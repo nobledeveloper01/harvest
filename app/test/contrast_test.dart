@@ -89,6 +89,42 @@ void main() {
         }
       });
 
+      test('a state colour drawn as text on its own tint', () {
+        /*
+          The pattern on the decision screen and the diagnosis result: a card
+          tinted with a state colour at 12%, with the *same colour* as the text
+          on it. It reads beautifully and it is the one composition in the app
+          that gets quietly worse the more it is used, because tinting the
+          background with the text's own hue moves the two toward each other.
+
+          Neither of the pairs already asserted covers it. `fresh on a card`
+          measures the colour against an untinted surface at 3:1, which is the
+          floor for a *graphical object*; this is a sentence, and a sentence
+          needs 4.5:1 against what it is actually drawn on — which is the
+          composite, not the surface underneath it.
+        */
+        Color over(Color tint, double alpha, Color base) => Color.from(
+              alpha: 1,
+              red: tint.r * alpha + base.r * (1 - alpha),
+              green: tint.g * alpha + base.g * (1 - alpha),
+              blue: tint.b * alpha + base.b * (1 - alpha),
+            );
+
+        for (final (label, colour) in [
+          ('fresh', crop.fresh),
+          ('at risk', crop.atRisk),
+          ('critical', crop.critical),
+          ('sold', crop.sold),
+        ]) {
+          assertPair(
+            '$label on its own 12% tint',
+            colour,
+            over(colour, 0.12, scheme.surface),
+            atLeast: 4.5,
+          );
+        }
+      });
+
       test('the primary button, which is the one people must find', () {
         assertPair('the button against the page', scheme.primary,
             scheme.surface, atLeast: 3);

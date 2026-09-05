@@ -371,6 +371,14 @@ Entries say *why*, not just what.
   illustrations as hatched placeholders, and the gate went back to reporting
   85 of 85. Nothing failed; the count just went up again. The manifest is a
   record of what is **not real**, not an inventory of what exists.
+- **A state colour was 4.09:1 as text on its own tint.** The decision headline
+  and the diagnosis verdict tint a card with a state colour at 12% and put the
+  *same colour* on it as text — a composition that gets quietly worse the more
+  it is used, because tinting a background with the text's own hue moves the two
+  toward each other. Nothing asserted that pair: `at risk on a card` measured
+  the colour against an untinted surface at the 3:1 floor for a *graphical
+  object*, and this is a sentence. Lowering the tint does not save it — at 6% it
+  is still 4.43:1 — so the light amber moved again, to `#995400`.
 - **The audio gate never checked for orphans.** The picture gate has failed on
   them since it was written; this one only ever asked whether what it expected
   was present, never whether what was present was expected. Renaming a phrase

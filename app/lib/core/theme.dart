@@ -190,8 +190,15 @@ abstract final class Palette {
       design floor for this app is a dusty screen in direct sunlight, where it
       is worse than it looks here. Found by `test/contrast_test.dart` on its
       first run.
+
+      Darker again, from `#A85E00`, for a pair nobody had asserted: this colour
+      **as text on a card tinted with itself at 12%** — the decision headline
+      and the diagnosis verdict. Tinting a background with the text's own hue
+      moves the two toward each other, so 4.78:1 against the surface became
+      4.09:1 against what the sentence is actually drawn on. Lowering the tint
+      does not save it; at 6% it is still 4.43:1. The colour had to move.
     */
-    atRisk: Color(0xFFA85E00),
+    atRisk: Color(0xFF995400),
     critical: Color(0xFFB3261E),
     sold: Color(0xFF505A4D),
     onAccent: Color(0xFFFFFFFF),

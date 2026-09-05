@@ -82,6 +82,27 @@ gates that already cover the other eighteen. Which then found the fourth thing �
 the five clips for the phrase it replaced, orphaned on disk, that the audio gate
 had no opinion about at all.
 
+### A fifth, in the colours
+
+The new screen tints a card with a state colour at 12% and writes the sentence
+in that same colour. The decision headline has done it since Phase 3. Both were
+covered by a contrast assertion that measured the colour against the **untinted**
+surface, at 3:1 — the floor for a graphical object.
+
+But it is a sentence, and a sentence needs 4.5:1 against what it is actually
+drawn on. What it is actually drawn on is the composite. Tinting a background
+with the text's own hue moves the two toward each other, so the pair everybody
+had checked was not the pair on screen: light `atRisk` measured 4.78:1 against
+the surface and **4.09:1** against its own tint.
+
+Lowering the tint does not save it. At 6% it is still 4.43:1 — the colour had to
+move, and it did, from `#A85E00` to `#995400`. Side by side the two are hard to
+tell apart, which is the point: the fix cost nothing visually and was invisible
+without measuring the right thing.
+
+That is the same fault as the other four, in a fourth place. Everything was
+asserted. Nothing asserted **the composition the screen actually uses.**
+
 ### Proved the gates fire
 
 Restore the manifest-rewrite and `picture-check` reports 85 of 85 placeholders
@@ -94,6 +115,10 @@ one that matters, because 92% is what candour looks like from the inside.
 And the audio gate now fails on an orphan: copy a clip to a name no enum
 carries, and it exits 1 naming the file. It exited 0 on five of them an hour
 ago.
+
+The contrast assertion was watched to fail with the old amber restored, and the
+scaling suite — which the diagnosis screen was outside of until today — fails
+with the app-bar title unflexed, by 387 px.
 
 ---
 
