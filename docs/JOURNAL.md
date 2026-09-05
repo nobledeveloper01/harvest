@@ -9,6 +9,25 @@ point — everything else is in the commit log.
 
 **Phase 3.**
 
+### A branch that could never run
+
+Coverage on the price file stopped at 92.7%, and two of the three uncovered
+lines were a guard for `kept.isEmpty` after outlier filtering.
+
+It cannot be empty. The median is zero distance from itself and the tolerance is
+never negative, so at least one report always survives — including the awkward
+case of two reports far apart, where the median is their average and the
+tolerance is three times half their gap.
+
+The wrong fix is a test that constructs an impossible input to colour a line
+green. The branch is gone and a comment says why it could not run, which is the
+same lesson as `MAX_SCALE` from the Keys build arriving from the other
+direction: there, a mechanism was built and never populated; here, one was built
+and never *reachable*, and the coverage report was the thing that noticed.
+
+The third uncovered line stays: it is a `return` Dart requires after a loop that
+always returns, and it is labelled as such.
+
 ### The test caught a corruption hazard, not a test bug
 
 The alert-destination test failed and the reason had nothing to do with alerts.

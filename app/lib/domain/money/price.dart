@@ -133,15 +133,19 @@ class MarketPrice {
         .where((r) => (r.nairaPerKg - middle).abs() <= tolerance)
         .toList();
 
-    if (kept.isEmpty) {
-      return MarketPrice(
-        nairaPerKg: null,
-        confidence: PriceConfidence.none,
-        used: 0,
-        discarded: recent.length,
-      );
-    }
+    /*
+      `kept` cannot be empty, and there is deliberately no branch for it.
 
+      The median is always zero distance from itself and the tolerance is never
+      negative, so at least one report always survives — including the case of
+      two reports far apart, where the median is their average and the
+      tolerance is three times half their gap.
+
+      A defensive branch here would be a mechanism that could never run,
+      reported as uncovered for ever, and eventually "fixed" by somebody
+      writing a test that constructs an impossible input. Better to say why it
+      cannot happen.
+    */
     final price = _weightedMedian(kept);
     final newest = kept.map((r) => r.at).reduce((a, b) => a.isAfter(b) ? a : b);
 
@@ -184,6 +188,8 @@ class MarketPrice {
       seen += report.reporterWeight;
       if (seen >= total / 2) return report.nairaPerKg;
     }
+    // Unreachable: the weights sum to `total`, so the last iteration always
+    // satisfies the condition above. Dart requires the return regardless.
     return sorted.last.nairaPerKg;
   }
 }
