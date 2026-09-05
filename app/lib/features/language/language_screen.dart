@@ -53,7 +53,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final crop = Theme.of(context).extension<Crop>()!;
+    final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Scaffold(
       body: SafeArea(
@@ -81,7 +81,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     return _LanguageRow(
                       language: language,
                       speaking: speaking,
-                      accent: crop.fresh,
+                      accent: freshness.fresh,
                       onFocus: () => _say(language),
                       onChoose: () => widget.onChosen(language),
                     );

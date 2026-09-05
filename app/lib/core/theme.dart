@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 
 /// The palette, from `docs/04-UX-DESIGN.md` §2.
 ///
+/// Named for freshness rather than for crops. It was called `Crop` until the
+/// crop catalogue arrived and wanted that name for the thing a farmer actually
+/// grows; the collision was a signal that the old name described the subject
+/// matter instead of the state, which is what these four colours are.
+///
 /// Built around crop freshness, because that is the one state the whole app
 /// communicates. `fresh`, `atRisk` and `critical` are not decoration — they are
 /// the spoilage clock, which is the product's wedge.
@@ -10,8 +15,8 @@ import 'package:flutter/material.dart';
 /// sunlight on a dusty screen gets the same information from the ring's fill
 /// fraction and from the spoken sentence. The colour is a third channel.
 @immutable
-class Crop extends ThemeExtension<Crop> {
-  const Crop({
+class Freshness extends ThemeExtension<Freshness> {
+  const Freshness({
     required this.fresh,
     required this.atRisk,
     required this.critical,
@@ -31,7 +36,7 @@ class Crop extends ThemeExtension<Crop> {
   final Color sold;
 
   @override
-  Crop copyWith({Color? fresh, Color? atRisk, Color? critical, Color? sold}) => Crop(
+  Freshness copyWith({Color? fresh, Color? atRisk, Color? critical, Color? sold}) => Freshness(
         fresh: fresh ?? this.fresh,
         atRisk: atRisk ?? this.atRisk,
         critical: critical ?? this.critical,
@@ -39,9 +44,9 @@ class Crop extends ThemeExtension<Crop> {
       );
 
   @override
-  Crop lerp(covariant Crop? other, double t) => other == null
+  Freshness lerp(covariant Freshness? other, double t) => other == null
       ? this
-      : Crop(
+      : Freshness(
           fresh: Color.lerp(fresh, other.fresh, t)!,
           atRisk: Color.lerp(atRisk, other.atRisk, t)!,
           critical: Color.lerp(critical, other.critical, t)!,
@@ -76,14 +81,14 @@ abstract final class Palette {
   static const _darkTextSecondary = Color(0xFFA3AE9E);
   static const _darkAccent = Color(0xFF5CB860);
 
-  static const light = Crop(
+  static const light = Freshness(
     fresh: Color(0xFF2E7D32),
     atRisk: Color(0xFFE08A00),
     critical: Color(0xFFC62828),
     sold: Color(0xFF5B6558),
   );
 
-  static const dark = Crop(
+  static const dark = Freshness(
     fresh: Color(0xFF5CB860),
     atRisk: Color(0xFFF0A93B),
     critical: Color(0xFFEF6B6B),

@@ -140,6 +140,30 @@ if [ -d docs/adr ]; then
   done
   [ -n "$adr_bad" ] && err "ADR numbering has gaps or duplicates:$adr_bad"
   [ "$n" -gt 0 ] && ok "$n ADRs, well-formed and numbered consecutively"
+
+  # --- 5b. Nothing cites an ADR that was never written ---------------------
+  #
+  # "See ADR-0002" in a Makefile comment reads exactly like a settled decision
+  # somebody can go and check. When the file does not exist the reader either
+  # concludes the decision is undocumented, or — worse — trusts the citation
+  # and never looks. A dangling reference is more misleading than no reference,
+  # because it claims a rationale exists.
+  #
+  # Found by this gate on its first run: `make domain-purity` cited ADR-0002
+  # while the directory held only ADR-0001.
+  dangling=""
+  for ref in $(grep -rhoE 'ADR-[0-9]{4}' \
+                 --include='*.md' --include='*.dart' --include='*.py' \
+                 --include='*.sh' --include='Makefile' . 2>/dev/null \
+               | sort -u); do
+    num=${ref#ADR-}
+    ls docs/adr/"$num"-*.md >/dev/null 2>&1 || dangling="$dangling $ref"
+  done
+  if [ -n "$dangling" ]; then
+    err "cited but never written — the citation claims a rationale that does not exist:$dangling"
+  else
+    ok "every ADR referenced anywhere in the repo exists"
+  fi
 fi
 
 # --- 6. THE ONE THAT MATTERS -----------------------------------------------

@@ -14,7 +14,7 @@ release gate blocks v1.0.
 
 ---
 
-## Phase 0 — Foundation · **current**
+## Phase 0 — Foundation · *cleared*
 
 Scaffold, theme and design-system primitives at 56 dp, the five languages, the
 bundled-audio pipeline, the domain-purity lint, and the audio-asset
@@ -37,7 +37,7 @@ recording it fails the build.
 **Android is unproven here** — no JDK, so nothing Android has been compiled.
 R2.
 
-## Phase 1 — Voice and logging
+## Phase 1 — Voice and logging · **current**
 
 Language selection persisted, composed-audio templates, push-to-talk with a
 constrained grammar, the crop catalogue and its illustrations, unit conversion,

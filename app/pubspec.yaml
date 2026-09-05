@@ -58,14 +58,27 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Every bundled clip, in every language. `scripts/audio-check.py` proves the
-  # set is complete; this is what puts it in the binary.
+  # Every bundled clip, in every language, and every crop tile.
+  # `scripts/audio-check.py` and `scripts/crop-check.py` prove the sets are
+  # complete; this is what puts them in the binary.
+  #
+  # **These entries are not recursive.** `assets/speech/ha/` bundles the files
+  # directly inside it and nothing under `assets/speech/ha/crop/`, with no build
+  # error either way — an undeclared asset only fails when a device asks for it.
+  # Both gates now read this list, so a directory added on disk and forgotten
+  # here fails the build instead of failing silently in a farmer's hand.
   assets:
     - assets/speech/en/
+    - assets/speech/en/crop/
     - assets/speech/pcm/
+    - assets/speech/pcm/crop/
     - assets/speech/ha/
+    - assets/speech/ha/crop/
     - assets/speech/yo/
+    - assets/speech/yo/crop/
     - assets/speech/ig/
+    - assets/speech/ig/crop/
+    - assets/crops/
 
   # To add assets to your application, add an assets section, like this:
 

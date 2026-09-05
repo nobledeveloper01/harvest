@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Every phrase the app can say has a clip in every language, and none is silent.
+Everything the app can say has a clip in every language, and none is silent.
 
 Phase 0 names this gate in its own scope, and it is the gate the whole voice
 architecture rests on. FR-1.1 says P0 audio must be *bundled*, because system
@@ -8,10 +8,21 @@ TTS coverage for Hausa, Igbo and Nigerian Pidgin is patchy enough that a
 farmer's language would work on some devices and not others. Bundled audio is
 only a guarantee if something checks that the bundle is complete.
 
-The check reads `Phrase` and `Speech` out of the Dart source rather than a
-hand-written list. A manifest maintained beside an enum is a manifest that goes
-stale the first time somebody adds a phrase and forgets — and the failure then
-is silence on a screen, in one language, for the users least able to report it.
+## Two enums, two namespaces
+
+`Phrase` is sentences. `Crop` is names of things, and a crop name is spoken on
+the selection grid in FR-2.1 exactly as a sentence is spoken on the language
+screen. They are separate enums because they are separate kinds — a crop is a
+thing the farmer grew, not something the app has to say — but both must be
+recorded in all five languages, so both are gated here, under
+
+    assets/speech/<language>/<phrase>.wav
+    assets/speech/<language>/crop/<crop>.wav
+
+Reading the enums out of the Dart source rather than a hand-written list is the
+whole point: a manifest kept beside an enum goes stale the first time somebody
+adds a crop and forgets, and the failure then is a silent tile, in one language,
+for the users least able to report it.
 
 ## What "recorded" means here
 
@@ -26,60 +37,38 @@ Exit codes: 1 if a clip is missing or empty, 0 otherwise.
 """
 
 import pathlib
-import re
 import sys
 import wave
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCE = ROOT / 'app/lib/domain/speech/phrase.dart'
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from dartenum import (  # noqa: E402
+    GREEN, OFF, RED, ROOT, YELLOW, enum_values, manifest, undeclared,
+)
+
+PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
+CROPS = ROOT / 'app/lib/domain/crops/crop.dart'
 SPEECH = ROOT / 'app/assets/speech'
 MANIFEST = SPEECH / 'placeholders.txt'
 
-RED = '\033[0;31m'
-YELLOW = '\033[0;33m'
-GREEN = '\033[0;32m'
-OFF = '\033[0m'
-
-
-def enum_values(source: str, enum: str) -> list[str]:
-    """The string literal each enum constant carries, in declaration order.
-
-    Parsed rather than imported because this runs in CI without a Dart
-    toolchain, and a gate that needs the thing it is gating to build first is a
-    gate that cannot report on a broken build.
-    """
-    body = re.search(rf'enum {enum} \{{(.*?)\n\}}', source, re.S)
-    if not body:
-        print(f'{RED}✗{OFF} cannot find `enum {enum}` in {SOURCE.name}')
-        sys.exit(1)
-    # `english('en', 'English'),` and `chooseLanguage('choose-language'),`
-    return re.findall(r"^\s*\w+\('([^']+)'", body.group(1), re.M)
-
 
 def main() -> int:
-    source = SOURCE.read_text()
-    languages = enum_values(source, 'Speech')
-    phrases = enum_values(source, 'Phrase')
+    languages = enum_values(PHRASES, 'Speech')
+    # `<language>/<stem>.wav` — the crop names sit in their own subdirectory so
+    # that a crop and a phrase can never collide on a filename, and so that a
+    # glance at the tree tells you which is which.
+    stems = enum_values(PHRASES, 'Phrase') + [
+        f'crop/{crop}' for crop in enum_values(CROPS, 'Crop')
+    ]
 
-    if not languages or not phrases:
-        print(f'{RED}✗{OFF} no languages or no phrases — the enums parsed empty')
-        return 1
-
-    placeholders = set()
-    if MANIFEST.exists():
-        placeholders = {
-            line.strip()
-            for line in MANIFEST.read_text().splitlines()
-            if line.strip() and not line.startswith('#')
-        }
+    placeholders = manifest(MANIFEST)
 
     missing: list[str] = []
     silent: list[str] = []
     pending: list[str] = []
 
     for language in languages:
-        for phrase in phrases:
-            rel = f'{language}/{phrase}.wav'
+        for stem in stems:
+            rel = f'{language}/{stem}.wav'
             clip = SPEECH / rel
             if not clip.exists():
                 missing.append(rel)
@@ -101,17 +90,43 @@ def main() -> int:
             if rel in placeholders:
                 pending.append(rel)
 
-    want = len(languages) * len(phrases)
+    want = len(languages) * len(stems)
 
-    if missing or silent:
-        for rel in missing:
+    # Recorded is not the same as shipped. Flutter's directory entries do not
+    # recurse, so `assets/speech/ha/` bundles the phrases and silently skips
+    # `assets/speech/ha/crop/` — with no build error, because an undeclared
+    # asset only fails when a device asks for it.
+    unshipped = undeclared(
+        [f'{language}/{stem}.wav' for language in languages for stem in stems],
+        'assets/speech',
+    )
+
+    if missing or silent or unshipped:
+        # Capped, because 125 identical lines buries the one that differs.
+        for rel in missing[:12]:
             print(f'{RED}✗{OFF} no clip: assets/speech/{rel}')
-        for rel in silent:
+        if len(missing) > 12:
+            print(f'  … and {len(missing) - 12} more missing')
+        for rel in silent[:12]:
             print(f'{RED}✗{OFF} empty or unreadable: assets/speech/{rel}')
+        if len(silent) > 12:
+            print(f'  … and {len(silent) - 12} more empty')
+        for path in unshipped[:12]:
+            print(f'{RED}✗{OFF} recorded but not bundled: {path}')
+        if len(unshipped) > 12:
+            print(f'  … and {len(unshipped) - 12} more undeclared')
         print()
-        print('  Every phrase must exist in every language. A farmer whose')
-        print('  language is missing one gets silence on that screen, and is')
-        print('  the user least able to tell anybody about it.')
+        print('  Everything the app says must exist in every language. A farmer')
+        print('  whose language is missing one gets silence on that screen, and')
+        print('  is the user least able to tell anybody about it.')
+        print()
+        if missing or silent:
+            print('  `python3 scripts/make-placeholders.py` writes stand-ins that')
+            print('  announce themselves, which is what to do while building.')
+        if unshipped:
+            print("  Add the directory to `flutter: assets:` in app/pubspec.yaml.")
+            print('  Directory entries are not recursive — a subdirectory needs')
+            print('  its own line, or it is simply absent from the binary.')
         return 1
 
     if pending:
@@ -123,8 +138,8 @@ def main() -> int:
         return 0
 
     print(
-        f'{GREEN}✓{OFF} every phrase is recorded in every language '
-        f'({len(phrases)} × {len(languages)} = {want} clips)'
+        f'{GREEN}✓{OFF} everything the app says is recorded in every language '
+        f'({len(stems)} × {len(languages)} = {want} clips)'
     )
     return 0
 

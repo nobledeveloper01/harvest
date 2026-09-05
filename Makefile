@@ -13,14 +13,22 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check audio-check analyze test coverage-gate ## Everything CI runs
+ci: doc-check audio-check crop-check analyze test coverage-gate ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check audio-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check audio-check crop-check coverage-gate ## The blocking gates alone. These never go yellow.
 
 .PHONY: audio-check
-audio-check: ## Fail if any phrase is missing a clip in any of the five languages
+audio-check: ## Fail if anything the app says is missing a clip, or is not bundled
 	@python3 scripts/audio-check.py
+
+.PHONY: crop-check
+crop-check: ## Fail if a crop has no picture, or a picture has no crop
+	@python3 scripts/crop-check.py
+
+.PHONY: placeholders
+placeholders: ## Write stand-in clips and tiles for anything not yet made (macOS)
+	@python3 scripts/make-placeholders.py
 
 # --- code -------------------------------------------------------------------
 
