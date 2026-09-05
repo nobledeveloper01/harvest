@@ -16,6 +16,12 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **A lot, logged end to end.** Language, crop, quantity, where it is kept and
+  when it was picked — five taps and one number from a cold start. The date
+  defaults to today and stays there for nearly every lot, so the whole path
+  runs on pictures and spoken names; backdating uses numerals, which is stated
+  rather than glossed over, because composed audio for numbers is still owed to
+  this phase.
 - **The quantity screen, and the correction that is the point of it.** A number
   pad, the nine measures as pictures, and the kilogram equivalent always on
   screen — saying whether it came from this farmer's own belt or from a national
@@ -67,6 +73,10 @@ Entries say *why*, not just what.
   direction. Both asset gates now read `pubspec.yaml` as well as the
   filesystem; the old ones would have stayed green while every crop name was
   silent on a real phone.
+- **A harvest date that could be refused after being offered.** The day row and
+  `Lot.record` now agree on the window to the day: fifteen buttons, today and
+  the fourteen behind it. A row offering one more would have produced a tap
+  that does nothing, on the screen where the farmer is trying to finish.
 - **A correction that would have recorded ninety-six baskets.** Once the pad
   is entering kilograms the typed number is no longer a count, and the
   assumption was being recomputed from it. The screen now holds the quantity

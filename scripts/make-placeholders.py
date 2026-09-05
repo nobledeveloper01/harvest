@@ -40,11 +40,16 @@ PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 SPEECH = ROOT / 'app/assets/speech'
 ASSETS = ROOT / 'app/assets'
 
-# `name: (source, enum)`. The name is both the picture directory
-# (`assets/<name>s/`) and the speech subdirectory (`speech/<lang>/<name>/`).
+# `name: (picture directory, speech subdirectory, source, enum)`.
+#
+# The two directory names are given rather than derived. Deriving the picture
+# directory by adding an "s" worked for crops and units and turns `storage`
+# into `storages`, which is the kind of rule that reads as clever until the
+# third case arrives.
 NAMES = {
-    'crop': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
-    'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
+    'crop': ('crops', ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
+    'unit': ('units', ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
+    'storage': ('storage', ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
 }
 
 # Beside the directories rather than inside them: `assets/crops/` is a pubspec
@@ -147,7 +152,8 @@ def main() -> int:
     languages = enum_values(PHRASES, 'Speech')
     phrases = enum_values(PHRASES, 'Phrase')
     names = {
-        name: enum_values(source, enum) for name, (source, enum) in NAMES.items()
+        name: (folder, enum_values(source, enum))
+        for name, (folder, source, enum) in NAMES.items()
     }
 
     # `enum_values` returns only the first literal on each constant. The
@@ -161,17 +167,17 @@ def main() -> int:
 
     pictures: list[str] = []
     seed = 0
-    for name, values in names.items():
-        folder = ASSETS / f'{name}s'
+    for directory, values in names.values():
+        folder = ASSETS / directory
         folder.mkdir(parents=True, exist_ok=True)
         for value in values:
-            pictures.append(f'{name}s/{value}.png')
+            pictures.append(f'{directory}/{value}.png')
             target = folder / f'{value}.png'
             seed += 1
             if target.exists() and not args.force:
                 continue
             png(target, TILE, seed)
-            written.append(f'pictures: {name}s/{value}.png')
+            written.append(f'pictures: {directory}/{value}.png')
 
     PICTURE_MANIFEST.write_text(
         PICTURE_HEADER + '\n' + '\n'.join(pictures) + '\n'
@@ -179,7 +185,7 @@ def main() -> int:
 
     if not args.pictures_only:
         stems = [(phrase, phrase.replace('-', ' ')) for phrase in phrases]
-        for name, values in names.items():
+        for name, (_, values) in names.items():
             stems += [
                 (f'{name}/{value}', value.replace('-', ' ')) for value in values
             ]

@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 
 import '../../domain/crops/crop.dart';
+import '../../domain/lots/lot.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 
@@ -45,6 +46,10 @@ class Speaker {
   /// farmer measured, not something the app has to say. See ADR-0003.
   Future<void> sayUnit(Unit unit, Speech language) =>
       _play('${language.code}/unit/${unit.id}');
+
+  /// Say a storage condition, in one language.
+  Future<void> sayStorage(StorageCondition storage, Speech language) =>
+      _play('${language.code}/storage/${storage.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

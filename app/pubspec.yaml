@@ -72,20 +72,26 @@ flutter:
     - assets/speech/en/
     - assets/speech/en/crop/
     - assets/speech/en/unit/
+    - assets/speech/en/storage/
     - assets/speech/pcm/
     - assets/speech/pcm/crop/
     - assets/speech/pcm/unit/
+    - assets/speech/pcm/storage/
     - assets/speech/ha/
     - assets/speech/ha/crop/
     - assets/speech/ha/unit/
+    - assets/speech/ha/storage/
     - assets/speech/yo/
     - assets/speech/yo/crop/
     - assets/speech/yo/unit/
+    - assets/speech/yo/storage/
     - assets/speech/ig/
     - assets/speech/ig/crop/
     - assets/speech/ig/unit/
+    - assets/speech/ig/storage/
     - assets/crops/
     - assets/units/
+    - assets/storage/
 
   # To add assets to your application, add an assets section, like this:
 

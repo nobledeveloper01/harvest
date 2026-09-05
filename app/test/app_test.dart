@@ -4,6 +4,8 @@ import 'package:harvest/app.dart';
 import 'package:harvest/data/settings/language_store.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
+import 'package:harvest/domain/lots/lot.dart';
+import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +17,12 @@ class _Silent implements Speaker {
 
   @override
   Future<void> sayCrop(Crop crop, Speech language) async {}
+
+  @override
+  Future<void> sayUnit(Unit unit, Speech language) async {}
+
+  @override
+  Future<void> sayStorage(StorageCondition storage, Speech language) async {}
 
   @override
   Future<void> dispose() async {}
@@ -117,5 +125,51 @@ void main() {
       isNot(contains(Phrase.chooseLanguage)),
       reason: 'the picker was built and spoke before the stored answer arrived',
     );
+  });
+
+  testWidgets('a lot is logged end to end, from the first launch', (tester) async {
+    /*
+      The phase gate, as far as a widget test can carry it: *a lot is logged
+      end to end, without reading a word*. What this cannot check is the two
+      halves that need a device — sixty seconds, and Hausa coming out of the
+      speaker — and those stay on the definition of done rather than being
+      claimed here.
+
+      Every tap below is on a picture or a spoken control. Nothing is typed
+      except the number, which is the one thing a farmer must supply.
+    */
+    SharedPreferences.setMockInitialValues({});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await launch(tester);
+
+    // Their language, by its own name.
+    await tester.tap(find.text('Hausa'));
+    await tester.pumpAndSettle();
+
+    // What they grew, by its picture.
+    await tester.tap(find.bySemanticsLabel('Tomato'));
+    await tester.pumpAndSettle();
+
+    // How much, and in what.
+    for (final digit in ['4']) {
+      await tester.tap(find.bySemanticsLabel(digit));
+      await tester.pump();
+    }
+    await tester.tap(find.bySemanticsLabel('small basket'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Where it is kept. The date stays on today, which is the point of the
+    // default — this path never touches the day row.
+    await tester.tap(find.bySemanticsLabel('In the shade'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save this lot'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Tomato'), findsWidgets);
+    expect(find.textContaining('In the shade'), findsOneWidget);
+    expect(find.textContaining('88.0 kg'), findsOneWidget);
   });
 }

@@ -4,11 +4,13 @@ import 'core/theme.dart';
 import 'data/settings/language_store.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
+import 'domain/lots/lot.dart';
 import 'domain/lots/quantity.dart';
 import 'domain/speech/phrase.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
+import 'features/lots/storage_screen.dart';
 
 /// The app.
 ///
@@ -35,6 +37,7 @@ class _HarvestAppState extends State<HarvestApp> {
   Speech? _language;
   Crop? _crop;
   Quantity? _quantity;
+  Lot? _lot;
 
   /*
     Three states, not two: unknown, none, and chosen.
@@ -79,6 +82,7 @@ class _HarvestAppState extends State<HarvestApp> {
       _language = null;
       _crop = null;
       _quantity = null;
+      _lot = null;
     });
   }
 
@@ -100,19 +104,28 @@ class _HarvestAppState extends State<HarvestApp> {
                   onChosen: (crop) => setState(() => _crop = crop),
                   onChangeLanguage: _forgetLanguage,
                 ),
-              (final language?, final crop?) => switch (_quantity) {
-                  null => QuantityScreen(
+              (final language?, final crop?) => switch ((_quantity, _lot)) {
+                  (null, _) => QuantityScreen(
                       speaker: _speaker,
                       language: language,
                       crop: crop,
                       onEntered: (quantity) =>
                           setState(() => _quantity = quantity),
                     ),
-                  final quantity => _NextStep(
+                  (final quantity?, null) => StorageScreen(
+                      speaker: _speaker,
                       language: language,
                       crop: crop,
                       quantity: quantity,
+                      // The one place the clock is read. Every screen and
+                      // every rule below this takes `now` as a parameter, so
+                      // this line is the whole app's contact with the present
+                      // moment — which is what makes any of it testable at a
+                      // date boundary.
+                      now: DateTime.now(),
+                      onRecorded: (lot) => setState(() => _lot = lot),
                     ),
+                  (_, final lot?) => _NextStep(language: language, lot: lot),
                 },
             },
     );
@@ -126,15 +139,10 @@ class _HarvestAppState extends State<HarvestApp> {
 /// missing feature ships, and the same rule that governs the hatched crop tiles
 /// governs this.
 class _NextStep extends StatelessWidget {
-  const _NextStep({
-    required this.language,
-    required this.crop,
-    required this.quantity,
-  });
+  const _NextStep({required this.language, required this.lot});
 
   final Speech language;
-  final Crop crop;
-  final Quantity quantity;
+  final Lot lot;
 
   @override
   Widget build(BuildContext context) {
@@ -143,10 +151,10 @@ class _NextStep extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '${crop.label} · ${quantity.amount} ${quantity.unit.label}'
-            ' · ${quantity.kilograms} kg\n\n'
-            'Where it is being kept goes here next, and then the lot is saved '
-            'and the clock starts.\n'
+            '${lot.crop.label} · ${lot.quantity.amount} '
+            '${lot.quantity.unit.label} · ${lot.quantity.kilograms} kg\n'
+            '${lot.storage.label}\n\n'
+            'The home screen and the spoilage clock go here.\n'
             'Nothing is stored yet — this lot disappears when the app does.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,

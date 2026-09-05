@@ -79,6 +79,13 @@ enum Phrase {
   /// that cannot be guessed.
   howMuch('how-much'),
 
+  /// *"Where are you keeping it?"*
+  ///
+  /// FR-2.3. The answer feeds the shelf-life model directly — open air and a
+  /// cold room are different products of the same harvest — so it is asked
+  /// rather than assumed.
+  whereIsItKept('where-is-it-kept'),
+
   /// *"Is that right? You can tell me the real weight."*
   ///
   /// The correction. FR-2.2 requires the farmer be able to override the kg

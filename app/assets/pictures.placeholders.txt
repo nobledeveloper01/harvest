@@ -43,3 +43,8 @@ units/crate.png
 units/mudu.png
 units/congo.png
 units/paint-rubber.png
+storage/open-air.png
+storage/shade.png
+storage/ventilated.png
+storage/cold-room.png
+storage/processed.png
