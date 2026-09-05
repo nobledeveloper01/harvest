@@ -5,6 +5,65 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Phase 4 opens on the part that needs no model
+
+Diagnosis needs a trained classifier and there is no labelled dataset, so two of
+Phase 4's three gate clauses are blocked on data rather than on engineering —
+the same shape as the directories, and said out loud in ADR-0007 rather than
+discovered at the gate.
+
+The third clause is buildable today: *an uncertain result routes to a person
+rather than guessing.*
+
+### The threshold I nearly wrote
+
+The obvious gate is a number: sound sure above 0.75, hedge below it. It is wrong
+in a specific way. It treats a top score of 0.88 against a runner-up of 0.06
+exactly like 0.88 against 0.84 — and the second is a coin toss wearing a number
+that clears the bar.
+
+That case is not hypothetical in this catalogue. **Early blight and late blight
+are the pair it describes.** Both in scope, both looking alike in a photograph
+taken in a field, and calling for different urgency and a different spray. A
+model that has narrowed a leaf to those two has done real work; the useful
+output of that work is *"this might be early blight"*, not a confident answer
+picked by a fourth decimal place.
+
+So the gate reads two numbers: the top score, and how far it is clear of second
+place. And both non-confident answers route to a person, not only *"I don't
+recognise this"* — a farmer about to spray on a maybe is who the escalation is
+for.
+
+### What surprised us
+
+**The boundary did not mean what the constant said.** The test that asserts a
+gap of exactly `clear` counts as sure failed on its first run: `0.75 - 0.55` is
+0.19999999999999998, so `>= 0.20` is false. Every reading a person would give
+those numbers says the gap is exactly two tenths.
+
+Left alone it would have been invisible — nobody would have reported it, and the
+boundary would have sat wherever binary representation happened to put it for
+whichever two numbers a model produced. It only surfaced because the test was
+written **at** the boundary and **against the constants** rather than somewhere
+safely above and below with literals. That is now twice in one day that asserting
+against the constant under test paid for itself.
+
+**Choosing what not to diagnose was the harder half.** Bacterial and Fusarium
+wilt look identical on a phone camera and are told apart by cutting the stem and
+watching for ooze in water. The app can describe that test; it cannot run it.
+Naming either would be guessing between two things a farmer would treat
+differently — which is the whole failure the confidence gate exists to prevent,
+arriving through the class list instead.
+
+### Proved the gates fire
+
+Three breaks, each failing on exactly the assertion meant to catch it: collapse
+the rule to one number and the two-horse race passes as confident; name the
+thing the app does not recognise and the "would not stand behind" assertion
+catches it; make a *maybe* stop needing a person and both hedged cases fail.
+
+---
+
 ## 2026-09-05 — Phase 3 closes, and the gate that was watching the wrong thing
 
 ### The exit gate, asked properly

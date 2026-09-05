@@ -10,6 +10,20 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Phase 4 opens with the half of its gate that needs no model: the confidence
+  gate.** Certainty is read from **two numbers** — the top score, and its
+  distance from whatever came second — because a single threshold treats 0.88
+  against 0.06 exactly like 0.88 against 0.84. The first is a model that knows;
+  the second is a coin toss between early blight and late blight, which look
+  alike on a phone camera and call for different sprays. Three outcomes, matching
+  the three sentences `docs/04-UX-DESIGN.md` already writes, and **both
+  non-confident outcomes route to a person** — a farmer about to spray a field
+  on a maybe is exactly who the escalation is for. ADR-0007.
+- **`Ailment`: thirteen things the app is allowed to name**, chosen for what is
+  common on the crops Harvest tracks *and* what a farmer can act on. What is
+  absent is deliberate and written down: anything needing a laboratory,
+  storage moulds, and deficiencies beyond nitrogen and potassium, which present
+  as "generally unhappy" and are not separable from drought in an image.
 - **Phase 3 is cleared.** Every figure on the decision screen names its source
   and its age — asserted **per card** now, including the storage course, rather
   than by counting provenance lines across the screen, which stayed true when a
