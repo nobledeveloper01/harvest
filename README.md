@@ -188,6 +188,22 @@ arithmetic cannot quietly lose that. Where there is no price the app says *"I do
 not know what this is worth"* and asks, because a number with nothing behind it
 is the most alarming thing it could put on that screen.
 
+<p align="center">
+  <img src="docs/screenshots/11-costs.png" width="250" alt="Costs: what the lorry costs and what share the agent takes, entered by the farmer" />
+  <img src="docs/screenshots/12-storage-offer.png" width="250" alt="A store's quote as a third course, worked out against selling today and against waiting" />
+</p>
+
+Nothing the farmer receives is the number anybody quotes. A lorry has to be paid,
+an agent takes a share, and some of the load arrives bruised — so the app asks,
+and takes those off **every course alike**. Commission is charged on what
+*arrives*, not on what was loaded: charging it on the gross overstates what the
+agent takes and understates what the road does, and those are separate problems
+with separate answers. One is negotiable and the other is a road.
+
+A store's quote then enters as a third course, valued the same way — and on the
+numbers above it loses to selling today, which is the answer a storage company's
+own calculator would be least likely to give.
+
 ### The engine has to be able to be wrong
 
 <p align="center">

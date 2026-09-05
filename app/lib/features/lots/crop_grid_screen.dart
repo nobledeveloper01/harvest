@@ -364,38 +364,41 @@ class _CropTile extends StatelessWidget {
                         ),
                       ),
                       /*
-                        A scrim at the foot of the picture.
+                        A scrim at the foot of the picture, in the light theme
+                        only.
 
-                        Not decoration: the label sits directly beneath, and
-                        without it a pale illustration and a pale card meet at a
-                        hard line that reads as two objects rather than one
-                        tile.
+                        Not decoration: there, a pale illustration and a pale
+                        card meet at a hard line that reads as two objects
+                        rather than one tile. In the dark theme they do not meet
+                        at all — the illustration is light and the card is dark,
+                        which is already an edge — and the scrim's own colour
+                        over a light ground produced a grey band that looked
+                        like a rendering fault.
 
-                        Half the height it was, and no longer opaque at the
-                        bottom. It was sized against hatched placeholders, which
-                        had nothing in them to lose; over a drawing it ate the
-                        stems off the okra and the base off the bitterleaf. A
-                        seam is worth softening, not worth a third of the
-                        picture.
+                        Half the height it was, too. It was sized against
+                        hatched placeholders, which had nothing in them to lose;
+                        over a drawing it ate the stems off the okra and the
+                        base off the bitterleaf.
                       */
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 14,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                freshness.raised.withValues(alpha: 0),
-                                freshness.raised.withValues(alpha: 0.75),
-                              ],
+                      if (Theme.of(context).brightness == Brightness.light)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 14,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  freshness.raised.withValues(alpha: 0),
+                                  freshness.raised.withValues(alpha: 0.75),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
                       if (speaking)
                         /*
                           The only feedback that the sound came from *this*

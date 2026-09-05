@@ -27,6 +27,9 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **Every README screenshot recaptured**, and two added — the costs screen and a
+  store's quote as a third course, neither of which had ever been shown. The old
+  ten were a tour of grey hatching.
 - **The type scale came down a step** — display 30→26, title 22→19, body 18→16,
   secondary 16→15, with the radii following. The 5" floor sets the *minimum* a
   farmer in sunlight can read; it was being used as an instruction to set
