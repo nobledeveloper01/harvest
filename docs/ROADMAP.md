@@ -70,20 +70,28 @@ coverage for these four languages has not been checked and cannot be checked
 here, and the gate above never named voice input — that wording turns out to
 have been careful.
 
-## Phase 2 — The spoilage engine · **current**
+## Phase 2 — The spoilage engine · *cleared, less what needs a handset*
 
 `ShelfLifeEngine` in pure Dart, weather integration and caching, alerts
-scheduled at log time, lot lifecycle, the decision screen, loss recording.
+scheduled at log time, lot lifecycle, loss recording.
+
+**The decision screen moved to Phase 3**, with the prices it needs. It leads
+with the financial consequence — *"sell today and you get about ₦142,000"* — and
+there is no source of naira until Phase 3 ingests one. A version without money
+would be three buttons and no reason to press any of them, which is the same
+mistake as a freshness ring drawn before the engine that fills it. That ring
+moved for the same reason and the precedent held.
 
 **Exit gate**. *Alerts fire correctly with the device permanently offline, on
 both platforms, and the engine's predictions are checked against recorded
 outcomes rather than against itself.*
 
-## Phase 3 — Prices and storage
+## Phase 3 — Prices and storage · **current**
 
 Price reporting and ingest, outlier filtering, reputation weighting, net
 realisable price, the market and storage directories, the cost-benefit
-calculator.
+calculator — and the decision screen, which arrives here with the money that
+makes it worth showing.
 
 **Exit gate**. *Every figure on screen names its source and its age, and the
 calculator says "do not store" when storing loses money.*

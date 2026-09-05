@@ -29,6 +29,8 @@ built past the point anybody can honestly ship it.
 
 | R8 | **`make speech-budget` becomes a gate.** The app talks for 29 seconds on the shortest path to a logged lot, against a 60-second phase gate — but every clip is a stand-in saying several times more than the recording that replaces it, so the figure is a report today and not a threshold. It becomes one the day R1 clears, against whatever the real recordings measure | R1 | Phase 2 |
 
+| R9 | **Money is spoken, not only written.** The storage verdict is the first figure in the product that a farmer decides real money on, and it exists as English text — the domain currently holds that sentence, which is itself borrowed time. `SpokenWeight` solved the same problem for kilograms with a closed scale of whole recorded sentences; naira needs the same treatment and a wider scale | A decision on the naira scale, and 5× recordings of it | Phase 3 |
+
 ## How a gate leaves this list
 
 By being true, and by somebody having watched it be true. Not by being

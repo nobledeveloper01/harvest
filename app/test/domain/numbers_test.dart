@@ -27,4 +27,28 @@ void main() {
     // Written down because it is the kind of thing somebody "fixes" later.
     expect(tidy(-1.25), '-1.3');
   });
+
+  group('naira', () {
+    test('groups the thousands a person writes', () {
+      // The difference matters most at exactly the magnitudes this app deals
+      // in: six figures, glanced at, in a market.
+      expect(naira(40000), '₦40,000');
+      expect(naira(142000), '₦142,000');
+      expect(naira(900), '₦900');
+      expect(naira(1000), '₦1,000');
+      expect(naira(1234567), '₦1,234,567');
+    });
+
+    test('rounds to whole naira', () {
+      // Kobo have not been meaningful in produce trade for a long time, and a
+      // decimal here would be precision the price estimate does not have.
+      expect(naira(1999.4), '₦1,999');
+      expect(naira(1999.6), '₦2,000');
+    });
+
+    test('a loss keeps its sign outside the symbol', () {
+      expect(naira(-5000), '-₦5,000');
+      expect(naira(0), '₦0');
+    });
+  });
 }

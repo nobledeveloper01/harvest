@@ -16,3 +16,24 @@ String tidy(num value) {
       ? rounded.toStringAsFixed(0)
       : rounded.toStringAsFixed(1);
 }
+
+
+/// Naira, with the separators a person writes.
+///
+/// `₦40000` is a number a computer produced. `₦40,000` is a sum of money, and
+/// the difference matters most at exactly the magnitudes this app deals in —
+/// six figures, glanced at, in a market.
+///
+/// Rounded to whole naira. Kobo have not been meaningful in Nigerian produce
+/// trade for a long time, and a decimal place here would be precision the
+/// underlying price estimate does not have.
+String naira(num amount) {
+  final whole = amount.round().abs();
+  final digits = whole.toString();
+  final grouped = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) grouped.write(',');
+    grouped.write(digits[i]);
+  }
+  return '${amount < 0 ? '-' : ''}₦$grouped';
+}

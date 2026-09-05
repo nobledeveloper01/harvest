@@ -5,6 +5,64 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Phase 3 opens, and the losing case is narrower than it looks
+
+**Phase 3.**
+
+### The gate is a type, not a convention
+
+*Every figure on screen names its source and its age.* Written as a UI rule that
+survives until the first screen somebody is in a hurry on. So it is
+`Sourced<T>`: there is no way to get the number out without having been handed
+the provenance with it, and `map` is the only way to derive a new figure — which
+means a naira estimate computed from a nine-day-old price is nine days old, and
+the arithmetic cannot quietly lose that on the way.
+
+Two rules fell out of building it that would not have occurred to me writing a
+UI convention:
+
+* A figure is as old as **the oldest input**, not the freshest. A storage
+  verdict resting on a nine-day-old price is nine days old however recently the
+  other half was updated.
+* A mixed figure claims the **weaker** source. A median built from one survey
+  and four farmers' reports is not "a market survey"; claiming the stronger one
+  is the flattering direction.
+
+### The mistyped total, and why the obvious filter fails
+
+The commonest bad price report is somebody typing the value of the whole basket
+instead of the price per kilogram — off by three orders of magnitude. The
+textbook filter is to reject anything more than a few standard deviations from
+the mean, and it does not work: the outlier inflates the deviation it is being
+measured against, so the band widens far enough to admit the very report it
+exists to exclude. Swapping median absolute deviation for standard deviation
+fails the test with `Expected: <405.0> / Actual: <410.0>` — the outlier survives
+*and* drags the price.
+
+A second bug in the same function, found by a test rather than by thinking:
+when every report is identical the deviation is zero, and "within three
+deviations" then rejects everything that is not exactly the median. In a market
+of four reports a naira apart, that is three of them. The band is floored at a
+fifth of the price for that reason.
+
+### The calculator's "no" is rarer than I assumed
+
+The first version of the exit-gate test — *says do not store when storing loses
+money* — expected a no and got a yes, and the code was right.
+
+A crop that would have spoiled is worth storing almost regardless of the fee,
+because the avoided loss dwarfs everything else: half a lot of tomatoes that
+still exists on Friday is worth more than any plausible week's rent. Storage
+only stops paying when the crop **barely spoils anyway** — a yam, in a dry
+store, for a week, at a real price.
+
+Which sharpens what the gate is protecting. On perishables the app's job is
+mostly to say *yes, and here is by how much*. Its job on a yam is to be trusted
+when it says no — and that is the case a storage operator has every reason to
+argue with.
+
+---
+
 ## 2026-09-05 — Phase 2 opens, and a promise from ADR-0003 comes due
 
 **Phase 2.**

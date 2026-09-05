@@ -10,6 +10,27 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A figure cannot exist without its source and its age.** Phase 3's exit gate
+  is that every number on screen says where it came from and when — easy to
+  write as a UI convention and easy to forget on the one screen that matters,
+  so it is a **type**. `Sourced<T>` carries the provenance, and the only way to
+  derive a new figure from an old one carries it along: anything computed from a
+  two-week-old price is itself two weeks old.
+- **A market price out of a pile of claims.** Stale reports dropped, outliers
+  rejected by median absolute deviation rather than standard deviation — a
+  mistyped total of ₦900,000 per kilogram inflates the very deviation a
+  standard filter measures against, so the filter widens to admit it — and a
+  **weighted** median, so one prolific optimist cannot become the price of a
+  market. The discard count survives to be shown: a market where four of nine
+  reports disagreed wildly is a market in the middle of something.
+- **The storage calculator, which defaults to no.** A storage operator is paid
+  to say yes and the arithmetic is close enough that a farmer cannot see the
+  answer in a field. It says *"do not store this"* in those words when storing
+  loses money, names how old its prices are, and refuses to answer at all when
+  there is no price — because "I cannot tell you" and "do not do it" are
+  different answers, and a farmer told the second when the app meant the first
+  has been given advice it did not have.
+
 - **Saying what happened to a lot.** Sold, put in storage, dried, or lost —
   from pictures — and a loss asks why from a fixed list of six. Closing a lot
   cancels its warnings, because a harvest that sold on Tuesday has no business
