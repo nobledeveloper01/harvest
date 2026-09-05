@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:harvest/data/alerts/alarms.dart';
 import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/lots/lots_database.dart';
 import 'package:harvest/data/settings/settings.dart';
+import 'package:harvest/data/weather/weather_store.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
@@ -13,6 +15,7 @@ import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:harvest/domain/spoilage/alerts.dart';
+import 'package:harvest/domain/spoilage/shelf_life.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Silent implements Speaker {
@@ -45,6 +48,26 @@ class _Silent implements Speaker {
 
   @override
   Future<void> dispose() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A Dio that never reaches anything.
+///
+/// The design floor is a phone with no signal for days, so that is what the
+/// app-level tests run against: the honest wide windows, and nothing waited on.
+class _Offline implements Dio {
+  @override
+  Future<Response<T>> get<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onReceiveProgress,
+  }) async =>
+      throw Exception('no route to host');
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -86,10 +109,14 @@ void main() {
 
   late LotsDatabase database;
   late _Ledger alarms;
+  late WeatherStore weather;
 
   setUp(() {
     database = LotsDatabase(NativeDatabase.memory());
     alarms = _Ledger();
+    // A store with no network. Every test here should behave as a farmer in a
+    // field does — no reading, wider windows, nothing waited for.
+    weather = WeatherStore(http: _Offline());
   });
   tearDown(() => database.close());
 
@@ -174,6 +201,7 @@ void main() {
         // never needs sqlite3's platform libraries.
         lots: LotStore(database),
         alarms: alarms,
+        weather: weather,
       ),
     );
     await tester.pumpAndSettle();
@@ -522,5 +550,61 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('lots.region'), 'south-west');
+  });
+
+  testWidgets('a real reading narrows the window; no signal widens it',
+      (tester) async {
+    /*
+      The whole point of fetching weather. With a reading the app says a
+      narrower, more useful thing; without one it says a wider, honest thing —
+      and it never waits for the difference. The design floor is a phone with
+      no signal for days, so the offline answer is the one that has to be good.
+    */
+    SharedPreferences.setMockInitialValues({
+      'speech.language.code': 'ha',
+      'lots.region': 'south-west',
+    });
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final lot = Lot.record(
+      crop: Crop.tomato,
+      quantity: Quantity.inUnits(
+        amount: 2,
+        unit: Unit.bigBasket,
+        region: Region.southWest,
+      )!,
+      storage: StorageCondition.shade,
+      harvestedAt: DateTime.now(),
+      now: DateTime.now(),
+    )!;
+    await LotStore(database).add(lot);
+
+    // Offline: the window is the wide, estimated one.
+    await launch(tester);
+    final wide = ShelfLifeEngine.predict(lot: lot);
+    expect(wide!.confidence, Confidence.estimated);
+
+    // With a cool reading, the same lot has longer and the app knows it.
+    const cool = Weather(celsius: 18, relativeHumidity: 85);
+    final narrow = ShelfLifeEngine.predict(lot: lot, weather: cool)!;
+    expect(narrow.confidence, Confidence.measured);
+    expect(narrow.shortest, greaterThan(wide.shortest));
+
+    /*
+      Compared as a **ratio**, not as a difference.
+
+      Cool weather multiplies both ends of the window, so a measured cool
+      reading produces a longer window whose absolute spread is *bigger* than
+      the estimated one — which says nothing about uncertainty. What shrinks
+      when the app knows the weather is how many times longer the optimistic
+      end is than the pessimistic one, and that is the thing a farmer feels as
+      "between two and four days" versus "between one and six".
+    */
+    double spread(ShelfLife life) =>
+        life.longest.inMinutes / life.shortest.inMinutes;
+
+    expect(spread(narrow), lessThan(spread(wide)),
+        reason: 'knowing narrows the band');
   });
 }

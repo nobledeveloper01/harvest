@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
@@ -5,6 +6,7 @@ import 'data/alerts/alarms.dart';
 import 'data/lots/lot_store.dart';
 import 'data/lots/lots_database.dart';
 import 'data/settings/settings.dart';
+import 'data/weather/weather_store.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
 import 'domain/lots/lot.dart';
@@ -32,6 +34,7 @@ class HarvestApp extends StatefulWidget {
     this.languages,
     this.lots,
     this.alarms,
+    this.weather,
     super.key,
   });
 
@@ -39,6 +42,7 @@ class HarvestApp extends StatefulWidget {
   final Settings? languages;
   final LotStore? lots;
   final Alarms? alarms;
+  final WeatherStore? weather;
 
   @override
   State<HarvestApp> createState() => _HarvestAppState();
@@ -49,6 +53,14 @@ class _HarvestAppState extends State<HarvestApp> {
   late final Settings _languages = widget.languages ?? const Settings();
   late final LotStore _lots = widget.lots ?? LotStore(LotsDatabase());
   late final Alarms _alarms = widget.alarms ?? LocalAlarms();
+  late final WeatherStore _weatherStore = widget.weather ?? WeatherStore();
+
+  /// The last reading, or null when there is none worth using.
+  ///
+  /// Held in memory for the session: the store decides whether a cached
+  /// reading is still current, and asking it once a launch is enough for a
+  /// model whose readings are good for twelve hours.
+  Weather? _weather;
 
   StoredLots _stored = const StoredLots(lots: [], unreadable: 0);
 
@@ -97,6 +109,17 @@ class _HarvestAppState extends State<HarvestApp> {
       _logging = stored.lots.isEmpty;
       _loaded = true;
     });
+
+    /*
+      Fetched after the screen is up, never before it.
+
+      FR-3.2 says fetch when a network is available, and the design floor says
+      there usually is not one. So this is deliberately not awaited into the
+      launch path: the app is usable, the windows are the honest wide ones, and
+      if a reading arrives it narrows them. A farmer opening the app in a field
+      waits for nothing.
+    */
+    unawaited(_refreshWeather());
   }
 
   @override
@@ -113,6 +136,12 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() => _language = language);
   }
 
+  Future<void> _refreshWeather() async {
+    final weather = await _weatherStore.forRegion(_region ?? Region.unknown);
+    if (!mounted || weather == null) return;
+    setState(() => _weather = weather);
+  }
+
   Future<void> _save(Lot lot) async {
     final id = await _lots.add(lot);
 
@@ -124,7 +153,7 @@ class _HarvestAppState extends State<HarvestApp> {
       background job, no next launch. The one moment the app is certainly
       running and certainly knows about this lot is now.
     */
-    final life = ShelfLifeEngine.predict(lot: lot);
+    final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
     if (life != null) {
       final alerts = AlertSchedule.forLot(
         lot: lot,
@@ -188,6 +217,7 @@ class _HarvestAppState extends State<HarvestApp> {
         stored: _stored,
         now: DateTime.now(),
         speaker: _speaker,
+        weather: _weather,
         // The list only speaks once a language has been chosen, and this
         // screen is unreachable before that.
         language: _language ?? Speech.values.first,
@@ -233,6 +263,9 @@ class _HarvestAppState extends State<HarvestApp> {
             onRegionChosen: (region) {
               _languages.writeRegion(region);
               setState(() => _region = region);
+              // A new region is a new place to ask about, and the old
+              // reading was for somewhere else.
+              unawaited(_refreshWeather());
             },
           ),
         (final crop?, final quantity?) => StorageScreen(

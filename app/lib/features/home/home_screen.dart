@@ -25,6 +25,7 @@ class HomeScreen extends StatelessWidget {
     required this.now,
     required this.speaker,
     required this.language,
+    required this.weather,
     required this.onLogAnother,
     required this.onToggleBrightness,
     super.key,
@@ -38,6 +39,12 @@ class HomeScreen extends StatelessWidget {
 
   final Speaker speaker;
   final Speech language;
+
+  /// The reading the windows are computed from, or null when there is none.
+  ///
+  /// Null widens every window and marks it estimated — which is the honest
+  /// answer, and the one a farmer with no signal gets.
+  final Weather? weather;
 
   final VoidCallback onLogAnother;
 
@@ -150,7 +157,8 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(height: Gap.m),
                         itemBuilder: (context, index) {
                           final lot = stored.lots[index];
-                          final life = ShelfLifeEngine.predict(lot: lot);
+                          final life =
+                              ShelfLifeEngine.predict(lot: lot, weather: weather);
                           final spent = life?.spentAt(lot.harvestedAt, now);
                           final state =
                               spent == null ? null : LotState.from(spent);

@@ -10,6 +10,14 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Weather, when there is a network, and honesty when there is not.** One
+  reading per trade belt, taken at its largest produce town, cached and used for
+  twelve hours. Past twelve it is thrown away rather than reused: temperature is
+  the biggest lever in the shelf-life model, so yesterday afternoon's reading
+  applied at dawn is not stale but **wrong**, and it would be labelled
+  *measured* while being worse than the band the engine falls back to. Nothing
+  waits for it — the app opens, the windows are the honest wide ones, and a
+  reading narrows them if it arrives.
 - **The app knows where you farm, without ever asking where you are.** Until
   now every basket in the country weighed the national median, and the quantity
   screen said so honestly on every lot and could do nothing about it. It now

@@ -237,4 +237,49 @@ void main() {
       expect(fresh.shortest.inHours, 1);
     });
   });
+
+  group('how old a reading may be', () {
+    final noon = DateTime(2026, 9, 5, 12);
+
+    WeatherReading taken(Duration ago) => WeatherReading(
+          weather: const Weather(celsius: 30, relativeHumidity: 70),
+          at: noon.subtract(ago),
+        );
+
+    test('this morning is worth using', () {
+      expect(taken(const Duration(hours: 4)).usableAt(noon), isTrue);
+      expect(taken(Duration.zero).usableAt(noon), isTrue);
+    });
+
+    test('yesterday is not', () {
+      /*
+        Twelve hours, because past that it is a different time of day.
+        Yesterday afternoon's thirty-four degrees, applied at dawn, is not a
+        stale fact — it is a wrong one, and it would be marked `measured` while
+        being worse than the band the engine falls back to. A model whose
+        confidence label and whose accuracy point in opposite directions is
+        worse than one that admits it does not know.
+      */
+      expect(taken(const Duration(hours: 12)).usableAt(noon), isTrue);
+      expect(taken(const Duration(hours: 13)).usableAt(noon), isFalse);
+      expect(taken(const Duration(days: 3)).usableAt(noon), isFalse);
+    });
+
+    test('a reading from the future is not a reading', () {
+      // A clock that moved, or a device whose time was wrong when it fetched.
+      // Either way there is nothing here to trust.
+      expect(taken(const Duration(hours: -1)).usableAt(noon), isFalse);
+    });
+  });
+
+  group('two weathers being the same weather', () {
+    test('same temperature and humidity', () {
+      const a = Weather(celsius: 30, relativeHumidity: 70);
+      const b = Weather(celsius: 30, relativeHumidity: 70);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a == const Weather(celsius: 31, relativeHumidity: 70), isFalse);
+      expect(a == Object(), isFalse);
+    });
+  });
 }

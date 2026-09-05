@@ -43,8 +43,13 @@ window, nine tenths, and the end — and they move **earlier** into waking hours
 never later, because a warning delivered at six about a crop that turned at two
 arrives after the thing it was warning about.
 
-What is not done: weather, the decision screen and loss recording (the rest of
-Phase 2), prices, diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
+Weather is fetched for the farmer's trade belt when there is a network, cached
+for twelve hours, and thrown away rather than reused past that — temperature is
+the biggest lever in the model, so yesterday's reading applied at dawn is not
+stale but wrong. Nothing waits for it.
+
+What is not done: the decision screen and loss recording (the rest of Phase 2),
+prices, diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
 work — see **The hard part**.
 
 ## The insight

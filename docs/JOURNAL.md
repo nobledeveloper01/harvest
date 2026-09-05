@@ -9,6 +9,38 @@ point — everything else is in the commit log.
 
 **Phase 2.**
 
+### The failure that is not an error
+
+`WeatherStore.forRegion` swallows everything — no signal, a timeout, a changed
+API shape, a region with no point on the map — and returns null. That is the one
+place in this app where a bare `catch (_)` is right, and it is worth saying why
+rather than leaving it to look like laziness.
+
+Every one of those outcomes means the same thing downstream: **there is no
+reading**. The engine already has an honest answer for that, and it is a wider
+window rather than an error. Telling a farmer standing in a field that the app
+could not reach the internet is telling them something they already know and
+cannot act on.
+
+The one thing it must never do is hand back a *stale* reading as though it were
+current — which is why the age check is on the cache and not in the catch, and
+why the test that removes it fails with `Expected: <22> / Actual: <34.0>`.
+
+### Narrower is not the same as shorter
+
+The test for "knowing the weather narrows the window" failed on its first run,
+and the code was right.
+
+A cool reading multiplies **both** ends of the window, so a measured window at
+eighteen degrees is longer than the estimated one *and* has a bigger absolute
+spread. Comparing `longest - shortest` therefore says the opposite of what it
+looks like it says.
+
+What shrinks when the app knows the weather is the **ratio** — how many times
+longer the optimistic end is than the pessimistic one. That is also the thing a
+farmer actually feels: *"between two and four days"* against *"between one and
+six"*.
+
 ### The app does not want to know where you are
 
 FR-2.2 needs a region and FR-3.2 wants weather "for the lot's location", and the

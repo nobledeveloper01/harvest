@@ -118,12 +118,50 @@ class ShelfLifeTable {
   (int, int)? hoursFor(Crop crop) => base[crop];
 }
 
-/// A temperature and humidity for a lot's location.
+/// A temperature and humidity for a lot's region.
 class Weather {
   const Weather({required this.celsius, required this.relativeHumidity});
 
   final double celsius;
   final double relativeHumidity;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Weather &&
+      other.celsius == celsius &&
+      other.relativeHumidity == relativeHumidity;
+
+  @override
+  int get hashCode => Object.hash(celsius, relativeHumidity);
+}
+
+/// A weather reading, and when it was taken.
+///
+/// The timestamp is not bookkeeping. Temperature is the single biggest lever in
+/// this model — the Q10 rule roughly halves shelf life for every 10 °C — so a
+/// reading's *age* decides whether it is information or noise.
+class WeatherReading {
+  const WeatherReading({required this.weather, required this.at});
+
+  final Weather weather;
+  final DateTime at;
+
+  /// How long a reading is worth using.
+  ///
+  /// Twelve hours, because past that it is a different time of day. Yesterday
+  /// afternoon's thirty-four degrees, applied at dawn, is not a stale fact —
+  /// it is a **wrong** one, and it would be marked `measured` while being
+  /// worse than the honest band the engine falls back to. A model whose
+  /// confidence label and whose accuracy point in opposite directions is worse
+  /// than one that admits it does not know.
+  static const usableFor = Duration(hours: 12);
+
+  bool usableAt(DateTime now) {
+    final age = now.difference(at);
+    // Negative age means a clock that moved, or a reading from the future.
+    // Neither is a reading to trust.
+    return !age.isNegative && age <= usableFor;
+  }
 }
 
 /// A window, and how much of it is guesswork.
