@@ -5,6 +5,73 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — The gates went blind, twice, in the tooling written to stop that
+
+The diagnosis result screen is built and Phase 4's one achievable gate clause is
+real: an uncertain result routes to a person, and it does it *above* the steps
+rather than under them. But the screen is not what this entry is about.
+
+### 570 of 570
+
+Adding `Ailment` and `Step` meant adding them to the asset gates. There were
+three places to do that — the generator's `NAMES`, the picture gate's `SETS`,
+the audio gate's `NAMES` — and I did two.
+
+`audio-check` then reported **570 of 570 clips present**. A green tick, a
+complete set, and a hundred and fifty-five clips it did not know existed. It was
+not wrong about anything it was looking at. It had simply stopped looking at
+part of the product.
+
+That is the hundred-and-twenty-five-clip failure from three weeks ago, happening
+again, *inside the tooling that was written to catch it.* The lesson last time
+was "read the pubspec, not just the filesystem". The lesson this time is one
+level up: **three copies of a list is three chances to update two of them.**
+There is one table now — `dartenum.ASSET_SETS` — and all three scripts read it.
+
+### And the generator was undoing R4
+
+Worse, and quieter. `make-placeholders` rewrote the picture manifest with every
+filename it knew about, rather than the ones it had actually written. So running
+it to add a clip re-declared all fifty-four finished illustrations as hatched
+placeholders. The gate went back to *85 of 85*, R4 went back a week, and nothing
+failed — the number just went up again, in a report I had already read that day
+and would have skimmed the next.
+
+The manifest is a record of what is **not real**. It had been implemented as an
+inventory of what exists. Those coincide exactly until the day the first real
+asset lands, which is the day the bug starts and the day nobody is looking.
+
+### What surprised us
+
+**Both of these were in the gates, not in the app.** Every discipline in this
+repo points at the code: break the gate, watch it fail, put it back. Neither of
+these would have been caught by that, because the gate did fail correctly on
+everything it was told about. The failure was in what it had been told.
+
+So there is a question I have not been asking, and it is different from
+*"would this test fail if the code were wrong?"*:
+
+> **Does this gate know about everything it claims to cover?**
+
+A count is not coverage. "570 of 570" is a ratio of a set to itself, and a set
+that is missing a member is still equal to itself.
+
+**A regex was the third one.** `enum Step` parsed empty, because the shared
+parser wanted the id on the declaration line and a constant carrying a sentence
+wraps. That one exited loudly and cost five minutes — the only one of the three
+that behaved the way a gate should when it cannot do its job.
+
+### Proved the gates fire
+
+Restore the manifest-rewrite and `picture-check` reports 85 of 85 placeholders
+again, on illustrations that are sitting there finished. Three breaks on the
+result screen too: make a confident answer nag and the "does not nag" assertion
+fires; move the escalation below the steps and the ordering assertion fires;
+write *"I'm 92% sure"* and the no-numbers assertion catches it — which is the
+one that matters, because 92% is what candour looks like from the inside.
+
+---
+
 ## 2026-09-05 — Phase 4 opens on the part that needs no model
 
 Diagnosis needs a trained classifier and there is no labelled dataset, so two of

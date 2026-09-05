@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 
 import '../../domain/crops/crop.dart';
+import '../../domain/diagnosis/ailment.dart';
+import '../../domain/diagnosis/guidance.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/lots/outcome.dart';
 import '../../domain/lots/quantity.dart';
@@ -71,6 +73,18 @@ class Speaker {
   /// Say why a lot was lost.
   Future<void> sayLoss(LossReason reason, Speech language) =>
       _play('${language.code}/loss/${reason.id}');
+
+  /// Say the name of an ailment.
+  ///
+  /// The *name only*. How sure the app is comes from a [Phrase] — one of three
+  /// — so that the hedge and the name are separate recordings and the hedge
+  /// cannot be lost by a translator shortening a sentence.
+  Future<void> sayAilment(Ailment ailment, Speech language) =>
+      _play('${language.code}/ailment/${ailment.id}');
+
+  /// Say one thing to do about it.
+  Future<void> sayStep(Step step, Speech language) =>
+      _play('${language.code}/step/${step.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

@@ -1,14 +1,10 @@
 # Tiles that are hatched placeholders, not illustrations.
 #
-# **Empty, since the illustrations landed.** `scripts/illustrate.py` draws all
-# fifty-four: flat, two or three tones each, family-tinted grounds, and
-# silhouettes chosen so that the three greens and the two peppers are told apart
-# by shape rather than only by colour — which is the rule the whole palette is
-# written under.
+# Diagonal hatching on grey, so that nobody mistakes one for a drawing and
+# nobody has to be told which crops are still unillustrated — the grid shows it.
 #
-# They are drawn, not photographed, and not drawn by somebody who draws for a
-# living. R4 in `docs/RELEASE-GATES.md` stays open for that review; what it no
-# longer blocks on is a grid of grey hatching.
+# `scripts/picture-check.py` counts these and warns. They do not block a phase;
+# they block the release, as R4 in docs/RELEASE-GATES.md.
 #
-# `scripts/picture-check.py` counts the lines below and warns. They do not block
-# a phase; they block the release, as R4.
+# Written by `scripts/make-placeholders.py`. Delete a line when the real
+# illustration lands.

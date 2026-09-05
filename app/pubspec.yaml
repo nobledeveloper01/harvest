@@ -96,6 +96,8 @@ flutter:
     - assets/speech/en/region/
     - assets/speech/en/outcome/
     - assets/speech/en/loss/
+    - assets/speech/en/ailment/
+    - assets/speech/en/step/
     - assets/speech/pcm/
     - assets/speech/pcm/crop/
     - assets/speech/pcm/unit/
@@ -104,6 +106,8 @@ flutter:
     - assets/speech/pcm/region/
     - assets/speech/pcm/outcome/
     - assets/speech/pcm/loss/
+    - assets/speech/pcm/ailment/
+    - assets/speech/pcm/step/
     - assets/speech/ha/
     - assets/speech/ha/crop/
     - assets/speech/ha/unit/
@@ -112,6 +116,8 @@ flutter:
     - assets/speech/ha/region/
     - assets/speech/ha/outcome/
     - assets/speech/ha/loss/
+    - assets/speech/ha/ailment/
+    - assets/speech/ha/step/
     - assets/speech/yo/
     - assets/speech/yo/crop/
     - assets/speech/yo/unit/
@@ -120,6 +126,8 @@ flutter:
     - assets/speech/yo/region/
     - assets/speech/yo/outcome/
     - assets/speech/yo/loss/
+    - assets/speech/yo/ailment/
+    - assets/speech/yo/step/
     - assets/speech/ig/
     - assets/speech/ig/crop/
     - assets/speech/ig/unit/
@@ -128,12 +136,16 @@ flutter:
     - assets/speech/ig/region/
     - assets/speech/ig/outcome/
     - assets/speech/ig/loss/
+    - assets/speech/ig/ailment/
+    - assets/speech/ig/step/
     - assets/crops/
     - assets/units/
     - assets/storage/
     - assets/regions/
     - assets/outcomes/
     - assets/losses/
+    - assets/ailments/
+    - assets/steps/
 
   # To add assets to your application, add an assets section, like this:
 

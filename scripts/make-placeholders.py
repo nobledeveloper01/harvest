@@ -34,7 +34,9 @@ import sys
 import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from dartenum import GREEN, OFF, ROOT, YELLOW, enum_values  # noqa: E402
+from dartenum import (  # noqa: E402
+    GREEN, OFF, ROOT, YELLOW, enum_values, manifest,
+)
 
 PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 SPEECH = ROOT / 'app/assets/speech'
@@ -53,6 +55,12 @@ NAMES = {
     'region': ('regions', ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
     'outcome': ('outcomes', ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
     'loss': ('losses', ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
+    'ailment': (
+        'ailments',
+        ROOT / 'app/lib/domain/diagnosis/ailment.dart',
+        'Ailment',
+    ),
+    'step': ('steps', ROOT / 'app/lib/domain/diagnosis/guidance.dart', 'Step'),
     # Spoken only. There is nothing to draw for "about forty-five kilograms",
     # so this one has no picture directory and `picture-check` never sees it.
     'weight': (None, ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
@@ -177,7 +185,23 @@ def main() -> int:
 
     written: list[str] = []
 
-    pictures: list[str] = []
+    # What is already known to be a stand-in, and still on disk.
+    #
+    # **The manifest is a record of what is not real, not an inventory of what
+    # exists.** It used to be rewritten with every filename this script knows
+    # about, which meant that running it — to add one clip — silently
+    # re-declared fifty-four finished illustrations as hatched placeholders and
+    # put R4 back where it had been a week earlier. Nothing failed. The count
+    # just went up again.
+    #
+    # So: carried forward if it was listed and is still there, added if this run
+    # actually wrote it, and dropped otherwise.
+    pictures = {
+        line
+        for line in manifest(PICTURE_MANIFEST)
+        if (ASSETS / line).exists()
+    }
+
     seed = 0
     for directory, values in names.values():
         if directory is None:
@@ -185,16 +209,16 @@ def main() -> int:
         folder = ASSETS / directory
         folder.mkdir(parents=True, exist_ok=True)
         for value in values:
-            pictures.append(f'{directory}/{value}.png')
             target = folder / f'{value}.png'
             seed += 1
             if target.exists() and not args.force:
                 continue
             png(target, TILE, seed)
+            pictures.add(f'{directory}/{value}.png')
             written.append(f'pictures: {directory}/{value}.png')
 
     PICTURE_MANIFEST.write_text(
-        PICTURE_HEADER + '\n' + '\n'.join(pictures) + '\n'
+        PICTURE_HEADER + '\n' + '\n'.join(sorted(pictures)) + '\n'
     )
 
     if not args.pictures_only:
@@ -215,15 +239,17 @@ def main() -> int:
                 )
                 written.append(f'speech: {language}/{stem}.wav')
 
+        # Same rule as the pictures: carried forward, or written this run.
+        clips = {
+            line
+            for line in manifest(SPEECH / 'placeholders.txt')
+            if (SPEECH / line).exists()
+        }
+        clips.update(entry[len('speech: '):] for entry in written
+                     if entry.startswith('speech: '))
+
         (SPEECH / 'placeholders.txt').write_text(
-            SPEECH_HEADER
-            + '\n'
-            + '\n'.join(
-                f'{language}/{stem}.wav'
-                for language in languages
-                for stem, _ in stems
-            )
-            + '\n'
+            SPEECH_HEADER + '\n' + '\n'.join(sorted(clips)) + '\n'
         )
 
     if written:

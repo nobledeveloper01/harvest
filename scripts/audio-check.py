@@ -44,6 +44,7 @@ import wave
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
+    asset_sets,
     GREEN, OFF, RED, ROOT, YELLOW, enum_values, manifest, undeclared,
 )
 
@@ -51,15 +52,9 @@ PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 
 # `subdirectory: (source, enum)` — names of things, spoken. See the module
 # docstring for why they are not `Phrase` constants.
-NAMES = {
-    'crop': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
-    'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
-    'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
-    'weight': (ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
-    'region': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
-    'outcome': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
-    'loss': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
-}
+# Which enums own clips: `dartenum.ASSET_SETS`, so this gate cannot fall
+# behind the generator that writes them. It did, once, and reported 570 of 570
+# while a hundred and fifty-five clips were outside its knowledge entirely.
 
 SPEECH = ROOT / 'app/assets/speech'
 MANIFEST = SPEECH / 'placeholders.txt'
@@ -71,8 +66,11 @@ def main() -> int:
     # that a crop and a phrase can never collide on a filename, and so that a
     # glance at the tree tells you which is which.
     stems = enum_values(PHRASES, 'Phrase')
-    for folder, (source, enum) in NAMES.items():
-        stems += [f'{folder}/{name}' for name in enum_values(source, enum)]
+    for spec in asset_sets().values():
+        stems += [
+            f'{spec["speech"]}/{name}'
+            for name in enum_values(spec['source'], spec['enum'])
+        ]
 
     placeholders = manifest(MANIFEST)
 

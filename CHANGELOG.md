@@ -19,6 +19,19 @@ Entries say *why*, not just what.
   the three sentences `docs/04-UX-DESIGN.md` already writes, and **both
   non-confident outcomes route to a person** — a farmer about to spray a field
   on a maybe is exactly who the escalation is for. ADR-0007.
+- **The diagnosis result screen.** Confidence in words and never a number —
+  asserted, because a percentage is the thing this screen most easily becomes:
+  the model produces one and printing it feels like candour. The hedge and the
+  name are **separate clips** played in order, so a translator shortening the
+  sentence cannot take the hedge with it. Both uncertain answers put the
+  *show it to somebody* card **above** the steps, because a farmer about to act
+  on a maybe should meet the second opinion before the instructions. The card
+  names no officer and no office: an app with no directory of extension staff
+  offering a button that goes nowhere is worse than a sentence.
+- **Thirty-one more illustrations** — thirteen ailments and eighteen steps. Each
+  ailment is drawn on the *same* leaf, in the same place, at the same size, so a
+  farmer is comparing symptoms rather than silhouettes; the two that change
+  outline do it because the outline is the symptom.
 - **Treatment guidance, and ADR-0008: the app never states a dose.** *"Mix 20 ml
   in 15 litres"* is the single most dangerous sentence this product could say,
   and it looks like helpfulness. The app cannot read the label on what the local
@@ -352,6 +365,22 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The placeholder generator was quietly undoing R4.** It rewrote the picture
+  manifest with *every* filename it knew about rather than the ones it had
+  written — so running it to add a clip re-declared fifty-four finished
+  illustrations as hatched placeholders, and the gate went back to reporting
+  85 of 85. Nothing failed; the count just went up again. The manifest is a
+  record of what is **not real**, not an inventory of what exists.
+- **The audio gate stopped looking.** Three scripts kept three copies of "which
+  enums own assets". `Ailment` and `Step` went into two of them, and
+  `audio-check` went on reporting a complete set while a hundred and fifty-five
+  clips were outside its knowledge — *570 of 570*. That is the 125-clip failure
+  again, inside the tooling written to catch it. There is one table now,
+  `dartenum.ASSET_SETS`, and all three read it.
+- **The shared enum parser could not read a wrapped constant.** A constant
+  carrying a sentence spans lines, and the regex wanted the id on the
+  declaration line — so `Step` parsed as empty. Loudly, which is the only reason
+  it cost five minutes rather than being a silent hole.
 - **"It would cost you about -₦180 more than it is worth."** The one sentence
   Phase 3's exit gate is written about, carrying a double negative: `net` is
   negative when storing loses, and the words already carry the sign. The figure

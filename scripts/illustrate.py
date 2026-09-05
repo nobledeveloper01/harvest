@@ -927,6 +927,544 @@ def no_buyer():
     return im
 
 
+
+# ── what is wrong with it ────────────────────────────────────────────────────
+#
+# Every ailment is drawn on the *same* leaf, in the same place, at the same
+# size. That is the whole design: a farmer comparing their leaf against these is
+# comparing symptoms, and a set where each drawing has its own silhouette makes
+# them compare shapes instead. The symptom is the only thing that moves.
+
+LEAF_EDGE = [(96, 26), (146, 74), (150, 118), (96, 166), (42, 118), (46, 74)]
+
+
+def _leaf_plate(fill=(96, 158, 66), vein=(64, 118, 48), ground='leaf'):
+    im, _ = canvas(ground)
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.polygon([px(x, y) for x, y in LEAF_EDGE], fill=fill)
+    dl.line([px(96, 166), px(96, 30)], fill=vein, width=int(px(3)))
+    for y in (70, 96, 122):
+        dl.line([px(96, y), px(48, y - 20)], fill=vein, width=int(px(1.8)))
+        dl.line([px(96, y), px(144, y - 20)], fill=vein, width=int(px(1.8)))
+
+    # Clipped to the leaf. Unclipped, the veins ran past the margin as four
+    # stray hairs at the top corners — invisible at 192 px in a review sheet
+    # and obvious on a phone.
+    mask = Image.new('L', (BIG, BIG), 0)
+    ImageDraw.Draw(mask).polygon([px(x, y) for x, y in LEAF_EDGE], fill=255)
+    lay.putalpha(mask)
+    im.paste(lay, (0, 0), lay)
+    return im
+
+
+def early_blight():
+    """Concentric rings — the one symptom that names itself."""
+    im = _leaf_plate()
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, r in ((74, 82, 17), (116, 112, 21), (92, 138, 12)):
+        for i, shade in enumerate(((88, 58, 30), (128, 88, 44), (166, 122, 62))):
+            d.ellipse(box(cx, cy, r - i * r / 3.2, r - i * r / 3.2), fill=shade)
+    return im
+
+
+def late_blight():
+    """Water-soaked blotches with a pale halo, running to the leaf edge."""
+    im = _leaf_plate()
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, rx, ry in ((70, 92, 26, 20), (118, 74, 20, 16), (108, 132, 24, 18)):
+        d.ellipse(box(cx, cy, rx + 4, ry + 4), fill=(206, 210, 158))
+        d.ellipse(box(cx, cy, rx, ry), fill=(58, 52, 44))
+    return im
+
+
+def leaf_curl():
+    """The margins roll toward you, showing the pale underside.
+
+    The one ailment allowed to move the silhouette, because the silhouette *is*
+    the symptom — a curled leaf photographed flat looks like nothing at all. The
+    roll is drawn *inside* the leaf and clipped to it: outside, it reads as two
+    objects sitting next to a healthy leaf, which was the first attempt.
+    """
+    edge = [(96, 30), (128, 76), (132, 116), (96, 162), (60, 116), (64, 76)]
+
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.polygon([px(x, y) for x, y in edge], fill=(126, 170, 70))
+    # The rolled margins: a pale band down each side, curving inward.
+    for side in (-1, 1):
+        band = bezier((96 + side * 30, 44), (96 + side * 8, 96),
+                      (96 + side * 26, 154))
+        taper(dl, band, bulge(13, 4), (186, 206, 132))
+    dl.line([px(96, 158), px(96, 36)], fill=(92, 134, 52), width=int(px(3)))
+
+    mask = Image.new('L', (BIG, BIG), 0)
+    ImageDraw.Draw(mask).polygon([px(x, y) for x, y in edge], fill=255)
+    lay.putalpha(mask)
+
+    im, _ = canvas('leaf')
+    im.paste(lay, (0, 0), lay)
+    d = ImageDraw.Draw(im, 'RGBA')
+    # And the tip, curled under.
+    d.pieslice([px(78), px(146), px(114), px(176)], start=180, end=360,
+               fill=(186, 206, 132))
+    return im
+
+
+def anthracnose():
+    """On a fruit, not a leaf: it is what a farmer photographs."""
+    im, _ = canvas('fruit')
+    d = ImageDraw.Draw(im, 'RGBA')
+    oval(d, 96, 104, 54, 50, (206, 84, 46))
+    for cx, cy, r in ((80, 92, 18), (116, 122, 14)):
+        d.ellipse(box(cx, cy, r, r), fill=(112, 62, 40))
+        d.ellipse(box(cx, cy, r * 0.6, r * 0.6), fill=(64, 44, 32))
+    stalk(d, 96, 56, 96, 42, 6, (86, 134, 56))
+    return im
+
+
+def cassava_mosaic():
+    """Mottling, on the lobed leaf that makes it cassava."""
+    im, _ = canvas('leaf')
+    d = ImageDraw.Draw(im, 'RGBA')
+    stalk(d, 96, 168, 96, 110, 6, (118, 152, 70))
+    for a in (-72, -36, 0, 36, 72):
+        leaf(im, 96, 96, 62, 16, (74, 140, 58), (52, 108, 44), a)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, r in ((70, 74, 11), (96, 58, 9), (124, 76, 10),
+                      (84, 104, 8), (112, 106, 9), (96, 82, 7)):
+        d.ellipse(box(cx, cy, r, r), fill=(226, 214, 106))
+    return im
+
+
+def maize_streak():
+    """Streaks run with the veins, which is what tells it from a spot."""
+    im, _ = canvas('grain')
+    d = ImageDraw.Draw(im, 'RGBA')
+    spine = bezier((60, 168), (96, 96), (140, 34))
+    taper(d, spine, bulge(26, 3), (104, 158, 62))
+    for off in (-14, -7, 0, 7, 14):
+        streak = [(x + off, y) for x, y in spine[4:-4]]
+        d.line([px(x, y) for x, y in streak], fill=(230, 224, 140),
+               width=int(px(2.4)))
+    return im
+
+
+def fall_armyworm():
+    """Chewed holes and the thing that chewed them."""
+    im = _leaf_plate()
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, r in ((76, 76, 13), (108, 104, 16), (86, 130, 10)):
+        d.ellipse(box(cx, cy, r, r), fill=GROUND['leaf'])
+    for i in range(5):
+        d.ellipse(box(118 + i * 11, 138 - i * 3, 9, 8), fill=(150, 128, 78))
+    d.ellipse(box(114, 141, 8, 7), fill=(110, 92, 56))
+    return im
+
+
+def leaf_spot():
+    im = _leaf_plate()
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, r in ((72, 80, 9), (110, 70, 7), (92, 104, 10),
+                      (124, 116, 8), (74, 128, 7), (104, 142, 6)):
+        d.ellipse(box(cx, cy, r + 2.5, r + 2.5), fill=(206, 196, 120))
+        d.ellipse(box(cx, cy, r, r), fill=(112, 74, 46))
+    return im
+
+
+def powdery_mildew():
+    im = _leaf_plate()
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, rx, ry in ((78, 84, 24, 18), (114, 106, 26, 20), (92, 138, 20, 13)):
+        d.ellipse(box(cx, cy, rx, ry), fill=(238, 240, 232, 220))
+    return im
+
+
+def aphids():
+    """A colony on a stem. Small, many, and clustered — which is how you know
+    them from anything else on this list."""
+    im, _ = canvas('leaf')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.line([px(96, 176), px(96, 44)], fill=(112, 152, 62), width=int(px(9)))
+    for a, y in ((-52, 92), (50, 116)):
+        leaf(im, 96, y, 30, 11, (86, 152, 60), (62, 118, 48), a)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy in ((88, 56), (100, 62), (89, 70), (102, 76), (88, 84),
+                   (101, 90), (89, 98), (102, 104), (88, 112), (100, 120),
+                   (90, 128), (99, 136)):
+        d.ellipse(box(cx, cy, 6.5, 5), fill=(158, 182, 92))
+        d.ellipse(box(cx - 1, cy - 1, 2.6, 2.2), fill=(108, 132, 60))
+    return im
+
+
+def nitrogen():
+    """The whole leaf goes pale, from the middle out. Not a spot anywhere."""
+    im = _leaf_plate(fill=(214, 210, 118), vein=(178, 174, 96))
+    return im
+
+
+def potassium():
+    """The margins scorch while the middle stays green — the difference from
+    nitrogen, and the reason both are in the list."""
+    im, _ = canvas('leaf')
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    # Outer leaf in the scorched colour, then the healthy middle over it: a
+    # ring without a mask, and so without an aliased black edge.
+    dl.polygon([px(x, y) for x, y in LEAF_EDGE], fill=(190, 150, 58))
+    dl.polygon(
+        [px(96, 46), px(132, 82), px(135, 114), px(96, 148),
+         px(59, 114), px(62, 82)],
+        fill=(96, 158, 66),
+    )
+    dl.line([px(96, 146), px(96, 50)], fill=(64, 118, 48), width=int(px(3)))
+    mask = Image.new('L', (BIG, BIG), 0)
+    ImageDraw.Draw(mask).polygon([px(x, y) for x, y in LEAF_EDGE], fill=255)
+    lay.putalpha(mask)
+    im.paste(lay, (0, 0), lay)
+    return im
+
+
+def water_stress():
+    """Wilt: the stem bends over and the leaves hang.
+
+    Drawn as a *shape*, not as a colour. A thirsty plant and a hungry one are
+    both pale, and this is the pair the model will confuse — so the drawings
+    have to be separable by outline alone.
+    """
+    im, _ = canvas('leaf')
+    d = ImageDraw.Draw(im, 'RGBA')
+    spine = bezier((92, 174), (98, 96), (140, 76))
+    taper(d, spine, bulge(5, 3), (132, 156, 78))
+    for cx, cy, angle in ((64, 124, 158), (126, 108, 205), (140, 84, 232)):
+        leaf(im, cx, cy, 40, 14, (150, 172, 90), (114, 138, 64), angle)
+    return im
+
+
+
+# ── what to do about it ──────────────────────────────────────────────────────
+#
+# Actions, not objects, and drawn on the neutral ground the measures use so that
+# a step never reads as a thing you could pick. Each one has to survive at 40 dp
+# beside a sentence somebody may not be able to read, so: one idea per picture,
+# and the idea is whatever the verb is.
+
+def _sprout(d, x, base, height=48, fill=(86, 150, 60), stem=(110, 152, 62)):
+    d.line([px(x, base), px(x, base - height)], fill=stem, width=int(px(6)))
+    return [(x - 20, base - height + 6, -50), (x + 20, base - height + 14, 48)]
+
+
+def _plant(im, x, base, height=48, fill=(86, 150, 60)):
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy, angle in _sprout(d, x, base, height):
+        leaf(im, cx, cy, 26, 10, fill, (60, 116, 46), angle)
+
+
+def _flame(d, cx, base):
+    d.polygon([px(cx, base - 44), px(cx + 16, base - 14), px(cx, base),
+               px(cx - 16, base - 14)], fill=(232, 132, 34))
+    d.polygon([px(cx, base - 26), px(cx + 8, base - 10), px(cx, base),
+               px(cx - 8, base - 10)], fill=(246, 200, 62))
+
+
+def _drop(d, cx, cy, r=9, fill=(84, 146, 204)):
+    d.polygon([px(cx, cy - r * 1.7), px(cx + r, cy + r * 0.4),
+               px(cx - r, cy + r * 0.4)], fill=fill)
+    d.ellipse(box(cx, cy + r * 0.3, r, r * 0.95), fill=fill)
+
+
+def _arrow_up(d, cx, base, height=44, fill=(72, 152, 84)):
+    d.line([px(cx, base), px(cx, base - height)], fill=fill, width=int(px(7)))
+    d.polygon([px(cx, base - height - 12), px(cx + 13, base - height + 4),
+               px(cx - 13, base - height + 4)], fill=fill)
+
+
+def _hand(base, cx, cy, angle=0, skin=(228, 192, 152), shade=(206, 168, 128)):
+    """A hand, at the size a 40 dp tile can carry.
+
+    A palm and three fingers. The first version was two beige rectangles, which
+    at tile size is two beige rectangles.
+    """
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.ellipse(box(cx, cy, 20, 17), fill=skin)
+    for i, off in enumerate((-11, 0, 11)):
+        dl.rounded_rectangle(
+            [px(cx + off - 5), px(cy - 34 + abs(off) * 0.5),
+             px(cx + off + 5), px(cy - 4)],
+            radius=px(5), fill=skin if i != 1 else shade)
+    # Thumb.
+    dl.rounded_rectangle([px(cx + 14), px(cy - 12), px(cx + 32), px(cy + 2)],
+                         radius=px(6), fill=shade)
+    turn(lay, base, angle, cx, cy)
+
+
+def step_remove_affected():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.line([px(118, 166), px(118, 70)], fill=(110, 152, 62), width=int(px(6)))
+    leaf(im, 136, 82, 30, 12, (86, 150, 60), (60, 116, 46), 46)
+    leaf(im, 100, 104, 28, 11, (86, 150, 60), (60, 116, 46), -46)
+
+    # The sick one, off the plant and on its way down. Spots, so which leaf is
+    # meant is not a matter of guessing which one moved.
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.polygon([px(54, 108), px(78, 124), px(70, 152), px(42, 148), px(36, 122)],
+               fill=(158, 146, 74))
+    for cx, cy in ((52, 124), (62, 140)):
+        dl.ellipse(box(cx, cy, 7, 7), fill=(104, 70, 42))
+    turn(lay, im, -24, 58, 130)
+
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.line([px(88, 62), px(64, 92)], fill=(150, 158, 168), width=int(px(5)))
+    d.polygon([px(58, 100), px(74, 88), px(70, 104)], fill=(150, 158, 168))
+    return im
+
+
+def step_pull_and_burn():
+    im, _ = canvas('thing')
+    _plant(im, 78, 150, 44, (140, 150, 92))
+    d = ImageDraw.Draw(im, 'RGBA')
+    _flame(d, 132, 156)
+    d.polygon([px(46, 158), px(160, 158), px(152, 172), px(54, 172)],
+              fill=(176, 148, 104))
+    return im
+
+
+def step_clean_tools():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.polygon([px(48, 104), px(128, 88), px(132, 104), px(48, 116)],
+               fill=(190, 196, 204))
+    dl.rounded_rectangle([px(128), px(88), px(158), px(116)], radius=px(8),
+                         fill=(120, 92, 66))
+    turn(lay, im, -14, 96, 102)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy in ((70, 138), (96, 150), (122, 138)):
+        _drop(d, cx, cy, 9)
+    return im
+
+
+def step_air_between():
+    im, _ = canvas('thing')
+    _plant(im, 52, 150, 44)
+    _plant(im, 140, 150, 44)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.line([px(76, 112), px(116, 112)], fill=(96, 108, 120), width=int(px(6)))
+    for side, x in ((-1, 74), (1, 118)):
+        d.polygon([px(x + side * 12, 112), px(x, 103), px(x, 121)],
+                  fill=(96, 108, 120))
+    return im
+
+
+def step_water_at_roots():
+    im, _ = canvas('thing')
+    _plant(im, 122, 152, 46)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(30, 78), px(74, 78), px(70, 122), px(36, 122)],
+              fill=(140, 150, 160))
+    d.polygon([px(74, 88), px(104, 106), px(100, 116), px(70, 100)],
+              fill=(140, 150, 160))
+    d.arc([px(28), px(58), px(60), px(88)], start=180, end=360,
+          fill=(140, 150, 160), width=int(px(5)))
+    for cx, cy in ((110, 126), (120, 138)):
+        _drop(d, cx, cy, 8)
+    d.polygon([px(40, 158), px(156, 158), px(148, 172), px(48, 172)],
+              fill=(176, 148, 104))
+    return im
+
+
+def step_drain_water():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(28, 130), px(164, 108), px(164, 172), px(28, 172)],
+              fill=(176, 148, 104))
+    d.ellipse(box(74, 138, 40, 14), fill=(120, 168, 206))
+    d.line([px(110, 134), px(158, 122)], fill=(84, 146, 204), width=int(px(7)))
+    d.polygon([px(166, 118), px(148, 112), px(150, 130)], fill=(84, 146, 204))
+    return im
+
+
+def step_clear_weeds():
+    im, _ = canvas('thing')
+    _plant(im, 132, 150, 44)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for x, h in ((52, 34), (72, 44), (92, 28)):
+        d.line([px(x, 150), px(x - 7, 150 - h)], fill=(164, 174, 100),
+               width=int(px(4)))
+        d.line([px(x, 150), px(x + 8, 150 - h * 0.7)], fill=(164, 174, 100),
+               width=int(px(4)))
+    _hand(im, 66, 76, -20)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(30, 156), px(162, 156), px(154, 172), px(38, 172)],
+              fill=(176, 148, 104))
+    return im
+
+
+def step_water_more():
+    im, _ = canvas('thing')
+    _plant(im, 96, 152, 46)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, cy in ((58, 60), (96, 46), (134, 60), (74, 92), (118, 92)):
+        _drop(d, cx, cy, 10)
+    d.polygon([px(34, 158), px(160, 158), px(152, 172), px(42, 172)],
+              fill=(176, 148, 104))
+    return im
+
+
+def step_mulch():
+    im, _ = canvas('thing')
+    _plant(im, 96, 140, 44)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(30, 136), px(162, 136), px(156, 172), px(36, 172)],
+              fill=(196, 168, 108))
+    for i in range(7):
+        y = 142 + (i % 3) * 10
+        x = 40 + i * 18
+        d.line([px(x, y), px(x + 22, y - 5)], fill=(164, 136, 82),
+               width=int(px(4)))
+    return im
+
+
+def step_shade_midday():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.ellipse(box(146, 46, 18, 18), fill=(246, 196, 60))
+    for a in range(0, 360, 60):
+        r = math.radians(a)
+        d.line([px(146 + 22 * math.cos(r), 46 + 22 * math.sin(r)),
+                px(146 + 32 * math.cos(r), 46 + 32 * math.sin(r))],
+               fill=(246, 196, 60), width=int(px(3)))
+    _plant(im, 84, 156, 40)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(30, 92), px(140, 92), px(134, 104), px(36, 104)],
+              fill=(140, 118, 92))
+    d.line([px(36, 104), px(36, 158)], fill=(140, 118, 92), width=int(px(5)))
+    d.line([px(134, 104), px(134, 158)], fill=(140, 118, 92), width=int(px(5)))
+    return im
+
+
+def step_handpick():
+    im, _ = canvas('thing')
+    leaf(im, 72, 132, 44, 17, (96, 158, 66), (64, 118, 48), 18)
+    d = ImageDraw.Draw(im, 'RGBA')
+    for i in range(4):
+        d.ellipse(box(58 + i * 12, 116 - i * 3, 9, 8), fill=(150, 128, 78))
+    d.ellipse(box(54, 119, 8, 7), fill=(110, 92, 56))
+    _hand(im, 118, 76, 14)
+    return im
+
+
+def step_soapy_water():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(52, 92), px(140, 92), px(130, 164), px(62, 164)],
+              fill=(150, 190, 220))
+    d.ellipse(box(96, 92, 44, 12), fill=(206, 230, 244))
+    for cx, cy, r in ((72, 74, 11), (96, 62, 14), (120, 76, 9), (106, 46, 7)):
+        d.ellipse(box(cx, cy, r, r), fill=(226, 240, 250))
+        d.ellipse(box(cx - r * 0.3, cy - r * 0.3, r * 0.3, r * 0.3),
+                  fill=(255, 255, 255))
+    return im
+
+
+def step_rotate():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.arc([px(40), px(40), px(152), px(152)], start=120, end=60,
+          fill=(96, 108, 120), width=int(px(8)))
+    d.polygon([px(150, 84), px(128, 68), px(132, 96)], fill=(96, 108, 120))
+    leaf(im, 74, 96, 30, 12, (86, 150, 60), (60, 116, 46), -20)
+    d = ImageDraw.Draw(im, 'RGBA')
+    oval(d, 118, 100, 18, 18, (226, 122, 34))
+    return im
+
+
+def step_healthy_planting():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    dl.rounded_rectangle([px(66), px(46), px(90), px(150)], radius=px(11),
+                         fill=(126, 92, 66))
+    for y in (72, 100, 128):
+        dl.line([px(64, y), px(92, y - 4)], fill=(100, 74, 54), width=int(px(2)))
+    turn(lay, im, -10, 78, 98)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.ellipse(box(126, 118, 26, 26), fill=(72, 152, 84))
+    d.line([px(116, 118), px(124, 128)], fill=(244, 250, 244), width=int(px(6)))
+    d.line([px(124, 128), px(140, 108)], fill=(244, 250, 244), width=int(px(6)))
+    return im
+
+
+def _hunger(margin=None):
+    im, _ = canvas('thing')
+    lay = layer()
+    dl = ImageDraw.Draw(lay)
+    edge = [(70, 40), (108, 74), (110, 112), (70, 150), (32, 112), (34, 74)]
+    dl.polygon([px(x, y) for x, y in edge], fill=margin or (216, 212, 120))
+    if margin:
+        dl.polygon(
+            [px(70, 56), px(98, 82), px(100, 110), px(70, 136),
+             px(43, 110), px(45, 82)],
+            fill=(96, 158, 66),
+        )
+    dl.line([px(70, 146), px(70, 46)], fill=(150, 148, 88), width=int(px(3)))
+    mask = Image.new('L', (BIG, BIG), 0)
+    ImageDraw.Draw(mask).polygon([px(x, y) for x, y in edge], fill=255)
+    lay.putalpha(mask)
+    im.paste(lay, (0, 0), lay)
+    d = ImageDraw.Draw(im, 'RGBA')
+    _arrow_up(d, 138, 148, 66)
+    return im
+
+
+def step_needs_nitrogen():
+    """A pale leaf and an arrow: it is short of something, and this is the way
+    up. Which nutrient is carried by the spoken sentence, because a picture
+    cannot say *nitrogen* and pretending otherwise is how a symbol becomes
+    something that has to be read."""
+    return _hunger()
+
+
+def step_needs_potassium():
+    return _hunger(margin=(190, 150, 58))
+
+
+def step_ask_about_spray():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.ellipse(box(64, 78, 20, 20), fill=(150, 128, 100))
+    d.pieslice(box(64, 132, 34, 40), start=180, end=360, fill=(96, 122, 158))
+    d.rounded_rectangle([px(96), px(44), px(166), px(92)], radius=px(14),
+                        fill=(236, 238, 240))
+    d.polygon([px(106, 90), px(122, 90), px(104, 108)], fill=(236, 238, 240))
+    for i, y in enumerate((60, 74)):
+        d.line([px(108, y), px(154 - i * 14, y)], fill=(150, 158, 168),
+               width=int(px(5)))
+    return im
+
+
+def step_sell_soon():
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.polygon([px(44, 104), px(140, 104), px(126, 162), px(58, 162)],
+              fill=(196, 152, 96))
+    for x in (62, 82, 102, 122):
+        d.line([px(x, 106), px(x - 4, 160)], fill=(162, 120, 70),
+               width=int(px(2)))
+    for cx, cy in ((66, 98), (92, 92), (118, 98)):
+        d.ellipse(box(cx, cy, 15, 13), fill=(214, 74, 56))
+    d.ellipse(box(140, 60, 26, 26), fill=(246, 240, 232))
+    d.ellipse(box(140, 60, 22, 22), fill=(96, 108, 120))
+    d.line([px(140, 60), px(140, 46)], fill=(246, 240, 232), width=int(px(4)))
+    d.line([px(140, 60), px(152, 64)], fill=(246, 240, 232), width=int(px(4)))
+    return im
+
+
 DRAWINGS = {
     'crops': {
         'tomato': tomato, 'ugu': ugu, 'spinach': spinach, 'bitterleaf': bitterleaf,
@@ -959,6 +1497,35 @@ DRAWINGS = {
         'rotted': rotted, 'damaged': damaged, 'pests': pests, 'water': water,
         'animals': animals, 'no-buyer': no_buyer,
     },
+    'steps': {
+        'remove-affected': step_remove_affected,
+        'pull-and-burn': step_pull_and_burn,
+        'clean-tools': step_clean_tools,
+        'air-between': step_air_between,
+        'water-at-roots': step_water_at_roots,
+        'drain-water': step_drain_water,
+        'clear-weeds': step_clear_weeds,
+        'water-more': step_water_more,
+        'mulch': step_mulch,
+        'shade-midday': step_shade_midday,
+        'handpick': step_handpick,
+        'soapy-water': step_soapy_water,
+        'rotate': step_rotate,
+        'healthy-planting': step_healthy_planting,
+        'needs-nitrogen': step_needs_nitrogen,
+        'needs-potassium': step_needs_potassium,
+        'ask-about-spray': step_ask_about_spray,
+        'sell-soon': step_sell_soon,
+    },
+    'ailments': {
+        'early-blight': early_blight, 'late-blight': late_blight,
+        'leaf-curl': leaf_curl, 'anthracnose': anthracnose,
+        'cassava-mosaic': cassava_mosaic, 'maize-streak': maize_streak,
+        'fall-armyworm': fall_armyworm, 'leaf-spot': leaf_spot,
+        'powdery-mildew': powdery_mildew, 'aphids': aphids,
+        'nitrogen': nitrogen, 'potassium': potassium,
+        'water-stress': water_stress,
+    },
 }
 
 
@@ -979,6 +1546,10 @@ def main() -> int:
         'regions': enum_values(ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
         'outcomes': enum_values(ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
         'losses': enum_values(ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
+        'steps': enum_values(
+            ROOT / 'app/lib/domain/diagnosis/guidance.dart', 'Step'),
+        'ailments': enum_values(
+            ROOT / 'app/lib/domain/diagnosis/ailment.dart', 'Ailment'),
     }
 
     for folder, drawings in DRAWINGS.items():

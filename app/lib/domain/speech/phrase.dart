@@ -157,7 +157,22 @@ enum Phrase {
   /// The correction. FR-2.2 requires the farmer be able to override the kg
   /// equivalent, and an override nobody is told about is an override nobody
   /// uses — least of all the person who cannot read the button.
-  isThatRight('is-that-right');
+  isThatRight('is-that-right'),
+
+  /*
+    The three hedges, recorded as whole sentences with the name left out.
+
+    "I'm fairly sure this is ___" and the crop's name are separate clips, so a
+    translator shortening the sentence cannot take the hedge with it — and the
+    hedge is the part that matters. `docs/04-UX-DESIGN.md` §6.4: never a
+    percentage; the certainty is carried by the words or it is not carried.
+  */
+  fairlySure('fairly-sure'),
+  mightBe('might-be'),
+  doNotRecognise('do-not-recognise'),
+
+  /// What to do when the app is not sure, or is sure and the news is bad.
+  showSomebody('show-somebody');
 
   const Phrase(this.id);
 

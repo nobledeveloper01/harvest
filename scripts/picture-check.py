@@ -34,18 +34,12 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
+    asset_sets,
     GREEN, OFF, RED, ROOT, YELLOW, enum_values, manifest, undeclared,
 )
 
-# `directory: (source, enum)`. Adding a third illustrated set is a line here.
-SETS = {
-    'crops': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
-    'units': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
-    'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
-    'regions': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
-    'outcomes': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
-    'losses': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
-}
+# Which enums own pictures: `dartenum.ASSET_SETS`, filtered to the ones with a
+# directory. Adding a set is a line there, not a line in each of three gates.
 
 # Beside the directories, not inside them. `assets/crops/` is a pubspec entry,
 # and a directory entry bundles *every* file in it — a development manifest
@@ -65,8 +59,9 @@ def main() -> int:
     unshipped: list[str] = []
     total = 0
 
-    for directory, (source, enum) in SETS.items():
-        names = enum_values(source, enum)
+    for spec in asset_sets(pictures=True).values():
+        directory = spec['pictures']
+        names = enum_values(spec['source'], spec['enum'])
         total += len(names)
         folder = ROOT / 'app/assets' / directory
 
