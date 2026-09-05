@@ -9,6 +9,56 @@ point — everything else is in the commit log.
 
 **Phase 2.**
 
+### "It did not throw" is not "it fires"
+
+The alert scheduling was easy to get to green: a fake `Alarms`, a widget test
+proving the app calls it at log time, and a permission prompt appearing on the
+simulator at the right moment — right after a lot is saved, when the reason is
+obvious rather than on first launch before the app has done anything for anybody.
+
+Then I went looking for the pending notifications on the simulator's disk and
+could not find them. Which proved nothing either way — I was reading a store I
+do not know the shape of — but it made the gap plain. Every test so far proved
+the app **decided** to schedule. None of them proved iOS **took** the schedule.
+
+`integration_test` closes the middle of that gap: it runs on the device and asks
+`UserNotifications` what it is actually holding. Four assertions, all on real
+iOS — the platform takes what it is given, scheduling a lot again replaces its
+alerts rather than doubling them, two lots do not overwrite each other, and
+clearing one leaves the other alone. The third of those is really a test that
+the id derivation does not collide, which it would if the stride were smaller
+than the number of alerts a lot can have. Shrinking the stride to 1 turns three
+of the four red, on the device: 3 where 1 was expected, 3 where 4 was, 2 where 1
+was.
+
+### Two false starts on the way there, both worth writing down
+
+**The first attempt to break these did not break them — it hung.** Both runs
+reported *"did not complete"* after fourteen minutes, and for a while I read
+that as the gate firing. It was not. The suite calls `ready()`, which puts up
+the system permission dialog, and `flutter test` reinstalls the app on every
+run, which resets the permission — so every run after the first sat waiting for
+a tap that was never coming. A hang is a worse outcome than a red test: it looks
+like an infrastructure problem, and I nearly recorded it as a pass.
+
+**The obvious fix was wrong too.** I removed the permission request on the
+theory that authorisation decides whether a banner is *presented*, and
+scheduling is a separate thing. It is not: without authorisation iOS registers
+**nothing**, and `pendingCount()` comes back zero for every request handed to
+it, silently.
+
+That is worth knowing about the product and not only about the test. A farmer
+who declines notifications gets no warnings at all, and the platform says
+nothing about it — which is why the app checks `ready()` before scheduling and
+why declining is a case with a test of its own.
+
+So the suite asks, somebody taps once per install, and it is `make device-check`
+rather than part of `make ci` for exactly that reason.
+
+What still cannot be tested by anything: whether a notification arrives three
+days later on a phone in a pocket with no signal. That is the phase's exit gate,
+and it stays a person with a handset.
+
 ### The cross-check that was written eight hours before it could run
 
 ADR-0003 gave `Perishability` — three coarse buckets that order the crop grid —

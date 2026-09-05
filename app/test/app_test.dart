@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
 import 'package:drift/native.dart';
+import 'package:harvest/data/alerts/alarms.dart';
 import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/lots/lots_database.dart';
 import 'package:harvest/data/settings/language_store.dart';
@@ -11,6 +12,7 @@ import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
+import 'package:harvest/domain/spoilage/alerts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Silent implements Speaker {
@@ -44,12 +46,47 @@ class _Silent implements Speaker {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Records what would have been scheduled, instead of scheduling it.
+///
+/// The *decision* to warn is arithmetic and belongs in a test; the *ringing*
+/// needs a device and is the phase's exit gate.
+class _Ledger implements Alarms {
+  final List<(int, List<Alert>)> set = [];
+  final List<int> cleared = [];
+  bool allowed = true;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<bool> ready() async => allowed;
+
+  @override
+  Future<void> setFor(
+    int lotId,
+    List<Alert> alerts,
+    String Function(Alert) body,
+  ) async =>
+      set.add((lotId, alerts));
+
+  @override
+  Future<void> clearFor(int lotId) async => cleared.add(lotId);
+
+  @override
+  Future<int> pendingCount() async =>
+      set.fold<int>(0, (total, entry) => total + entry.$2.length);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late LotsDatabase database;
+  late _Ledger alarms;
 
-  setUp(() => database = LotsDatabase(NativeDatabase.memory()));
+  setUp(() {
+    database = LotsDatabase(NativeDatabase.memory());
+    alarms = _Ledger();
+  });
   tearDown(() => database.close());
 
   /// A lot on disk, so the app opens on the harvest list rather than on the
@@ -82,6 +119,45 @@ void main() {
   /// test of "is it still there next launch" passes whether or not anything
   /// was ever written to disk. That is exactly the gate that cannot fail, and
   /// this file had one.
+  /// Log a yam, end to end.
+  ///
+  /// **Yam, and therefore a scroll**: it is twenty-third in a grid ordered by
+  /// how fast things spoil, which is the point of the ordering. Its three-week
+  /// window is what makes the alerts these tests assert on land in the future
+  /// whatever hour the suite runs at — a tomato's would depend on the clock.
+  Future<void> logAYam(WidgetTester tester) async {
+    // By its label text rather than its semantics node: the node wraps the
+    // whole tile and `scrollUntilVisible` stops as soon as any part of it is
+    // on screen, which leaves the node's centre outside the viewport.
+    await tester.scrollUntilVisible(find.text('Yam'), 200);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yam'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('2'));
+    await tester.pump();
+    final bag = find.bySemanticsLabel('bag');
+    await tester.scrollUntilVisible(
+      bag,
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('units')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(bag);
+    await tester.pumpAndSettle();
+    await tester.tap(bag);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('In a store'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save this lot'));
+    await tester.pumpAndSettle();
+  }
+
   Future<_Silent> launch(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -93,6 +169,7 @@ void main() {
         // In memory, so a test never touches the farmer's actual database and
         // never needs sqlite3's platform libraries.
         lots: LotStore(database),
+        alarms: alarms,
       ),
     );
     await tester.pumpAndSettle();
@@ -358,5 +435,49 @@ void main() {
     // chose. The state is the product's whole point and was, until this,
     // carried only by a colour and an arc.
     expect(speaker.said, ['crop:yam', 'weight:kg-100', 'phrase:still-fine']);
+  });
+
+  testWidgets('logging a lot schedules its warnings there and then',
+      (tester) async {
+    /*
+      Phase 2's exit gate is that alerts fire **with the device permanently
+      offline**, so there is nothing later to schedule them — no server, no
+      background job, no next launch. The one moment the app is certainly
+      running and certainly knows about this lot is the moment it is saved.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await launch(tester);
+
+    await logAYam(tester);
+
+    expect(alarms.set, hasLength(1));
+    final (lotId, scheduled) = alarms.set.single;
+    expect(lotId, greaterThan(0), reason: 'keyed on the row it was saved as');
+    expect(scheduled, isNotEmpty);
+    for (final alert in scheduled) {
+      expect(alert.at.isAfter(DateTime.now()), isTrue);
+      expect(alert.at.hour, inInclusiveRange(wakingFrom, wakingUntil));
+    }
+  });
+
+  testWidgets('and schedules nothing when permission is refused',
+      (tester) async {
+    // Refusing notifications is a legitimate answer. An app that schedules
+    // anyway is an app that has not understood the answer.
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    alarms.allowed = false;
+    await launch(tester);
+
+    await logAYam(tester);
+
+    expect(alarms.set, isEmpty);
+    // And the lot is still saved. A refused notification is not a refused
+    // harvest.
+    expect(find.text('Your harvest'), findsOneWidget);
+    expect((await LotStore(database).all()).lots, hasLength(1));
   });
 }

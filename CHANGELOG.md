@@ -10,6 +10,22 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Warnings, scheduled the moment a lot is logged.** Phase 2's exit gate is
+  that alerts fire with the device **permanently offline**, so there is nothing
+  later to schedule them — no server, no background job, no next launch. Three
+  warnings at half the window, nine tenths, and the end.
+- **Alerts move earlier into waking hours, never later.** A warning due at two
+  in the morning fires at eight the evening before. Later is the obvious
+  direction and it is wrong: delivered at six, it arrives after the thing it was
+  warning about. Early costs a farmer a glance at a lot that still had a few
+  hours; late costs them the lot. Two warnings less than three hours apart become
+  one, because a second buzz about the same basket is the beginning of somebody
+  muting the app — which costs every future alert including the one that
+  mattered.
+- **An on-device test suite.** `make device-check` runs against the real
+  `UserNotifications` on iOS and `AlarmManager` on Android, and asks the
+  platform what it actually accepted — because "we called schedule and nothing
+  threw" is not the same claim as "alerts fire".
 - **The spoilage clock.** `ShelfLifeEngine` turns a crop, where it is kept and
   the weather into a **window with two ends** — never a single hour. The base
   values are bundled and versioned, the range starts at the base because a

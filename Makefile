@@ -26,6 +26,26 @@ audio-check: ## Fail if anything the app says is missing a clip, or is not bundl
 picture-check: ## Fail if a crop or unit has no picture, or a picture has nothing using it
 	@python3 scripts/picture-check.py
 
+.PHONY: device-check
+# The half of Phase 2's exit gate a machine can reach.
+#
+# A widget test proves the app *decides* to schedule an alert. Only a device
+# proves the platform *accepted* the schedule, and nothing at all proves a
+# notification arrived three days later — that part is a person with a phone,
+# and it stays on the gate.
+#
+#   make device-check D=<device id>     (flutter devices)
+device-check: ## Run the on-device tests:  make device-check D=<device>
+	@if [ -z "$(D)" ]; then \
+	  echo "\033[0;33m!\033[0m no device given. \`flutter devices\`, then: make device-check D=<id>"; \
+	  exit 64; \
+	fi
+	@echo "\033[0;33m!\033[0m Watch the device: it asks for notification permission once per"
+	@echo "  install, and the suite waits for the tap. Without authorisation iOS"
+	@echo "  registers no pending requests at all, so the tests would be red for"
+	@echo "  a reason that has nothing to do with the code."
+	cd $(APP) && $(FLUTTER) test integration_test -d $(D)
+
 .PHONY: speech-budget
 speech-budget: ## Print how long the app talks for on the shortest path
 	@python3 scripts/speech-budget.py $(L)

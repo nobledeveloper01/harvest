@@ -8,7 +8,6 @@ import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
-import 'package:harvest/domain/spoilage/lot_state.dart';
 import 'package:harvest/features/home/freshness_ring.dart';
 import 'package:harvest/features/home/home_screen.dart';
 

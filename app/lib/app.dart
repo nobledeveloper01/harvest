@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
+import 'data/alerts/alarms.dart';
 import 'data/lots/lot_store.dart';
 import 'data/lots/lots_database.dart';
 import 'data/settings/language_store.dart';
@@ -9,6 +10,8 @@ import 'domain/crops/crop.dart';
 import 'domain/lots/lot.dart';
 import 'domain/lots/quantity.dart';
 import 'domain/speech/phrase.dart';
+import 'domain/spoilage/alerts.dart';
+import 'domain/spoilage/shelf_life.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
@@ -24,11 +27,18 @@ class HarvestApp extends StatefulWidget {
   /// picker, grid, quantity, storage, and a lot surviving a relaunch — can be
   /// tested without an audio device or a file on disk. The defaults are the
   /// real ones; nothing in production passes any of them.
-  const HarvestApp({this.speaker, this.languages, this.lots, super.key});
+  const HarvestApp({
+    this.speaker,
+    this.languages,
+    this.lots,
+    this.alarms,
+    super.key,
+  });
 
   final Speaker? speaker;
   final LanguageStore? languages;
   final LotStore? lots;
+  final Alarms? alarms;
 
   @override
   State<HarvestApp> createState() => _HarvestAppState();
@@ -38,6 +48,7 @@ class _HarvestAppState extends State<HarvestApp> {
   late final Speaker _speaker = widget.speaker ?? Speaker();
   late final LanguageStore _languages = widget.languages ?? const LanguageStore();
   late final LotStore _lots = widget.lots ?? LotStore(LotsDatabase());
+  late final Alarms _alarms = widget.alarms ?? LocalAlarms();
 
   StoredLots _stored = const StoredLots(lots: [], unreadable: 0);
 
@@ -100,7 +111,34 @@ class _HarvestAppState extends State<HarvestApp> {
   }
 
   Future<void> _save(Lot lot) async {
-    await _lots.add(lot);
+    final id = await _lots.add(lot);
+
+    /*
+      Scheduled the moment the lot is logged, and never again.
+
+      Phase 2's exit gate is that alerts fire with the device permanently
+      offline, so there is nothing later to schedule them — no server, no
+      background job, no next launch. The one moment the app is certainly
+      running and certainly knows about this lot is now.
+    */
+    final life = ShelfLifeEngine.predict(lot: lot);
+    if (life != null) {
+      final alerts = AlertSchedule.forLot(
+        lot: lot,
+        life: life,
+        now: DateTime.now(),
+      );
+      if (alerts.isNotEmpty && await _alarms.ready()) {
+        await _alarms.setFor(
+          id,
+          alerts,
+          // The crop's name, which a farmer recognises as a word even when
+          // they read little. The sentence itself is spoken in the app.
+          (_) => '${lot.crop.label} — open Harvest',
+        );
+      }
+    }
+
     final stored = await _lots.all();
     if (!mounted) return;
     setState(() {

@@ -38,8 +38,13 @@ fine, half gone, nearly finished or out of time.
 
 The pure-Dart domain is at 100% coverage and `make ci` is green.
 
-What is not done: alerts and the decision screen (the rest of Phase 2), prices,
-diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
+Warnings are scheduled the moment a lot is logged — three of them, at half the
+window, nine tenths, and the end — and they move **earlier** into waking hours,
+never later, because a warning delivered at six about a crop that turned at two
+arrives after the thing it was warning about.
+
+What is not done: weather, the decision screen and loss recording (the rest of
+Phase 2), prices, diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
 work — see **The hard part**.
 
 ## The insight
@@ -81,6 +86,22 @@ English voices and not one** for Hausa, Yoruba, Igbo or Pidgin. So every fixed p
 bundled recording, and `make audio-check` fails the build when one is missing in any of the five
 languages — reading the language, phrase, crop, unit and storage lists out of the Dart enums
 rather than a manifest that goes stale. See [ADR-0001](docs/adr/0001-speech-is-bundled-not-synthesised.md).
+
+### "It did not throw" is not "it fires"
+
+Phase 2's exit gate is that alerts fire with the device **permanently offline**,
+so they are local notifications scheduled at log time — no server, no background
+job, no next launch.
+
+A widget test proves the app *decides* to schedule. Only a device proves the
+platform *accepted* the schedule, so `make device-check` runs against real
+`UserNotifications` and `AlarmManager` and asks what they are actually holding:
+that a lot rescheduled replaces its alerts rather than doubling them, that two
+lots do not overwrite each other, that clearing one leaves the other alone.
+
+Whether a notification arrives three days later on a phone in a pocket with no
+signal is not something any test can say. That stays on the gate, and it stays a
+person with a handset.
 
 ### The window has two ends, and says so
 

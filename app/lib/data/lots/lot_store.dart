@@ -34,7 +34,12 @@ class LotStore {
 
   final LotsDatabase _database;
 
-  Future<void> add(Lot lot) => _database.into(_database.lots).insert(
+  /// Save a lot, and hand back the row id.
+  ///
+  /// The id is what the alarms are keyed on — three notification ids derived
+  /// from it, so cancelling a lot's warnings means cancelling known numbers
+  /// rather than keeping a table of what was scheduled.
+  Future<int> add(Lot lot) => _database.into(_database.lots).insert(
         LotsCompanion.insert(
           cropId: lot.crop.id,
           amount: lot.quantity.amount,
