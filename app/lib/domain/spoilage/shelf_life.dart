@@ -189,6 +189,28 @@ class ShelfLife {
     return left.isNegative ? Duration.zero : left;
   }
 
+  /// How much of the lot is gone by [when], from 0 to 1.
+  ///
+  /// **The range doing its second job.** `shortest` and `longest` are not a
+  /// decorative "about" — they are the app's uncertainty about when this lot
+  /// turns, and the honest reading of that is: before the short end, nothing
+  /// has gone; past the long end, take it as gone; in between, the share of the
+  /// range that has elapsed is the share of the lot that has.
+  ///
+  /// That is a coarse model and it is the *same* coarseness already declared by
+  /// printing a range instead of a number. Inventing a separate decay curve
+  /// would be a second, invisible claim about spoilage on top of the one the
+  /// window already makes — and the two would drift.
+  double lostBy(DateTime harvestedAt, DateTime when) {
+    final elapsed = when.difference(harvestedAt);
+    if (elapsed <= shortest) return 0;
+    if (elapsed >= longest) return 1;
+    final through = (elapsed - shortest).inMinutes;
+    final band = (longest - shortest).inMinutes;
+    if (band <= 0) return 1;
+    return (through / band).clamp(0, 1).toDouble();
+  }
+
   /// Where in the window a lot sits, from 0 (just picked) to 1 (out of time).
   ///
   /// Against [shortest], not [longest]. The fraction drives a ring and an

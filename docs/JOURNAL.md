@@ -9,6 +9,33 @@ point — everything else is in the commit log.
 
 **Phase 3.**
 
+### The range was already the answer
+
+Valuing "wait" needs to know how much of a lot will be gone by Friday, and the
+obvious move is a decay curve — some function of elapsed time and crop.
+
+The window already contains that claim. `shortest` and `longest` are not a
+decorative "about": they are the app's uncertainty about *when this lot turns*.
+So the honest reading is that nothing has gone before the short end, all of it
+has gone past the long one, and in between the share of the range elapsed is the
+share of the lot gone. No new model, no second set of numbers to keep in step
+with the first — and a curve would have been a second invisible claim about
+spoilage that drifted from the one already on screen.
+
+### The comparison nobody makes
+
+A farmer weighing ₦400 a kilo today against ₦450 on Friday is comparing two
+prices, and on those numbers waiting is obviously right. The tonnage that will
+not survive until Friday never enters the comparison, because nobody quotes it —
+there is no market for the part of your harvest that rots.
+
+That asymmetry is the entire product in one sentence, and the test that pins it
+is worth the words: four days into a two-to-six-day window, half the lot is
+gone, so waiting is worth ₦22,500 against ₦40,000 today. Valuing waiting on the
+whole lot — the arithmetic a farmer would do — fails it with `Expected: <22500>
+/ Actual: <45000.0>`, which is exactly the ₦45,000 they would be reasoning
+towards.
+
 ### The gate is a type, not a convention
 
 *Every figure on screen names its source and its age.* Written as a UI rule that

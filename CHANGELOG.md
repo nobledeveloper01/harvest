@@ -10,6 +10,19 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The three things a farmer can do, priced.** Sell now, store, or wait — and
+  the third is the one the whole product exists to make visible, because waiting
+  is a choice with a price and it is the only one of the three nobody quotes you
+  a figure for. Waiting is valued on **what will still exist**, not on what
+  exists now: a farmer comparing ₦400 a kilo today against ₦450 on Friday is
+  comparing two prices and will quite reasonably wait, and the tonnage that will
+  not survive until Friday never enters that comparison.
+- **The window's range now does a second job.** How much of a lot is gone by a
+  given day is the share of the range that has elapsed — nothing before the
+  short end, all of it past the long one. That is the same coarseness already
+  declared by printing a range instead of a number; inventing a separate decay
+  curve would have been a second, invisible claim about spoilage that would
+  drift from the first.
 - **A figure cannot exist without its source and its age.** Phase 3's exit gate
   is that every number on screen says where it came from and when — easy to
   write as a UI convention and easy to forget on the one screen that matters,
