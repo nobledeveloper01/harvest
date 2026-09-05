@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/numbers.dart';
 import '../../core/theme.dart';
 import '../../data/lots/lot_store.dart';
 import '../../domain/lots/lot.dart';
@@ -31,65 +32,111 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Your harvest', style: text.titleLarge),
-        toolbarHeight: Target.primary,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (stored.unreadable > 0)
-              /*
-                Said out loud rather than swallowed.
+      appBar: AppBar(title: Text('Your harvest', style: text.titleLarge)),
+      body: PageCanvas(
+        child: SafeArea(
+          child: Column(
+            children: [
+              if (stored.unreadable > 0)
+                /*
+                  Said out loud rather than swallowed.
 
-                This should never appear: crops, units and storage conditions
-                are only ever added, never removed. If it does, a farmer is
-                missing a harvest, and the one thing worse than telling them is
-                not telling them.
-              */
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  '${stored.unreadable} '
-                  '${stored.unreadable == 1 ? 'lot is' : 'lots are'} saved but '
-                  'cannot be read by this version of the app. Nothing has been '
-                  'deleted.',
-                  style: text.bodyMedium,
-                ),
-              ),
-            Expanded(
-              child: stored.lots.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Nothing logged yet.',
-                          textAlign: TextAlign.center,
-                          style: text.bodyLarge,
-                        ),
+                  This should never appear: crops, units and storage conditions
+                  are only ever added, never removed. If it does, a farmer is
+                  missing a harvest, and the one thing worse than telling them
+                  is not telling them.
+                */
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
+                  child: Container(
+                    padding: const EdgeInsets.all(Gap.l),
+                    decoration: BoxDecoration(
+                      color: freshness.atRisk.withValues(alpha: 0.12),
+                      borderRadius: Radii.card,
+                      border: Border.all(
+                        color: freshness.atRisk.withValues(alpha: 0.45),
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: stored.lots.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) =>
-                          _LotCard(lot: stored.lots[index], now: now),
                     ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: FilledButton(
-                onPressed: onLogAnother,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(Target.primary),
-                  backgroundColor: scheme.primary,
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline_rounded,
+                            size: 24, color: freshness.atRisk),
+                        const SizedBox(width: Gap.m),
+                        Expanded(
+                          child: Text(
+                            '${stored.unreadable} '
+                            '${stored.unreadable == 1 ? 'lot is' : 'lots are'} '
+                            'saved but cannot be read by this version of the '
+                            'app. Nothing has been deleted.',
+                            style: text.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Text('Log a harvest'),
+              Expanded(
+                child: stored.lots.isEmpty
+                    ? _Empty()
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                            Gap.l, 0, Gap.l, Gap.l),
+                        itemCount: stored.lots.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: Gap.m),
+                        itemBuilder: (context, index) =>
+                            _LotCard(lot: stored.lots[index], now: now),
+                      ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.l),
+                child: PrimaryButton(
+                  label: 'Log a harvest',
+                  icon: Icons.add_rounded,
+                  onPressed: onLogAnother,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Empty extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final text = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Gap.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: freshness.fresh.withValues(alpha: 0.14),
+                borderRadius: Radii.pill,
+              ),
+              child: Icon(Icons.eco_rounded, size: 44, color: freshness.fresh),
+            ),
+            const SizedBox(height: Gap.l),
+            Text('Nothing logged yet.', style: text.titleMedium),
+            const SizedBox(height: Gap.xs),
+            Text(
+              'Log what you picked and the clock starts.',
+              textAlign: TextAlign.center,
+              style: text.bodyMedium,
             ),
           ],
         ),
@@ -123,42 +170,61 @@ class _LotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Semantics(
       container: true,
-      label: '${lot.crop.label}, ${lot.quantity.kilograms} kilograms, '
+      label: '${lot.crop.label}, ${tidy(lot.quantity.kilograms)} kilograms, '
           '${lot.storage.label}, $_since',
       child: ExcludeSemantics(
-        child: Material(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            color: freshness.raised,
+            borderRadius: Radii.card,
+            border: Border.all(color: freshness.outline),
+          ),
           clipBehavior: Clip.antiAlias,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(Gap.m),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: Target.primary,
-                  height: Target.primary,
+                ClipRRect(
+                  borderRadius: Radii.chip,
                   child: Image.asset(
                     'assets/crops/${lot.crop.id}.png',
+                    width: 72,
+                    height: 72,
                     fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: Gap.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(lot.crop.label, style: text.titleLarge),
+                      Text(lot.crop.label, style: text.titleMedium),
+                      const SizedBox(height: Gap.xs),
                       Text(
-                        '${lot.quantity.amount} ${lot.quantity.unit.label}'
-                        ' · ${lot.quantity.kilograms} kg',
-                        style: text.bodyMedium,
+                        '${tidy(lot.quantity.amount)} ${lot.quantity.unit.label}'
+                        ' · ${tidy(lot.quantity.kilograms)} kg',
+                        style: text.bodyMedium?.copyWith(
+                          color: freshness.fresh,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      Text('$_since · ${lot.storage.label}',
-                          style: text.bodyMedium),
+                      const SizedBox(height: Gap.s),
+                      Wrap(
+                        spacing: Gap.s,
+                        runSpacing: Gap.xs,
+                        children: [
+                          _Tag(icon: Icons.schedule_rounded, label: _since),
+                          _Tag(
+                            icon: Icons.warehouse_rounded,
+                            label: lot.storage.label,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -166,6 +232,45 @@ class _LotCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A small fact about a lot.
+///
+/// `Wrap`, not `Row`, on the card above: two tags plus a long storage label at
+/// large type is wider than a card, and a row would overflow rather than fold.
+class _Tag extends StatelessWidget {
+  const _Tag({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Gap.s, vertical: Gap.xs),
+      decoration: BoxDecoration(
+        color: freshness.high,
+        borderRadius: Radii.pill,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: scheme.onSurfaceVariant),
+          const SizedBox(width: Gap.xs + 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 14,
+                  color: scheme.onSurfaceVariant,
+                ),
+          ),
+        ],
       ),
     );
   }

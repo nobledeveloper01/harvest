@@ -63,10 +63,11 @@ void main() {
   Future<_Recording> pump(
     WidgetTester tester, {
     Region region = Region.unknown,
+    Size size = const Size(360, 900),
   }) async {
     entered = null;
     final speaker = _Recording();
-    await tester.binding.setSurfaceSize(const Size(360, 900));
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -95,12 +96,24 @@ void main() {
   Future<void> choose(WidgetTester tester, Unit unit) async {
     // Nine measures do not fit across 360 dp, so the row scrolls — and a test
     // that only ever tapped the first three would be testing the first three.
+    // By key, not by index: the screen has several scrollables and an index is
+    // right until somebody adds one.
+    final tile = find.bySemanticsLabel(unit.label);
     await tester.scrollUntilVisible(
-      find.bySemanticsLabel(unit.label),
+      tile,
       120,
-      scrollable: find.byType(Scrollable).at(1),
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('units')),
+        matching: find.byType(Scrollable),
+      ),
     );
-    await tester.tap(find.bySemanticsLabel(unit.label));
+    // And then all the way in. `scrollUntilVisible` stops as soon as any part
+    // of the tile is on screen, which leaves its centre outside the viewport —
+    // where a synthetic tap lands and misses. A finger does not have that
+    // problem; a test does.
+    await tester.ensureVisible(tile);
+    await tester.pumpAndSettle();
+    await tester.tap(tile);
     await tester.pump();
   }
 
@@ -174,7 +187,7 @@ void main() {
 
     expect(find.textContaining('not an estimate'), findsOneWidget);
     // And there is nothing to correct, because nothing was assumed.
-    expect(find.text('That is not right — I weighed it'), findsNothing);
+    expect(find.text('I weighed it myself'), findsNothing);
   });
 
   testWidgets('the correction keeps the baskets and takes the weight', (tester) async {
@@ -192,7 +205,7 @@ void main() {
     await choose(tester, Unit.smallBasket);
     expect(find.text('About 80 kg'), findsOneWidget);
 
-    await tester.tap(find.text('That is not right — I weighed it'));
+    await tester.tap(find.text('I weighed it myself'));
     await tester.pump();
 
     await type(tester, '96');
@@ -210,7 +223,7 @@ void main() {
     final speaker = await pump(tester, region: Region.southWest);
     await type(tester, '1');
     await choose(tester, Unit.bigBasket);
-    await tester.tap(find.text('That is not right — I weighed it'));
+    await tester.tap(find.text('I weighed it myself'));
     await tester.pump();
 
     expect(speaker.phrases, contains(Phrase.isThatRight));
@@ -219,8 +232,8 @@ void main() {
   testWidgets('Save does nothing until there is something to save', (tester) async {
     await pump(tester);
 
-    FilledButton save() =>
-        tester.widget<FilledButton>(find.byType(FilledButton));
+    PrimaryButton save() =>
+        tester.widget<PrimaryButton>(find.byType(PrimaryButton));
     expect(save().onPressed, isNull, reason: 'no amount, no measure');
 
     await type(tester, '3');
@@ -315,5 +328,27 @@ void main() {
     final speaker = await pump(tester);
     await choose(tester, Unit.bag);
     expect(speaker.weights, isEmpty);
+  });
+
+  testWidgets('Save is on screen on the 5-inch floor, however full the screen',
+      (tester) async {
+    /*
+      Found by running the app, not by a test — with the assumption card
+      showing, the pad and the button below it pushed Save off the bottom of a
+      6.1" phone, and the design floor is 5". A primary action that has to be
+      scrolled to is one a farmer in a market will not find.
+
+      720p at ~2x is 360x640 dp, which is the floor `DESIGN.md` names.
+    */
+    await pump(tester, size: const Size(360, 640), region: Region.southWest);
+    await type(tester, '4');
+    await choose(tester, Unit.bigBasket);
+
+    final save = tester.getRect(find.byType(PrimaryButton));
+    expect(save.bottom, lessThanOrEqualTo(640),
+        reason: 'Save has fallen off the bottom of the screen');
+    expect(save.top, greaterThanOrEqualTo(0));
+    // And it is the whole button, not a sliver of one.
+    expect(save.height, greaterThanOrEqualTo(Target.primary));
   });
 }

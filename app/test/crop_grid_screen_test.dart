@@ -174,6 +174,23 @@ void main() {
     expect(tile.width, lessThan(screen.width / 2.5));
   });
 
+  testWidgets('a mild text bump gets two columns, not a list', (tester) async {
+    /*
+      Three steps, not two. Somebody who nudges the system type up a little has
+      not asked for a twenty-five-row list, and two columns holds every crop
+      name in the catalogue comfortably.
+    */
+    await pump(tester, textScale: 1.4);
+
+    final tile = tester.getSize(find.ancestor(
+      of: find.text('Tomato'),
+      matching: find.byType(Material),
+    ).first);
+    final screen = tester.getSize(find.byType(GridView));
+    expect(tile.width, greaterThan(screen.width / 3));
+    expect(tile.width, lessThan(screen.width * 0.6));
+  });
+
   testWidgets('the picture never starves to feed the label', (tester) async {
     /*
       The failure a fixed `childAspectRatio` actually produces, which is not

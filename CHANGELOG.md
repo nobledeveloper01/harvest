@@ -10,6 +10,16 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A design system with some presence.** Inter bundled as a variable font —
+  chosen after checking it covers Hausa's hooked letters, Yorùbá's dot-below
+  vowels with tone marks, Igbo's, and ₦, because a typeface that cannot set the
+  product's own languages is not a candidate. Three stepped surface tones and a
+  hairline rather than shadow, which does not read on a dark screen; a two-stop
+  page gradient; 20–24 dp radii; and every tappable surface scaling to 0.96
+  under the thumb, because on a budget screen in bright light the ripple alone
+  is often invisible and the one thing a farmer needs to know is whether the
+  phone felt the tap.
+
 - **Local units, and a correction that sticks.** A farmer logs four baskets, not
   eighty kilograms. The conversion is region-aware — a big basket in Kano is
   genuinely bigger than one in Lagos — the app shows the assumption it made, and
@@ -82,6 +92,12 @@ Entries say *why*, not just what.
   anything used one-handed outdoors, both themes authored, dark by default.
 
 ### Changed
+
+- **The primary action is pinned below the scroll on both logging screens.**
+  Found by running the app rather than by testing it: with the assumption card
+  showing, a keypad and a button at the end of a scroll pushed Save off the
+  bottom of a 6.1" phone, and the design floor is 5". Both screens now assert
+  it stays on a 360×640 screen.
 
 - **The freshness rings move to Phase 2**, with the `ShelfLifeEngine` that fills
   them. A ring drawn before there is a model behind it is decoration that looks

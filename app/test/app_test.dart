@@ -104,7 +104,9 @@ void main() {
     await launch(tester);
 
     expect(find.text('What did you harvest?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Igbo'));
+    // The language pill in the app bar, which carries the endonym rather than
+    // a gear icon — the whole point of it.
+    await tester.tap(find.bySemanticsLabel('language: Igbo, tap to change'));
     await tester.pumpAndSettle();
 
     expect(find.text('What did you harvest?'), findsNothing);
@@ -190,7 +192,7 @@ void main() {
     // memory until the app closes.
     expect(find.text('Your harvest'), findsOneWidget);
     expect(find.text('Tomato'), findsOneWidget);
-    expect(find.textContaining('88.0 kg'), findsOneWidget);
+    expect(find.textContaining('88 kg'), findsOneWidget);
     expect(find.textContaining('Picked today'), findsOneWidget);
 
     expect((await LotStore(database).all()).lots, hasLength(1));

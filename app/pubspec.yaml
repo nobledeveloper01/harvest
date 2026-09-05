@@ -110,6 +110,21 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
+  # Inter, variable, one file for every weight.
+  #
+  # Bundled rather than fetched: the app is designed for a phone with no
+  # network, and a typeface that arrives over the wire is a screen that renders
+  # in a fallback face the first time somebody opens it in a field.
+  #
+  # Chosen after checking, not assuming, that it covers what these languages
+  # need: Hausa's hooked letters (ɓ ɗ ƙ Ɓ Ɗ Ƙ), Yorùbá's dot-below vowels with
+  # tone marks (ẹ ọ ṣ), Igbo's (ị ọ ụ ṅ), and the naira sign ₦. A beautiful
+  # typeface that cannot set the product's own languages is not a candidate.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/InterVariable.ttf
+
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

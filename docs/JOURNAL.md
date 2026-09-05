@@ -208,6 +208,49 @@ The test also covers the pair nothing else would have: the selected day chip
 paints its label directly on `fresh`, a combination drawn on exactly one control
 in the whole app.
 
+### Everything a screenshot found that a hundred tests did not
+
+The app had never been run. A hundred and twenty-six tests were green, the
+domain was at 100%, and nobody had looked at it. Building it for the simulator
+took two minutes and found four things in the first two screenshots:
+
+* **The crop tiles were portrait**, so `BoxFit.cover` on a square illustration
+  would crop the top and bottom off a real photograph of a tomato.
+* **"Fresh maize" starved its own picture.** A two-line name took the room from
+  the `Expanded` image above it, so that one tile was visibly shorter than its
+  neighbours. The test for picture starvation passed — it asserts a floor of
+  64 dp, and this was above it and still wrong.
+* **The app bar centred its title** into the language button beside it.
+* **The label box reserved three lines and mostly held one**, leaving every
+  tile two-thirds empty below the picture.
+
+Then, after the redesign, the one that mattered: **Save fell off the bottom of
+the screen.** With the assumption card showing, the keypad and the button below
+it ran past the fold on a 6.1" phone — and the floor for this product is 5". A
+primary action a farmer has to scroll to find is a primary action they will not
+find, in a market, one-handed.
+
+Every one of these is invisible to a widget test, because a widget test measures
+what it is told to measure and none of them was on the list. Two are now: both
+logging screens assert that the primary button is fully on a 360×640 screen, and
+the assertion fails on the old layout with `Actual: <784.7>`.
+
+The lesson is not "write more tests". It is that **"acceptance criteria met and
+demonstrated on a device" is on the definition of done for a reason**, and it
+had been quietly deferred for two phases because the tests were green.
+
+### The typeface had to pass a check before it was allowed to be beautiful
+
+Inter is the obvious choice and the reason to hesitate is that these are not
+Latin-1 languages. Hausa needs ɓ ɗ ƙ; Yorùbá needs ẹ ọ ṣ carrying tone marks;
+Igbo needs ị ụ ṅ; prices need ₦. A font that renders any of those as a box is
+worse than the system face, however good it looks in English.
+
+So the cmap got parsed before the file got bundled. Inter v4.1 covers all
+twenty-two codepoints, and so does Noto Sans, which was the fallback. Written
+down because "check the font covers the languages" is the kind of step that
+gets skipped exactly when the languages are not the reviewer's own.
+
 ### Sixty-two megabytes of noise
 
 Adding the weight scale took the placeholder set to 415 clips and the repository

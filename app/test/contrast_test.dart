@@ -94,11 +94,41 @@ void main() {
             scheme.surface, atLeast: 3);
       });
 
-      test('the chosen day, whose label sits on the accent itself', () {
-        // The selected day chip paints its text on `fresh`. The pair is drawn
-        // nowhere else, which is exactly why nobody would have checked it.
-        assertPair('the chosen day label', scheme.surface, crop.fresh,
+      test('anything drawn on the accent itself', () {
+        /*
+          The selected day chip and the primary button paint their labels
+          directly on the accent. In the dark theme the readable foreground
+          there is the near-black surface, not white — which is why `onAccent`
+          is a token and not an assumption.
+        */
+        assertPair('a label on the accent', crop.onAccent, crop.fresh,
             atLeast: 4.5);
+        assertPair('the button label', scheme.onPrimary, scheme.primary,
+            atLeast: 4.5);
+      });
+
+      test('text on the third surface tone, which controls sit on', () {
+        // Depth here is three stepped surfaces rather than shadow, and the
+        // keypad and chips sit on the highest of them. A step that is legible
+        // on the card and not on the control is a step in the wrong place.
+        assertPair('primary text on a control', scheme.onSurface, crop.high,
+            atLeast: 4.5);
+        assertPair('secondary text on a control',
+            theme.textTheme.bodyMedium!.color!, crop.high, atLeast: 4.5);
+      });
+
+      test('the hairline that separates the surfaces', () {
+        /*
+          The tonal steps between page, card and control are deliberately small
+          — calm on a desk, and at arm's length on a dusty screen almost
+          invisible. The outline is what makes them read as separate objects,
+          so it has to clear the 3:1 floor for a graphical object rather than
+          being a decorative whisper.
+        */
+        assertPair('the outline on the page', crop.outline, scheme.surface,
+            atLeast: 1.4);
+        assertPair('the outline on a card', crop.outline, crop.raised,
+            atLeast: 1.4);
       });
     });
   }

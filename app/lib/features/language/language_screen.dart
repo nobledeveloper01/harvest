@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
-import '../../domain/speech/phrase.dart';
 import '../../data/speech/speaker.dart';
+import '../../domain/speech/phrase.dart';
 
 /// The first screen, and the one the whole product's accessibility rests on.
 ///
@@ -53,42 +53,71 @@ class _LanguageScreenState extends State<LanguageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Harvest', style: Theme.of(context).textTheme.displaySmall),
-              const SizedBox(height: 8),
-              Text(
-                // English, and only here. This one line is for whoever hands
-                // the phone over; everything below says itself.
-                'Choose the language you want to hear.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: Speech.values.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final language = Speech.values[index];
-                    final speaking = _speaking == language;
-                    return _LanguageRow(
-                      language: language,
-                      speaking: speaking,
-                      accent: freshness.fresh,
-                      onFocus: () => _say(language),
-                      onChoose: () => widget.onChosen(language),
-                    );
-                  },
+      body: PageCanvas(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Gap.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: Gap.xxl),
+                Row(
+                  children: [
+                    /*
+                      A mark, not a logo.
+
+                      The app's name is the one word on this screen that a
+                      farmer might have been told to look for, and a shape
+                      beside it is what makes it findable on a phone somebody
+                      else set up for them.
+                    */
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: freshness.fresh,
+                        borderRadius: Radii.chip,
+                      ),
+                      child: Icon(
+                        Icons.eco_rounded,
+                        size: 30,
+                        color: freshness.onAccent,
+                      ),
+                    ),
+                    const SizedBox(width: Gap.m),
+                    Text('Harvest', style: text.displaySmall),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: Gap.l),
+                Text(
+                  // English, and only here. This one line is for whoever hands
+                  // the phone over; everything below says itself.
+                  'Choose the language you want to hear.',
+                  style: text.bodyMedium,
+                ),
+                const SizedBox(height: Gap.xl),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.only(bottom: Gap.xl),
+                    itemCount: Speech.values.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: Gap.m),
+                    itemBuilder: (context, index) {
+                      final language = Speech.values[index];
+                      return _LanguageRow(
+                        language: language,
+                        speaking: _speaking == language,
+                        onFocus: () => _say(language),
+                        onChoose: () => widget.onChosen(language),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -100,56 +129,77 @@ class _LanguageRow extends StatelessWidget {
   const _LanguageRow({
     required this.language,
     required this.speaking,
-    required this.accent,
     required this.onFocus,
     required this.onChoose,
   });
 
   final Speech language;
   final bool speaking;
-  final Color accent;
   final VoidCallback onFocus;
   final VoidCallback onChoose;
 
   @override
   Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
     final scheme = Theme.of(context).colorScheme;
 
     return Semantics(
       button: true,
+      container: true,
       label: language.endonym,
-      child: Material(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.card,
           onTap: onChoose,
           // A long press hears it again without choosing it. Somebody
           // comparing two languages should not have to commit to one to
           // listen to it twice.
           onLongPress: onFocus,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: Target.primary),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            constraints: const BoxConstraints(minHeight: Target.primary + 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Gap.l,
+              vertical: Gap.m,
+            ),
+            decoration: BoxDecoration(
+              color: freshness.raised,
+              borderRadius: Radii.card,
+              border: Border.all(
+                // The speaking row is outlined in the accent *and* fills its
+                // speaker icon. Two channels, because one of them is colour.
+                color: speaking ? freshness.fresh : freshness.outline,
+                width: speaking ? 2 : 1,
+              ),
+            ),
             child: Row(
               children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: speaking ? freshness.fresh : freshness.high,
+                    borderRadius: Radii.chip,
+                  ),
+                  child: Icon(
+                    speaking ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                    size: 26,
+                    color: speaking ? freshness.onAccent : scheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: Gap.l),
                 Expanded(
                   child: Text(
                     language.endonym,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-                /*
-                  A speaker icon that fills while the clip plays.
-
-                  Not an animation for its own sake: it is the only feedback
-                  that the sound came from *this* row, on a phone whose volume
-                  may be down or whose user is in a noisy market.
-                */
                 Icon(
-                  speaking ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                  size: 30,
-                  color: speaking ? accent : scheme.onSurface,
+                  Icons.chevron_right_rounded,
+                  size: 26,
+                  color: scheme.onSurfaceVariant,
                 ),
               ],
             ),

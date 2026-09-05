@@ -15,17 +15,28 @@ hands, and a user who may not read. Every rule below follows from it.
 
 Built around crop freshness, because that is the one state the whole app communicates.
 
-| Role | Light | Dark |
-|---|---|---|
-| `surface` | `#FFFFFF` | `#0F1310` |
-| `surfaceDim` | `#F2F5F1` | `#1A211B` |
-| `textPrimary` | `#12180F` | `#EDF2EA` |
-| `textSecondary` | `#5B6558` | `#A3AE9E` |
-| `accent` | `#2E7D32` | `#5CB860` |
-| `fresh` | `#2E7D32` | `#5CB860` |
-| `atRisk` | `#B06A00` | `#F0A93B` |
-| `critical` | `#C62828` | `#EF6B6B` |
-| `sold` | `#5B6558` | `#A3AE9E` |
+**Three surface tones, not one.** Depth on a dark screen cannot come from shadow — there is
+nothing for a shadow to fall on. It comes from stepping the surface: the page, the card that
+sits on it, and the control that sits on the card, with a hairline where the step alone is
+too subtle to read at arm's length on a dusty screen.
+
+| Role | Light | Dark | |
+|---|---|---|---|
+| `surface` | `#FBFCFA` | `#0B0F0C` | The page |
+| `raised` | `#FFFFFF` | `#161D17` | Cards, tiles |
+| `high` | `#EDF1EA` | `#212A22` | Controls on a card |
+| `outline` | `#C9D2C4` | `#3E4B3F` | The hairline between them |
+| `textPrimary` | `#0E140C` | `#F0F5EE` | |
+| `textSecondary` | `#505A4D` | `#A6B2A2` | |
+| `accent` / `fresh` | `#1F6F33` | `#6BCB6F` | |
+| `onAccent` | `#FFFFFF` | `#07120A` | What is legible **on** the accent |
+| `atRisk` | `#A85E00` | `#F3B24E` | |
+| `critical` | `#B3261E` | `#F17A78` | |
+| `sold` | `#505A4D` | `#A6B2A2` | |
+
+The page carries a two-stop vertical gradient — `#101A13` to `#0B0F0C` in the dark, barely
+apart. Enough that the screen is not a flat rectangle; little enough that nothing on it has
+to fight a moving background.
 
 **Dark is the default**, not `ThemeMode.system`. Both are authored; neither is derived.
 
@@ -43,10 +54,38 @@ sunlight on a dusty screen loses one channel and keeps two.
 `Target.standard` is **56 dp** — Material's 48 is a figure for an office.
 `Target.primary` is **64 dp**, for anything used one-handed outdoors while holding a crate.
 
+## Shape and spacing
+
+Radii: 20 for tiles, 24 for cards, 16 for chips, fully round for pills and the primary
+button. Spacing on a four-point grid — 4, 8, 12, 16, 24, 32.
+
+Every tappable surface scales to 0.96 under the thumb. Not decoration: on a budget screen in
+bright light the ripple alone is often invisible, and the one thing a farmer needs to know is
+whether the phone felt the tap at all.
+
+**One primary action per screen, pinned below the scroll.** Found by running the app rather
+than by testing it: with the assumption card showing, a keypad and a button at the end of a
+scroll pushed Save off the bottom of a 6.1" phone, and the floor is 5". A primary action that
+has to be scrolled to is one a farmer in a market will not find. Both screens now assert it
+stays on a 360×640 screen.
+
 ## Type
 
+**Inter, bundled** — one variable file, every weight. Bundled rather than fetched because the
+app is designed for a phone with no network, and a typeface that arrives over the wire is a
+screen that renders in a fallback face the first time somebody opens it in a field.
+
+Chosen after checking, not assuming, that it covers what these languages need: Hausa's hooked
+letters (ɓ ɗ ƙ Ɓ Ɗ Ƙ), Yorùbá's dot-below vowels with tone marks (ẹ ọ ṣ), Igbo's (ị ọ ụ ṅ),
+and ₦. A beautiful typeface that cannot set the product's own languages is not a candidate.
+
 Display 30 sp, title 22, body 18, secondary 16. Moderate on purpose: a headline that fills
-the screen leaves no room for the thing it introduces.
+the screen leaves no room for the thing it introduces. The hierarchy is carried by **weight
+and tracking** rather than by size alone, which is what lets the scale stay moderate and
+still read as a hierarchy at arm's length in bright light.
+
+Figures are **tabular** wherever they change under the thumb — the quantity display, the
+keypad. A number that shifts sideways as it is typed reads as the app struggling.
 
 ## Speech
 

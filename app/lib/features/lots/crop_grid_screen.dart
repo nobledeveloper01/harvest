@@ -100,28 +100,32 @@ class _CropGridScreenState extends State<CropGridScreen> {
       grows; neither half starves the other.
     */
     final scaler = MediaQuery.textScalerOf(context);
-    final labelHeight = scaler.scale(text.bodyLarge!.fontSize!) * 1.35 * 3;
+    // Two lines of the secondary size, which is what every crop name in the
+    // catalogue needs and no more. Three lines of the body size left most
+    // tiles two-thirds empty below the picture — obvious in a screenshot,
+    // invisible to a test that only measures.
+    final labelHeight = scaler.scale(text.bodyMedium!.fontSize!) * 1.35 * 2;
 
     return Scaffold(
       appBar: AppBar(
+        // Left, not centred. A centred title sits in the middle of the row and
+        // crowds the language button into the edge — visible the first time the
+        // app was actually run, and invisible to every test.
         title: Text('What did you harvest?', style: text.titleLarge),
-        toolbarHeight: Target.primary,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton(
-              onPressed: widget.onChangeLanguage,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(Target.standard, Target.standard),
-              ),
-              child: Text(widget.language.endonym, style: text.bodyLarge),
+            padding: const EdgeInsets.only(right: Gap.l),
+            child: _LanguagePill(
+              language: widget.language,
+              onTap: widget.onChangeLanguage,
             ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
+      body: PageCanvas(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
             const gap = 12.0;
             const padding = 16.0;
 
@@ -140,12 +144,19 @@ class _CropGridScreenState extends State<CropGridScreen> {
 
               A declared threshold is worse design and better engineering. It
               behaves identically in a test and on a device, and somebody who
-              has turned type up past 130% is telling you they want things
-              bigger — a single column of large tiles is a reasonable reading
-              of that, not a consolation prize.
+              has turned type up is telling you they want things bigger.
+
+              Three steps rather than two. Jumping from three columns straight
+              to a list at the first nudge above default punishes a mild
+              preference; two columns holds every label comfortably up to 150%,
+              and past that a list is the honest answer.
             */
-            final columns =
-                MediaQuery.textScalerOf(context).scale(1) > 1.3 ? 1 : 3;
+            final scale = MediaQuery.textScalerOf(context).scale(1);
+            final columns = switch (scale) {
+              <= 1.0 => 3,
+              <= 1.5 => 2,
+              _ => 1,
+            };
             final tileWidth =
                 (constraints.maxWidth - padding * 2 - gap * (columns - 1)) / columns;
             // Square by preference, never smaller than the outdoor touch
@@ -156,7 +167,7 @@ class _CropGridScreenState extends State<CropGridScreen> {
             final pictureHeight = tileWidth.clamp(Target.primary, 200.0);
 
             return GridView.builder(
-              padding: const EdgeInsets.all(padding),
+              padding: const EdgeInsets.fromLTRB(padding, 0, padding, Gap.xl),
               itemCount: Crop.grid.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: columns,
@@ -168,13 +179,68 @@ class _CropGridScreenState extends State<CropGridScreen> {
                 final crop = Crop.grid[index];
                 return _CropTile(
                   crop: crop,
+                  pictureHeight: pictureHeight,
                   speaking: _speaking == crop,
                   onChoose: () => _choose(crop),
                   onHear: () => _say(crop),
                 );
-              },
-            );
-          },
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The current language, as a pill carrying its own name.
+///
+/// Not a gear icon. Somebody who chose Igbo by mistake needs to see the word
+/// `Hausa` to know they can get back to it, and a settings glyph tells them
+/// nothing at all.
+class _LanguagePill extends StatelessWidget {
+  const _LanguagePill({required this.language, required this.onTap});
+
+  final Speech language;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: 'language: ${language.endonym}, tap to change',
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.pill,
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: Target.standard - 12),
+            padding: const EdgeInsets.symmetric(horizontal: Gap.m),
+            decoration: BoxDecoration(
+              color: freshness.high,
+              borderRadius: Radii.pill,
+              border: Border.all(color: freshness.outline),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.translate_rounded,
+                    size: 18, color: freshness.fresh),
+                const SizedBox(width: Gap.xs + 2),
+                Text(
+                  language.endonym,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -184,12 +250,25 @@ class _CropGridScreenState extends State<CropGridScreen> {
 class _CropTile extends StatelessWidget {
   const _CropTile({
     required this.crop,
+    required this.pictureHeight,
     required this.speaking,
     required this.onChoose,
     required this.onHear,
   });
 
   final Crop crop;
+
+  /// Fixed, and equal to the tile's width.
+  ///
+  /// It was `Expanded` until the app was run on a phone, where two things
+  /// showed up at once: a tile is much taller than it is wide, so `BoxFit.cover`
+  /// on a square illustration crops the top and bottom off a tomato; and a crop
+  /// whose name wraps to two lines takes the room from its own picture, so
+  /// "Fresh maize" sat in the grid with a visibly shorter tile than its
+  /// neighbours. Both are invisible against hatched placeholders in a test and
+  /// obvious in a screenshot.
+  final double pictureHeight;
+
   final bool speaking;
   final VoidCallback onChoose;
   final VoidCallback onHear;
@@ -201,78 +280,127 @@ class _CropTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      // `container: true` so this is one node, not a label floating beside the
-      // InkWell's button. Without it the tile's own `Text` supplies the name
-      // and the alternative is simply lost — which is how it read the first
-      // time, plausibly and wrongly.
       container: true,
       // The alternative name is in the spoken label but not on the tile: three
-      // columns at 200% scaling has no room for it, and a screen reader has all
+      // columns at large type has no room for it, and a screen reader has all
       // the room in the world.
       label: crop.also == null ? crop.label : '${crop.label}, ${crop.also}',
-      child: Material(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+      child: ExcludeSemantics(
+        child: Pressable(
           onTap: onChoose,
           onLongPress: onHear,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // `Expanded`, so the picture takes whatever the label leaves —
-              // and the grid's `mainAxisExtent` above is what guarantees there
-              // is enough left. The two have to agree; see the comment there.
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      'assets/crops/${crop.id}.png',
-                      fit: BoxFit.cover,
-                      // Excluded because the tile already carries the crop's
-                      // name; announcing the picture as well would read the
-                      // same word twice.
-                      excludeFromSemantics: true,
-                    ),
-                    if (speaking)
-                      /*
-                        The only feedback that the sound came from *this* tile,
-                        on a phone whose volume may be down or whose user is in
-                        a noisy market. Same reasoning as the language screen's
-                        filling speaker icon.
-                      */
-                      ColoredBox(
-                        color: freshness.fresh.withValues(alpha: 0.35),
-                        child: Icon(
-                          Icons.volume_up_rounded,
-                          size: 28,
-                          color: scheme.onSurface,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              color: freshness.raised,
+              borderRadius: Radii.tile,
+              border: Border.all(
+                color: speaking ? freshness.fresh : freshness.outline,
+                width: speaking ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: pictureHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(19),
+                        ),
+                        child: Image.asset(
+                          'assets/crops/${crop.id}.png',
+                          fit: BoxFit.cover,
+                          // Excluded because the tile already carries the
+                          // crop's name; announcing the picture as well would
+                          // read the same word twice.
+                          excludeFromSemantics: true,
                         ),
                       ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
-                // Excluded because the tile's own label already names the crop
-                // and adds the alternative. Left in, this would announce "Ugu"
-                // and the fuller "Ugu, fluted pumpkin leaf" would never be
-                // read.
-                child: ExcludeSemantics(
-                  child: Text(
-                    crop.label,
-                    textAlign: TextAlign.center,
-                    // Three, not two. At 200% on a 360 dp screen a tile is
-                    // about 108 dp wide and "Sweet potato" does not fit in two
-                    // lines — and the default overflow is `clip`, which cuts
-                    // the word off without an ellipsis to say that it did.
-                    maxLines: 3,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                      /*
+                        A scrim at the foot of the picture.
+
+                        Not decoration: the label sits directly beneath, and
+                        without it a pale illustration and a pale card meet at a
+                        hard line that reads as two objects rather than one
+                        tile. It also gives the speaker badge something to sit
+                        on whatever the picture turns out to be.
+                      */
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 28,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                freshness.raised.withValues(alpha: 0),
+                                freshness.raised,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (speaking)
+                        /*
+                          The only feedback that the sound came from *this*
+                          tile, on a phone whose volume may be down or whose
+                          user is in a noisy market.
+                        */
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(Gap.s),
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: freshness.fresh,
+                                borderRadius: Radii.pill,
+                              ),
+                              child: Icon(
+                                Icons.volume_up_rounded,
+                                size: 18,
+                                color: freshness.onAccent,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(Gap.s, 0, Gap.s, Gap.s),
+                    child: Center(
+                      child: Text(
+                        crop.label,
+                        textAlign: TextAlign.center,
+                        // Two lines is every name in the catalogue: the longest
+                        // are two words. The single long ones — "Bitterleaf",
+                        // "Watermelon" — cannot wrap at all, which is what the
+                        // column count is for.
+                        maxLines: 2,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              // Secondary *size*, primary colour. The crop's
+                              // name is the thing being chosen; the muted grey
+                              // is meant for sentences beside a decision, not
+                              // for the decision itself.
+                              color: scheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

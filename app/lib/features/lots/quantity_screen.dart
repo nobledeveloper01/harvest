@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
 
+import '../../core/numbers.dart';
 import '../../core/theme.dart';
 import '../../data/speech/speaker.dart';
 import '../../domain/crops/crop.dart';
@@ -147,34 +149,55 @@ class _QuantityScreenState extends State<QuantityScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
     final quantity = _quantity;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.crop.label, style: text.titleLarge),
-        toolbarHeight: Target.primary,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: Gap.l),
+          child: ClipRRect(
+            borderRadius: Radii.chip,
+            child: Image.asset(
+              'assets/crops/${widget.crop.id}.png',
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+            ),
+          ),
+        ),
+        leadingWidth: 40 + Gap.l * 2,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: PageCanvas(
+        child: SafeArea(
+          /*
+            The pad scrolls; the Save button does not.
+
+            Found by running it: with the assumption card on screen, a pad and a
+            button below it push Save off the bottom of a 6.1" phone — and the
+            design floor is 5". A primary action that has to be scrolled to is a
+            primary action a farmer in a market will not find, and no test
+            measures whether something is above the fold.
+          */
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
-              _Typed(
-                typed: _typed,
-                suffix: _correcting ? 'kg' : _unit?.label ?? '',
-              ),
-              if (!_correcting) ...[
-                const SizedBox(height: 8),
-                _UnitRow(
-                  chosen: _unit,
-                  onChoose: _choose,
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.s),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                _Typed(
+                  typed: _typed,
+                  suffix: _correcting ? 'kg' : _unit?.label ?? '',
                 ),
-              ],
-              const SizedBox(height: 8),
-              _Assumption(
+                if (!_correcting) ...[
+                  const SizedBox(height: Gap.m),
+                  _UnitRow(chosen: _unit, onChoose: _choose),
+                ],
+                const SizedBox(height: Gap.m),
+                _Assumption(
                 quantity: quantity,
                 unit: _unit,
                 region: widget.region,
@@ -183,30 +206,33 @@ class _QuantityScreenState extends State<QuantityScreen> {
                 // the volume down needs a second chance at the one sentence
                 // that says what they have.
                 onSayAgain: _sayWeight,
-                onCorrect: quantity == null
-                    ? null
-                    : () {
-                        widget.speaker.say(Phrase.isThatRight, widget.language);
-                        setState(() {
-                          _assumed = quantity;
-                          _typed = '';
-                        });
-                      },
-              ),
-              const SizedBox(height: 8),
-              _Pad(onPress: _press),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: (_correcting ? _amount > 0 : quantity != null)
-                    ? _confirm
-                    : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(Target.primary),
-                  backgroundColor: scheme.primary,
+                  onCorrect: quantity == null
+                      ? null
+                      : () {
+                          widget.speaker.say(Phrase.isThatRight, widget.language);
+                          setState(() {
+                            _assumed = quantity;
+                            _typed = '';
+                          });
+                        },
                 ),
-                child: const Text('Save'),
+                      const SizedBox(height: Gap.m),
+                      _Pad(onPress: _press),
+                      const SizedBox(height: Gap.m),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
+                child: PrimaryButton(
+                  label: 'Save',
+                  icon: Icons.check_rounded,
+                  onPressed: (_correcting ? _amount > 0 : quantity != null)
+                      ? _confirm
+                      : null,
+                ),
+              ),
             ],
           ),
         ),
@@ -225,22 +251,54 @@ class _Typed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final scheme = Theme.of(context).colorScheme;
+
     return Semantics(
       liveRegion: true,
       label: typed.isEmpty ? 'nothing entered yet' : '$typed $suffix',
       child: ExcludeSemantics(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              typed.isEmpty ? '0' : typed,
-              key: const ValueKey('typed'),
-              style: text.displaySmall,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(suffix, style: text.bodyMedium)),
-          ],
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Gap.l,
+            vertical: Gap.m,
+          ),
+          decoration: BoxDecoration(
+            color: freshness.raised,
+            borderRadius: Radii.card,
+            border: Border.all(color: freshness.outline),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                typed.isEmpty ? '0' : typed,
+                key: const ValueKey('typed'),
+                style: text.displaySmall?.copyWith(
+                  fontSize: 44,
+                  // Tabular figures, so the number does not shift sideways as
+                  // digits are typed. A display that jiggles under the thumb
+                  // reads as the app struggling.
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  // Dimmed until there is a real number in it, so an empty
+                  // field is visibly empty rather than visibly zero.
+                  color: typed.isEmpty
+                      ? scheme.onSurfaceVariant
+                      : scheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: Gap.s),
+              Expanded(
+                child: Text(
+                  suffix,
+                  style: text.bodyLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -249,9 +307,9 @@ class _Typed extends StatelessWidget {
 
 /// The measures, as pictures.
 ///
-/// A horizontal row rather than a grid: nine units is not enough to be worth a
-/// screen of its own, and the pad below has to stay visible or the two halves
-/// of the question stop being one question.
+/// A horizontal row rather than a screen of its own: nine units is not enough
+/// to be worth one, and the pad below has to stay visible or the two halves of
+/// the question stop being one question.
 class _UnitRow extends StatelessWidget {
   const _UnitRow({required this.chosen, required this.onChoose});
 
@@ -260,69 +318,129 @@ class _UnitRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final freshness = Theme.of(context).extension<Freshness>()!;
-
     return SizedBox(
-      height: Target.primary + 40,
+      height: 118,
       child: ListView.separated(
+        key: const ValueKey('units'),
         scrollDirection: Axis.horizontal,
         itemCount: Unit.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: Gap.m),
         itemBuilder: (context, index) {
           final unit = Unit.values[index];
-          final picked = unit == chosen;
-          return Semantics(
-            button: true,
-            selected: picked,
-            container: true,
-            label: unit.label,
-            child: SizedBox(
-              width: Target.primary + 16,
-              child: Material(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => onChoose(unit),
-                  child: Container(
-                    // Chosen is a border *and* a fill, never colour alone —
-                    // the design rule the whole palette is written under.
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: picked ? freshness.fresh : Colors.transparent,
-                        width: 3,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
+          return _UnitTile(
+            unit: unit,
+            picked: unit == chosen,
+            onTap: () => onChoose(unit),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _UnitTile extends StatelessWidget {
+  const _UnitTile({
+    required this.unit,
+    required this.picked,
+    required this.onTap,
+  });
+
+  final Unit unit;
+  final bool picked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      selected: picked,
+      container: true,
+      label: unit.label,
+      child: ExcludeSemantics(
+        child: SizedBox(
+          width: 84,
+          child: Pressable(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              decoration: BoxDecoration(
+                color: freshness.raised,
+                borderRadius: Radii.tile,
+                border: Border.all(
+                  // Chosen is a ring *and* a tick, never colour alone — the
+                  // rule the whole palette is written under.
+                  color: picked ? freshness.fresh : freshness.outline,
+                  width: picked ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 66,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Expanded(
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(19),
+                          ),
                           child: Image.asset(
                             'assets/units/${unit.id}.png',
                             fit: BoxFit.cover,
                             excludeFromSemantics: true,
                           ),
                         ),
-                        ExcludeSemantics(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Text(
-                              unit.label,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                        if (picked)
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(Gap.xs),
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: freshness.fresh,
+                                  borderRadius: Radii.pill,
+                                ),
+                                child: Icon(
+                                  Icons.check_rounded,
+                                  size: 16,
+                                  color: freshness.onAccent,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Gap.xs),
+                      child: Center(
+                        child: Text(
+                          unit.label,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 13,
+                                height: 1.2,
+                                fontWeight: FontWeight.w600,
+                                color: picked
+                                    ? freshness.fresh
+                                    : scheme.onSurface,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -349,15 +467,45 @@ class _Assumption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget shell(Widget child, {Color? tint, Color? edge}) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(Gap.l),
+          decoration: BoxDecoration(
+            color: tint ?? freshness.high,
+            borderRadius: Radii.card,
+            border: Border.all(color: edge ?? freshness.outline),
+          ),
+          child: child,
+        );
 
     if (correcting) {
-      return Text(
-        'Tell me what it really weighs, in kilograms.',
-        style: text.bodyMedium,
+      return shell(
+        Row(
+          children: [
+            Icon(Icons.scale_rounded, size: 24, color: freshness.atRisk),
+            const SizedBox(width: Gap.m),
+            Expanded(
+              child: Text(
+                'Tell me what it really weighs, in kilograms.',
+                style: text.bodyMedium?.copyWith(color: scheme.onSurface),
+              ),
+            ),
+          ],
+        ),
+        tint: freshness.atRisk.withValues(alpha: 0.12),
+        edge: freshness.atRisk.withValues(alpha: 0.45),
       );
     }
     if (quantity == null || unit == null) {
-      return Text('Choose a measure and type how many.', style: text.bodyMedium);
+      return shell(
+        Text(
+          'Choose a measure and type how many.',
+          style: text.bodyMedium,
+        ),
+      );
     }
 
     /*
@@ -371,53 +519,111 @@ class _Assumption extends StatelessWidget {
       can accept and one they should probably correct.
     */
     final regional = UnitTable.current.isRegional(unit!, region);
-    final kilograms = quantity!.kilograms;
-    final rounded = kilograms == kilograms.roundToDouble()
-        ? kilograms.toStringAsFixed(0)
-        : kilograms.toStringAsFixed(1);
+    final rounded = tidy(quantity!.kilograms);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          button: true,
-          container: true,
-          label: 'about $rounded kilograms, tap to hear it again',
-          child: InkWell(
-            onTap: onSayAgain,
+    return shell(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            button: true,
+            container: true,
+            label: 'about $rounded kilograms, tap to hear it again',
             child: ExcludeSemantics(
-              child: Row(
-                children: [
-                  Text('About $rounded kg', style: text.bodyLarge),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.volume_up_outlined, size: 22),
-                ],
+              child: Pressable(
+                borderRadius: Radii.chip,
+                onTap: onSayAgain,
+                child: Row(
+                  children: [
+                    // Flexible, because the figure and the unit are a sentence
+                    // that grows: "About 1000 kg" at 200% type is wider than
+                    // the card it sits in, and an unflexed row overflows into
+                    // a yellow-striped bar instead of wrapping.
+                    Flexible(
+                      child: Text(
+                        'About $rounded kg',
+                        style: text.headlineSmall?.copyWith(
+                          color: freshness.fresh,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: Gap.m),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: freshness.fresh.withValues(alpha: 0.16),
+                        borderRadius: Radii.pill,
+                      ),
+                      child: Icon(
+                        Icons.volume_up_rounded,
+                        size: 20,
+                        color: freshness.fresh,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        Text(
-          unit!.isWeight
-              ? 'You gave me a weight, so this is not an estimate.'
-              : regional
-                  ? 'A ${unit!.label} in ${region.label} is about '
-                      '${(UnitTable.current.gramsPer(unit!, region)! / 1000)
-                          .toStringAsFixed(0)} kg.'
-                  : 'Using the national average for a ${unit!.label}. '
-                      'It may not match yours.',
-          style: text.bodyMedium,
-        ),
-        if (!unit!.isWeight)
-          TextButton(
-            onPressed: onCorrect,
-            style: TextButton.styleFrom(
-              minimumSize: const Size(Target.standard, Target.standard),
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text('That is not right — I weighed it'),
+          const SizedBox(height: Gap.xs),
+          Text(
+            unit!.isWeight
+                ? 'You gave me a weight, so this is not an estimate.'
+                : regional
+                    ? 'A ${unit!.label} in ${region.label} is about '
+                        '${tidy(UnitTable.current.gramsPer(unit!, region)! / 1000)} kg.'
+                    : 'Using the national average for a ${unit!.label}. '
+                        'It may not match yours.',
+            style: text.bodyMedium,
           ),
-      ],
+          if (!unit!.isWeight) ...[
+            const SizedBox(height: Gap.s),
+            Semantics(
+              button: true,
+              container: true,
+              label: 'that is not right, I weighed it',
+              child: ExcludeSemantics(
+                child: Pressable(
+                  borderRadius: Radii.pill,
+                  onTap: onCorrect ?? () {},
+                  child: Container(
+                    constraints:
+                        const BoxConstraints(minHeight: Target.standard - 8),
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.m),
+                    decoration: BoxDecoration(
+                      borderRadius: Radii.pill,
+                      border: Border.all(color: freshness.outline),
+                    ),
+                    // `Flexible`, not a bare `Text`. The label is a sentence
+                    // and the pill is as wide as the card; at large type, or
+                    // in a language whose words are longer, an unflexed row
+                    // overflows rather than wraps — which is a yellow-striped
+                    // bar on a farmer's screen.
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.scale_rounded,
+                            size: 18, color: scheme.onSurfaceVariant),
+                        const SizedBox(width: Gap.s),
+                        Flexible(
+                          child: Text(
+                            'I weighed it myself',
+                            style: text.bodyMedium?.copyWith(
+                              color: scheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -437,15 +643,19 @@ class _Pad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
     final scheme = Theme.of(context).colorScheme;
 
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      childAspectRatio: 1.7,
+      crossAxisSpacing: Gap.m,
+      mainAxisSpacing: Gap.m,
+      // Wider than tall: the pad has to leave room for the assumption above it
+      // and the Save button below on a 5" screen, and a key 64 dp high is
+      // already past the outdoor target.
+      childAspectRatio: 1.65,
       children: [
         for (final key in _keys)
           Semantics(
@@ -456,18 +666,35 @@ class _Pad extends StatelessWidget {
               '.' => 'point',
               _ => key,
             },
-            child: Material(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
+            child: ExcludeSemantics(
+              child: Pressable(
+                borderRadius: Radii.chip,
                 onTap: () => onPress(key),
-                child: Center(
-                  child: ExcludeSemantics(
-                    child: Text(
-                      key,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: key == '⌫' ? freshness.high : freshness.raised,
+                    borderRadius: Radii.chip,
+                    border: Border.all(color: freshness.outline),
+                  ),
+                  child: Center(
+                    child: key == '⌫'
+                        ? Icon(
+                            Icons.backspace_outlined,
+                            size: 24,
+                            color: scheme.onSurfaceVariant,
+                          )
+                        : Text(
+                            key,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontSize: 26,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
+                                ),
+                          ),
                   ),
                 ),
               ),

@@ -36,10 +36,13 @@ void main() {
 
   late Lot? saved;
 
-  Future<_Recording> pump(WidgetTester tester) async {
+  Future<_Recording> pump(
+    WidgetTester tester, {
+    Size size = const Size(360, 900),
+  }) async {
     saved = null;
     final speaker = _Recording();
-    await tester.binding.setSurfaceSize(const Size(360, 900));
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -71,6 +74,11 @@ void main() {
         matching: find.byType(Scrollable),
       ),
     );
+    // All the way in: `scrollUntilVisible` stops as soon as any part of the
+    // chip is on screen, which leaves its centre outside the viewport where a
+    // synthetic tap lands and misses.
+    await tester.ensureVisible(find.bySemanticsLabel(label));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel(label));
     await tester.pump();
   }
@@ -112,7 +120,7 @@ void main() {
       certain; where a lot is kept is not.
     */
     await pump(tester);
-    final save = tester.widget<FilledButton>(find.byType(FilledButton));
+    final save = tester.widget<PrimaryButton>(find.byType(PrimaryButton));
     expect(save.onPressed, isNull);
   });
 
@@ -159,5 +167,18 @@ void main() {
       expect(find.bySemanticsLabel(condition.label), findsOneWidget,
           reason: condition.id);
     }
+  });
+
+  testWidgets('Save is on screen on the 5-inch floor', (tester) async {
+    // Same rule as the quantity screen, and the same reason: the button is
+    // pinned below the scroll rather than sitting at the end of it.
+    await pump(tester, size: const Size(360, 640));
+    await tester.tap(find.bySemanticsLabel('In a store'));
+    await tester.pump();
+
+    final save = tester.getRect(find.byType(PrimaryButton));
+    expect(save.bottom, lessThanOrEqualTo(640),
+        reason: 'Save has fallen off the bottom of the screen');
+    expect(save.height, greaterThanOrEqualTo(Target.primary));
   });
 }
