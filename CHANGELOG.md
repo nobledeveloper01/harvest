@@ -10,6 +10,13 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **What comes off the top, entered and applied.** The lorry and the agent's
+  share, taken off **every course alike** — comparing a gross "sell today"
+  against a gross "wait" compares two wrong numbers fairly, but comparing either
+  against a storage option whose fee is real would quietly flatter selling,
+  which is the one asymmetry that would change an answer. The decision screen
+  says plainly when it is assuming nothing comes off, because a farmer has no
+  way to tell whether the figure in front of them already had the fare taken.
 - **The net realisable price** — what a farmer actually receives, which is not
   the number anybody quotes. A lorry has to be paid, an agent takes a share, and
   some of the load arrives bruised. Commission is charged on **what arrives**,

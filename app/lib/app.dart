@@ -17,6 +17,7 @@ import 'domain/speech/phrase.dart';
 import 'domain/spoilage/alerts.dart';
 import 'domain/money/decision.dart';
 import 'domain/money/price.dart';
+import 'domain/money/net_price.dart';
 import 'domain/money/sourced.dart';
 import 'domain/money/storing.dart';
 import 'domain/spoilage/shelf_life.dart';
@@ -25,6 +26,7 @@ import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/money/decision_screen.dart';
+import 'features/money/costs_screen.dart';
 import 'features/money/price_screen.dart';
 import 'features/money/storage_offer_screen.dart';
 import 'features/lots/storage_screen.dart';
@@ -241,6 +243,7 @@ class _HarvestAppState extends State<HarvestApp> {
     if (language == null) return;
 
     Quote? quoted;
+    var deductions = const Deductions();
 
     Future<Decision?> decide() async {
       final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
@@ -263,6 +266,7 @@ class _HarvestAppState extends State<HarvestApp> {
         // the one nobody else counts.
         pricePerKgLater: price.nairaPerKg,
         storage: quoted == null ? null : _offerFrom(lot, life, quoted!),
+        deductions: deductions,
       );
     }
 
@@ -275,6 +279,8 @@ class _HarvestAppState extends State<HarvestApp> {
           weather: _weather,
           decide: decide,
           onQuoted: (quote) async => quoted = quote,
+          onCosts: (costs) async => deductions = costs,
+          deductionsNow: () => deductions,
           onReported: (perKg) => _prices.record(
             crop: lot.crop,
             nairaPerKg: perKg,
@@ -460,6 +466,8 @@ class _DecisionHost extends StatefulWidget {
     required this.decide,
     required this.onReported,
     required this.onQuoted,
+    required this.onCosts,
+    required this.deductionsNow,
   });
 
   final Speaker speaker;
@@ -469,6 +477,8 @@ class _DecisionHost extends StatefulWidget {
   final Future<Decision?> Function() decide;
   final Future<void> Function(double perKg) onReported;
   final Future<void> Function(Quote quote) onQuoted;
+  final Future<void> Function(Deductions costs) onCosts;
+  final Deductions Function() deductionsNow;
 
   @override
   State<_DecisionHost> createState() => _DecisionHostState();
@@ -491,6 +501,22 @@ class _DecisionHostState extends State<_DecisionHost> {
       _decision = decision;
       _ready = true;
     });
+  }
+
+  Future<void> _enterCosts() async {
+    final costs = await Navigator.of(context).push<Deductions>(
+      MaterialPageRoute(
+        builder: (_) => CostsScreen(
+          speaker: widget.speaker,
+          language: widget.language,
+          lot: widget.lot,
+          deductions: widget.deductionsNow(),
+        ),
+      ),
+    );
+    if (costs == null) return;
+    await widget.onCosts(costs);
+    await _reload();
   }
 
   Future<void> _quoteStorage() async {
@@ -539,6 +565,8 @@ class _DecisionHostState extends State<_DecisionHost> {
       now: DateTime.now(),
       onReportPrice: _reportPrice,
       onQuoteStorage: _quoteStorage,
+      onEnterCosts: _enterCosts,
+      deductions: widget.deductionsNow(),
     );
   }
 }

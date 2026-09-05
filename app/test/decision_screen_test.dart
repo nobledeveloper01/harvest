@@ -6,6 +6,7 @@ import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/money/decision.dart';
+import 'package:harvest/domain/money/net_price.dart';
 import 'package:harvest/domain/money/sourced.dart';
 import 'package:harvest/domain/money/storing.dart';
 import 'package:harvest/domain/speech/phrase.dart';
@@ -67,10 +68,18 @@ void main() {
 
   late int reports;
   late int quotes;
+  late int costEntries;
+  late Deductions deductions;
 
-  Future<_Recording> pump(WidgetTester tester, Decision? given) async {
+  Future<_Recording> pump(
+    WidgetTester tester,
+    Decision? given, {
+    Deductions costs = const Deductions(),
+  }) async {
+    deductions = costs;
     reports = 0;
     quotes = 0;
+    costEntries = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(const Size(360, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -87,6 +96,8 @@ void main() {
           now: noon,
           onReportPrice: () => reports++,
           onQuoteStorage: () => quotes++,
+          onEnterCosts: () => costEntries++,
+          deductions: deductions,
         ),
       ),
     );
@@ -282,6 +293,48 @@ void main() {
       // The price control is still there, so the list really did reach its end.
       expect(find.text('Somebody offered me a price'), findsOneWidget);
       expect(find.text('A store quoted me a price'), findsNothing);
+    });
+  });
+
+  group('what is coming off the top', () {
+    testWidgets('says plainly when nothing is', (tester) async {
+      /*
+        A screen that silently assumed a lorry was free would overstate every
+        figure on it by the price of a lorry — and a farmer has no way to tell
+        whether the number in front of them already had the fare taken off.
+      */
+      await pump(tester, decision());
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nothing taken off yet for transport'), findsOneWidget);
+    });
+
+    testWidgets('and says what is, once it knows', (tester) async {
+      await pump(
+        tester,
+        decision(),
+        costs: const Deductions(
+          transportNaira: 8000,
+          commissionFraction: 0.1,
+        ),
+      );
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('After ₦8,000 transport and 10% commission'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('and can be changed', (tester) async {
+      await pump(tester, decision());
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nothing taken off yet for transport'));
+      await tester.pump();
+      expect(costEntries, 1);
     });
   });
 }

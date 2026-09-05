@@ -18,6 +18,7 @@ en/still-fine.wav
 en/half-gone.wav
 en/nearly-finished.wav
 en/time-is-up.wav
+en/what-does-it-cost-to-get-there.wav
 en/what-does-the-store-cost.wav
 en/you-could-lose.wav
 en/waiting-is-fine.wav
@@ -127,6 +128,7 @@ pcm/still-fine.wav
 pcm/half-gone.wav
 pcm/nearly-finished.wav
 pcm/time-is-up.wav
+pcm/what-does-it-cost-to-get-there.wav
 pcm/what-does-the-store-cost.wav
 pcm/you-could-lose.wav
 pcm/waiting-is-fine.wav
@@ -236,6 +238,7 @@ ha/still-fine.wav
 ha/half-gone.wav
 ha/nearly-finished.wav
 ha/time-is-up.wav
+ha/what-does-it-cost-to-get-there.wav
 ha/what-does-the-store-cost.wav
 ha/you-could-lose.wav
 ha/waiting-is-fine.wav
@@ -345,6 +348,7 @@ yo/still-fine.wav
 yo/half-gone.wav
 yo/nearly-finished.wav
 yo/time-is-up.wav
+yo/what-does-it-cost-to-get-there.wav
 yo/what-does-the-store-cost.wav
 yo/you-could-lose.wav
 yo/waiting-is-fine.wav
@@ -454,6 +458,7 @@ ig/still-fine.wav
 ig/half-gone.wav
 ig/nearly-finished.wav
 ig/time-is-up.wav
+ig/what-does-it-cost-to-get-there.wav
 ig/what-does-the-store-cost.wav
 ig/you-could-lose.wav
 ig/waiting-is-fine.wav

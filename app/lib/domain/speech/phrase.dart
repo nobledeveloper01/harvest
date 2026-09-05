@@ -101,6 +101,9 @@ enum Phrase {
   /// gets argued with rather than used.
   timeIsUp('time-is-up'),
 
+  /// *"What does it cost you to get this to market?"*
+  whatDoesItCostToGetThere('what-does-it-cost-to-get-there'),
+
   /// *"What does the store charge you a day?"*
   whatDoesTheStoreCost('what-does-the-store-cost'),
 

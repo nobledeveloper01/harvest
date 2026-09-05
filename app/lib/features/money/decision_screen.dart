@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../data/speech/speaker.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/money/decision.dart';
+import '../../domain/money/net_price.dart';
 import '../../domain/money/sourced.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/spoilage/shelf_life.dart';
@@ -30,6 +31,8 @@ class DecisionScreen extends StatefulWidget {
     required this.now,
     required this.onReportPrice,
     required this.onQuoteStorage,
+    required this.onEnterCosts,
+    required this.deductions,
     super.key,
   });
 
@@ -45,6 +48,12 @@ class DecisionScreen extends StatefulWidget {
 
   /// Ask what a store quoted them.
   final VoidCallback onQuoteStorage;
+
+  /// Ask what it costs to get the lot to market.
+  final VoidCallback onEnterCosts;
+
+  /// What is already coming off the top, if anything.
+  final Deductions deductions;
 
   @override
   State<DecisionScreen> createState() => _DecisionScreenState();
@@ -124,6 +133,24 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   icon: Icons.handshake_outlined,
                   label: 'Somebody offered me a price',
                   onTap: widget.onReportPrice,
+                ),
+                const SizedBox(height: Gap.m),
+                /*
+                  Says what it is currently assuming, which is usually nothing.
+
+                  A screen that silently assumed a lorry was free would be
+                  overstating every figure on it by the price of a lorry — and
+                  a farmer has no way to tell whether the number in front of
+                  them already had the fare taken off.
+                */
+                _Another(
+                  icon: Icons.local_shipping_outlined,
+                  label: widget.deductions.isNothing
+                      ? 'Nothing taken off yet for transport'
+                      : 'After ${naira(widget.deductions.transportNaira)} '
+                          'transport and '
+                          '${(widget.deductions.commissionFraction * 100).round()}% commission',
+                  onTap: widget.onEnterCosts,
                 ),
                 if (decision.of(Course.store) == null) ...[
                   const SizedBox(height: Gap.m),

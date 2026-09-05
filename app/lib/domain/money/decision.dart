@@ -13,6 +13,7 @@ library;
 
 import '../lots/lot.dart';
 import '../spoilage/shelf_life.dart';
+import 'net_price.dart';
 import 'sourced.dart';
 import 'storing.dart';
 
@@ -80,10 +81,26 @@ class Decision {
     required Sourced<double>? pricePerKgNow,
     required Sourced<double>? pricePerKgLater,
     StorageOffer? storage,
+    Deductions deductions = const Deductions(),
   }) {
     final kilograms = lot.quantity.kilograms;
 
-    Sourced<double>? sellNow = pricePerKgNow?.map((per) => per * kilograms);
+    /*
+      Net, not gross, and applied to every course alike.
+
+      The gross figure is the one everybody quotes and nobody receives: a lorry
+      has to be paid, an agent takes a share, and some of the load arrives
+      bruised. Comparing a gross "sell today" against a gross "wait" is a fair
+      comparison of two wrong numbers — but comparing gross against a *storage*
+      option whose fee is real would quietly flatter selling, which is the one
+      asymmetry that would matter.
+    */
+    Sourced<double>? net(Sourced<double>? gross) => gross == null
+        ? null
+        : NetPrice.from(grossForLot: gross, deductions: deductions).net;
+
+    Sourced<double>? sellNow =
+        net(pricePerKgNow?.map((per) => per * kilograms));
 
     /*
       Waiting is valued on what will still exist, not on what exists now.
@@ -97,7 +114,7 @@ class Decision {
     final lost = life.lostBy(lot.harvestedAt, until);
     final surviving = kilograms * (1 - lost);
     Sourced<double>? later =
-        pricePerKgLater?.map((per) => per * surviving);
+        net(pricePerKgLater?.map((per) => per * surviving));
 
     final options = <Option>[
       Option(course: Course.sellNow, worth: sellNow),

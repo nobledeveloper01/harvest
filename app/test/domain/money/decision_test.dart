@@ -3,6 +3,7 @@ import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/money/decision.dart';
+import 'package:harvest/domain/money/net_price.dart';
 import 'package:harvest/domain/money/sourced.dart';
 import 'package:harvest/domain/money/storing.dart';
 import 'package:harvest/domain/spoilage/shelf_life.dart';
@@ -171,6 +172,68 @@ void main() {
         expect(option.worth!.from, isNotNull, reason: option.course.name);
       }
       expect(decision.costOfWaiting!.asOf, noon);
+    });
+  });
+
+  group('what the farmer actually receives', () {
+    test('deductions come off every course alike', () {
+      /*
+        Comparing a gross "sell today" against a gross "wait" compares two
+        wrong numbers fairly. Comparing either against a *storage* option whose
+        fee is real would quietly flatter selling — which is the one asymmetry
+        that would change an answer.
+      */
+      final gross = Decision.forLot(
+        lot: lot(),
+        life: window,
+        now: noon,
+        until: noon.add(const Duration(days: 4)),
+        pricePerKgNow: price(400),
+        pricePerKgLater: price(400),
+      );
+      final afterCosts = Decision.forLot(
+        lot: lot(),
+        life: window,
+        now: noon,
+        until: noon.add(const Duration(days: 4)),
+        pricePerKgNow: price(400),
+        pricePerKgLater: price(400),
+        deductions: const Deductions(transportNaira: 8000),
+      );
+
+      expect(gross.of(Course.sellNow)!.worth!.value, 40000);
+      expect(afterCosts.of(Course.sellNow)!.worth!.value, 32000);
+      expect(afterCosts.of(Course.wait)!.worth!.value, 12000);
+    });
+
+    test('and change what waiting costs, because both ends move', () {
+      // ₦32,000 against ₦12,000 rather than ₦40,000 against ₦20,000: the same
+      // ₦20,000 either way, because a flat fare is paid once whichever day the
+      // trip happens.
+      final afterCosts = Decision.forLot(
+        lot: lot(),
+        life: window,
+        now: noon,
+        until: noon.add(const Duration(days: 4)),
+        pricePerKgNow: price(400),
+        pricePerKgLater: price(400),
+        deductions: const Deductions(transportNaira: 8000),
+      );
+      expect(afterCosts.costOfWaiting!.value, 20000);
+    });
+
+    test('a trip that is not worth making leaves nothing, not a negative', () {
+      final hopeless = Decision.forLot(
+        lot: lot(),
+        life: window,
+        now: noon,
+        until: noon.add(const Duration(days: 4)),
+        pricePerKgNow: price(10),
+        pricePerKgLater: price(10),
+        deductions: const Deductions(transportNaira: 8000),
+      );
+      expect(hopeless.of(Course.sellNow)!.worth!.value, 0);
+      expect(hopeless.of(Course.wait)!.worth!.value, 0);
     });
   });
 }
