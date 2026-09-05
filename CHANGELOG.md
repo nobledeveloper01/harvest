@@ -10,6 +10,14 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The net realisable price** — what a farmer actually receives, which is not
+  the number anybody quotes. A lorry has to be paid, an agent takes a share, and
+  some of the load arrives bruised. Commission is charged on **what arrives**,
+  not on what was loaded: charging it on the gross overstates what the agent
+  takes and understates what the road does, and those are separate problems with
+  separate answers — one is negotiable and the other is a road. A trip that costs
+  more than the load is worth is said in words rather than shown as a negative
+  price, which reads as a bug rather than as advice.
 - **A warning lands on the lot it was about.** Tapping a spoilage alert opens
   that lot's decision, not the list of every lot — `docs/04-UX-DESIGN.md` calls
   the decision screen the alert destination, and a warning that opens a list has
