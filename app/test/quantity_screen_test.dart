@@ -362,6 +362,81 @@ void main() {
     expect(save.height, greaterThanOrEqualTo(Target.primary));
   });
 
+  testWidgets('the pad does not move under the thumb', (tester) async {
+    /*
+      Found by using the app: choose a measure, press the first digit, and the
+      assumption card appears *above* the pad — which pushed every key down by
+      more than two rows. The second digit then lands on whatever slid into the
+      place the thumb was already aiming at, and the lot is recorded wrong
+      without anybody being told.
+
+      A number pad is a keyboard. Keyboards do not move.
+    */
+    await pump(tester, size: const Size(360, 640), region: Region.southWest);
+    await choose(tester, Unit.bigBasket);
+
+    final before = tester.getRect(find.bySemanticsLabel('5'));
+    await type(tester, '1');
+    final after = tester.getRect(find.bySemanticsLabel('5'));
+
+    expect(after, before,
+        reason: 'the pad moved between the first digit and the second');
+
+    // And the other order, because a farmer may type the count first and then
+    // say what they counted.
+    await pump(tester, size: const Size(360, 640), region: Region.southWest);
+    await type(tester, '1');
+    final beforeUnit = tester.getRect(find.bySemanticsLabel('5'));
+    await choose(tester, Unit.bigBasket);
+    expect(tester.getRect(find.bySemanticsLabel('5')), beforeUnit,
+        reason: 'the pad moved when the measure was chosen');
+  });
+
+  testWidgets('the measure you chose is still in the row you chose it from',
+      (tester) async {
+    /*
+      The row shrinks once a measure is chosen, and a shrunk row fits more of
+      the nine — which slid the one just tapped off the right edge. The tick
+      confirming the answer was then on something outside the viewport, and the
+      farmer's own answer scrolled away at the moment they gave it.
+    */
+    await pump(tester, size: const Size(360, 640), region: Region.southWest);
+    await choose(tester, Unit.bigBasket);
+    await tester.pumpAndSettle();
+
+    final row = tester.getRect(find.byKey(const ValueKey('units')));
+    final tile = tester.getRect(find.bySemanticsLabel(Unit.bigBasket.label));
+
+    expect(tile.left, greaterThanOrEqualTo(row.left - 0.5));
+    expect(tile.right, lessThanOrEqualTo(row.right + 0.5),
+        reason: 'the chosen measure is off the edge of the row');
+  });
+
+  testWidgets('the weight stays on screen on the 5-inch floor', (tester) async {
+    /*
+      The other half of pinning the pad. Something has to be below the fold on
+      a 360x640 screen and it must not be this: the whole screen exists to say
+      what the farmer has, in a unit the rest of the app can price.
+    */
+    await pump(tester, size: const Size(360, 640), region: Region.southWest);
+    await type(tester, '15');
+    await choose(tester, Unit.bigBasket);
+
+    /*
+      Against the viewport, not the screen. A widget pushed out of a scroll
+      view still has a global rect on the screen — asserting `bottom <= 640`
+      passes for something the farmer cannot see, which is the failure mode
+      this whole test exists to catch.
+    */
+    final viewport = tester.getRect(find.byType(SingleChildScrollView));
+    final figure = tester.getRect(find.text('About 675 kg'));
+
+    expect(viewport.contains(figure.topLeft), isTrue,
+        reason: 'the weight starts outside the part of the screen you can see');
+    expect(viewport.contains(figure.bottomRight - const Offset(1, 1)), isTrue,
+        reason: 'the weight runs off the part of the screen you can see');
+  });
+
   group('getting out of it', () {
     testWidgets('the wrong crop is not a dead end', (tester) async {
       /*

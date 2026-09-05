@@ -240,66 +240,91 @@ class _QuantityScreenState extends State<QuantityScreen> {
       body: PageCanvas(
         child: SafeArea(
           /*
-            The pad scrolls; the Save button does not.
+            The pad and the Save button are pinned. Only what is above them
+            scrolls.
 
-            Found by running it: with the assumption card on screen, a pad and a
-            button below it push Save off the bottom of a 6.1" phone — and the
-            design floor is 5". A primary action that has to be scrolled to is a
-            primary action a farmer in a market will not find, and no test
-            measures whether something is above the fold.
+            Both halves of that were found by using the app, not by a test.
+
+            Save fell off the bottom of a 6.1" phone once the assumption card
+            was on screen, and the design floor is 5" — a primary action that
+            has to be scrolled to is one a farmer in a market will not find.
+
+            Then the pad itself moved. The card appears on the first digit,
+            which pushed every key down by two and a half rows on the floor, so
+            the second digit landed on whatever had slid under a thumb that was
+            already aiming. The lot is then recorded wrong and nobody is told.
+            A number pad is a keyboard, and keyboards do not move.
+
+            Pinning the pad costs the assumption card its place above the fold
+            on a 5" screen, so the figure itself — the one sentence this screen
+            exists to show — moved up into the typed box, which never scrolls
+            out of view. What stays in the card is where the figure came from
+            and the way to overrule it.
           */
           child: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
+                child: _FadedEdge(
+                  child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.s),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                _Typed(
-                  typed: _typed,
-                  suffix: _correcting ? 'kg' : _unit?.label ?? '',
-                ),
-                if (!_correcting) ...[
-                  const SizedBox(height: Gap.m),
-                  _UnitRow(chosen: _unit, onChoose: _choose),
-                ],
-                const SizedBox(height: Gap.m),
-                _Assumption(
-                quantity: quantity,
-                unit: _unit,
-                region: widget.region,
-                correcting: _correcting,
-                // Tap the figure to hear it again. Somebody in a market with
-                // the volume down needs a second chance at the one sentence
-                // that says what they have.
-                onSayAgain: _sayWeight,
-                onChangeRegion: _askWhereTheyFarm,
-                  onCorrect: quantity == null
-                      ? null
-                      : () {
-                          widget.speaker.say(Phrase.isThatRight, widget.language);
-                          setState(() {
-                            _assumed = quantity;
-                            _typed = '';
-                          });
-                        },
-                ),
+                      _Typed(
+                        typed: _typed,
+                        suffix: _correcting ? 'kg' : _unit?.label ?? '',
+                        kilograms: _correcting || quantity == null
+                            ? null
+                            : tidy(quantity.kilograms),
+                        hint: _correcting
+                            ? 'The weight you measured.'
+                            : 'Choose a measure and type how many.',
+                        // Tap the figure to hear it again. Somebody in a market
+                        // with the volume down needs a second chance at the one
+                        // sentence that says what they have.
+                        onSayAgain: _sayWeight,
+                      ),
+                      if (!_correcting) ...[
+                        const SizedBox(height: Gap.m),
+                        _UnitRow(chosen: _unit, onChoose: _choose),
+                      ],
                       const SizedBox(height: Gap.m),
-                      Keypad(onPress: _press),
-                      const SizedBox(height: Gap.m),
+                      _Assumption(
+                        quantity: quantity,
+                        unit: _unit,
+                        region: widget.region,
+                        correcting: _correcting,
+                        onChangeRegion: _askWhereTheyFarm,
+                        onCorrect: quantity == null
+                            ? null
+                            : () {
+                                widget.speaker
+                                    .say(Phrase.isThatRight, widget.language);
+                                setState(() {
+                                  _assumed = quantity;
+                                  _typed = '';
+                                });
+                              },
+                      ),
                     ],
                   ),
                 ),
+                ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
-                child: PrimaryButton(
-                  label: 'Save',
-                  icon: Icons.check_rounded,
-                  onPressed: (_correcting ? _amount > 0 : quantity != null)
-                      ? _confirm
-                      : null,
+                padding: const EdgeInsets.fromLTRB(Gap.l, Gap.s, Gap.l, Gap.m),
+                child: Column(
+                  children: [
+                    Keypad(onPress: _press),
+                    const SizedBox(height: Gap.m),
+                    PrimaryButton(
+                      label: 'Save',
+                      icon: Icons.check_rounded,
+                      onPressed: (_correcting ? _amount > 0 : quantity != null)
+                          ? _confirm
+                          : null,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -310,12 +335,59 @@ class _QuantityScreenState extends State<QuantityScreen> {
   }
 }
 
-/// The number as typed, at the largest size on the screen.
+/// A scrolling region whose bottom edge fades instead of ending in a cut.
+///
+/// The assumption card does not fit above the pad on a 6.1" phone and cannot
+/// on the 5" floor, so it is scrolled to. A hard clip through the middle of a
+/// sentence reads as a broken screen rather than as more to see; a fade says
+/// which way the rest of it is.
+class _FadedEdge extends StatelessWidget {
+  const _FadedEdge({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.white, Colors.white, Colors.transparent],
+        stops: [0, 0.92, 1],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: child,
+    );
+  }
+}
+
+/// The number as typed, at the largest size on the screen — and under it, what
+/// the app makes of it in kilograms.
+///
+/// The figure lives here rather than in the card below because this box is the
+/// one part of the screen that is never scrolled past. On the 5" floor there is
+/// not room for the box, the measures, the card, the pad and Save all at once;
+/// something has to be below the fold, and it cannot be the sentence that says
+/// what the farmer has.
 class _Typed extends StatelessWidget {
-  const _Typed({required this.typed, required this.suffix});
+  const _Typed({
+    required this.typed,
+    required this.suffix,
+    required this.kilograms,
+    required this.hint,
+    required this.onSayAgain,
+  });
 
   final String typed;
   final String suffix;
+
+  /// The weight, already rounded, or null when there is not one yet.
+  final String? kilograms;
+
+  /// What to say in the figure's place until there is a figure.
+  final String hint;
+
+  final VoidCallback onSayAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -323,24 +395,27 @@ class _Typed extends StatelessWidget {
     final freshness = Theme.of(context).extension<Freshness>()!;
     final scheme = Theme.of(context).colorScheme;
 
-    return Semantics(
-      liveRegion: true,
-      label: typed.isEmpty ? 'nothing entered yet' : '$typed $suffix',
-      child: ExcludeSemantics(
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Gap.l,
-            vertical: Gap.m,
-          ),
-          decoration: BoxDecoration(
-            color: freshness.raised,
-            borderRadius: Radii.card,
-            border: Border.all(color: freshness.outline),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Gap.l,
+        vertical: Gap.m,
+      ),
+      decoration: BoxDecoration(
+        color: freshness.raised,
+        borderRadius: Radii.card,
+        border: Border.all(color: freshness.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            liveRegion: true,
+            label: typed.isEmpty ? 'nothing entered yet' : '$typed $suffix',
+            child: ExcludeSemantics(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
               Text(
                 typed.isEmpty ? '0' : typed,
                 key: const ValueKey('typed'),
@@ -357,18 +432,81 @@ class _Typed extends StatelessWidget {
                       : scheme.onSurface,
                 ),
               ),
-              const SizedBox(width: Gap.s),
-              Expanded(
-                child: Text(
-                  suffix,
-                  style: text.bodyLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: Text(
+                      suffix,
+                      style: text.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: Gap.xs),
+          /*
+            "About", never a bare number.
+
+            The weight is inferred from a table of averages. Printing "45 kg"
+            claims a precision nobody has, and every figure downstream — the
+            loss in naira, the price a buyer offers — inherits that claim.
+          */
+          if (kilograms case final rounded?)
+            Semantics(
+              button: true,
+              container: true,
+              label: 'about $rounded kilograms, tap to hear it again',
+              child: ExcludeSemantics(
+                child: Pressable(
+                  borderRadius: Radii.chip,
+                  onTap: onSayAgain,
+                  child: Row(
+                    children: [
+                      // Flexible, because the figure and the unit are a
+                      // sentence that grows: "About 1000 kg" at 200% type is
+                      // wider than the box it sits in, and an unflexed row
+                      // overflows into a yellow-striped bar instead of
+                      // wrapping.
+                      Flexible(
+                        child: Text(
+                          'About $rounded kg',
+                          style: text.headlineSmall?.copyWith(
+                            color: freshness.fresh,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: Gap.m),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: freshness.fresh.withValues(alpha: 0.16),
+                          borderRadius: Radii.pill,
+                        ),
+                        child: Icon(
+                          Icons.volume_up_rounded,
+                          size: 20,
+                          color: freshness.fresh,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
+            )
+          else
+            // The same slot, so the measures below do not jump the moment a
+            // figure arrives.
+            SizedBox(
+              height: 34,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(hint, style: text.bodyMedium),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -379,27 +517,78 @@ class _Typed extends StatelessWidget {
 /// A horizontal row rather than a screen of its own: nine units is not enough
 /// to be worth one, and the pad below has to stay visible or the two halves of
 /// the question stop being one question.
-class _UnitRow extends StatelessWidget {
+class _UnitRow extends StatefulWidget {
   const _UnitRow({required this.chosen, required this.onChoose});
 
   final Unit? chosen;
   final void Function(Unit) onChoose;
 
   @override
+  State<_UnitRow> createState() => _UnitRowState();
+}
+
+class _UnitRowState extends State<_UnitRow> {
+  /// One key per measure, so the chosen one can be brought back into view.
+  final _keys = {for (final unit in Unit.values) unit: GlobalKey()};
+
+  @override
+  void didUpdateWidget(_UnitRow old) {
+    super.didUpdateWidget(old);
+    /*
+      Keep the answer in sight.
+
+      The row shrinks when a measure is chosen, and a shrunk row fits more of
+      the nine measures — which pushed the one just tapped off the right edge.
+      The farmer's own answer then scrolled away at the moment they gave it,
+      and the tick they were shown was on something they could no longer see.
+    */
+    if (widget.chosen != null && widget.chosen != old.chosen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final box = _keys[widget.chosen]!.currentContext;
+        if (box == null || !mounted) return;
+        Scrollable.ensureVisible(
+          box,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    /*
+      The pictures are large while the question is open and small once it is
+      answered.
+
+      Until a measure is chosen, this row *is* the question and a picture is
+      how it gets answered without reading. After it is answered the measure is
+      already named twice above — in the typed box and in the sentence under it
+      — and 118 dp of pictures is holding space the assumption card needs on a
+      6.1" screen, let alone the 5" floor.
+
+      The row changes size when a measure is tapped, which is a tap in the row
+      itself. It never changes size while digits are being pressed, which is
+      the only moment a moving layout can take a number nobody typed.
+    */
+    final compact = widget.chosen != null;
+
     return SizedBox(
-      height: 118,
+      height: compact ? Target.standard : 118,
       child: ListView.separated(
         key: const ValueKey('units'),
         scrollDirection: Axis.horizontal,
         itemCount: Unit.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: Gap.m),
+        separatorBuilder: (_, _) => const SizedBox(width: Gap.s),
         itemBuilder: (context, index) {
           final unit = Unit.values[index];
           return _UnitTile(
+            key: _keys[unit],
             unit: unit,
-            picked: unit == chosen,
-            onTap: () => onChoose(unit),
+            picked: unit == widget.chosen,
+            compact: compact,
+            onTap: () => widget.onChoose(unit),
           );
         },
       ),
@@ -411,11 +600,17 @@ class _UnitTile extends StatelessWidget {
   const _UnitTile({
     required this.unit,
     required this.picked,
+    required this.compact,
     required this.onTap,
+    super.key,
   });
 
   final Unit unit;
   final bool picked;
+
+  /// A picture over a label, or a picture beside one.
+  final bool compact;
+
   final VoidCallback onTap;
 
   @override
@@ -430,7 +625,7 @@ class _UnitTile extends StatelessWidget {
       label: unit.label,
       child: ExcludeSemantics(
         child: SizedBox(
-          width: 84,
+          width: compact ? null : 84,
           child: Pressable(
             onTap: onTap,
             child: AnimatedContainer(
@@ -445,7 +640,47 @@ class _UnitTile extends StatelessWidget {
                   width: picked ? 2 : 1,
                 ),
               ),
-              child: Column(
+              child: compact
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Gap.s),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipRRect(
+                            borderRadius: Radii.chip,
+                            child: Image.asset(
+                              'assets/units/${unit.id}.png',
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.cover,
+                              excludeFromSemantics: true,
+                            ),
+                          ),
+                          const SizedBox(width: Gap.s),
+                          Text(
+                            unit.label,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: picked
+                                      ? freshness.fresh
+                                      : scheme.onSurface,
+                                ),
+                          ),
+                          if (picked) ...[
+                            const SizedBox(width: Gap.s),
+                            Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: freshness.fresh,
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  : Column(
                 children: [
                   SizedBox(
                     height: 66,
@@ -515,7 +750,10 @@ class _UnitTile extends StatelessWidget {
   }
 }
 
-/// What the app is assuming, said plainly, with the door out of it.
+/// Where the figure came from, and the door out of it.
+///
+/// The figure itself is in the typed box above; this is the part a farmer
+/// reads once, and only if they doubt it.
 class _Assumption extends StatelessWidget {
   const _Assumption({
     required this.quantity,
@@ -523,7 +761,6 @@ class _Assumption extends StatelessWidget {
     required this.region,
     required this.correcting,
     required this.onCorrect,
-    required this.onSayAgain,
     required this.onChangeRegion,
   });
 
@@ -532,7 +769,6 @@ class _Assumption extends StatelessWidget {
   final Region region;
   final bool correcting;
   final VoidCallback? onCorrect;
-  final VoidCallback onSayAgain;
   final VoidCallback onChangeRegion;
 
   @override
@@ -570,74 +806,25 @@ class _Assumption extends StatelessWidget {
         edge: freshness.atRisk.withValues(alpha: 0.45),
       );
     }
-    if (quantity == null || unit == null) {
-      return shell(
-        Text(
-          'Choose a measure and type how many.',
-          style: text.bodyMedium,
-        ),
-      );
-    }
+    /*
+      Nothing at all until there is something to be uncertain about. The
+      prompt that used to live here — "choose a measure and type how many" —
+      is in the typed box now, where it holds the place the figure will take.
+    */
+    if (quantity == null || unit == null) return const SizedBox.shrink();
 
     /*
-      "About", never a bare number.
-
-      The weight is inferred from a table of averages. Printing "45 kg" claims a
-      precision nobody has, and every figure downstream — the loss in naira, the
-      price a buyer offers — inherits that claim. `isRegional` is what lets the
-      sentence say whether the average came from this farmer's own belt or from
-      the country as a whole, which is the difference between an assumption they
-      can accept and one they should probably correct.
+      `isRegional` is what lets the sentence say whether the average came from
+      this farmer's own belt or from the country as a whole, which is the
+      difference between an assumption they can accept and one they should
+      probably correct.
     */
     final regional = UnitTable.current.isRegional(unit!, region);
-    final rounded = tidy(quantity!.kilograms);
 
     return shell(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Semantics(
-            button: true,
-            container: true,
-            label: 'about $rounded kilograms, tap to hear it again',
-            child: ExcludeSemantics(
-              child: Pressable(
-                borderRadius: Radii.chip,
-                onTap: onSayAgain,
-                child: Row(
-                  children: [
-                    // Flexible, because the figure and the unit are a sentence
-                    // that grows: "About 1000 kg" at 200% type is wider than
-                    // the card it sits in, and an unflexed row overflows into
-                    // a yellow-striped bar instead of wrapping.
-                    Flexible(
-                      child: Text(
-                        'About $rounded kg',
-                        style: text.headlineSmall?.copyWith(
-                          color: freshness.fresh,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Gap.m),
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: freshness.fresh.withValues(alpha: 0.16),
-                        borderRadius: Radii.pill,
-                      ),
-                      child: Icon(
-                        Icons.volume_up_rounded,
-                        size: 20,
-                        color: freshness.fresh,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: Gap.xs),
           Text(
             unit!.isWeight
                 ? 'You gave me a weight, so this is not an estimate.'
