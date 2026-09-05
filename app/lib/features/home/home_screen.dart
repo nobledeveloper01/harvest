@@ -328,13 +328,18 @@ class _LotCard extends StatelessWidget {
 
   /// How long since it left the ground, in the words somebody would use.
   ///
-  /// Days, because that is the unit a farmer decides in and because the
-  /// harvest date is a day — printing hours would claim a precision the stored
-  /// date does not have.
+  /// Days, because that is the unit a farmer decides in — and *calendar* days
+  /// on both sides. `harvestedAt` carries a time of day since ADR-0005, and
+  /// subtracting an instant from a midnight counts a lot picked at two
+  /// yesterday afternoon as picked today.
   String get _since {
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(lot.harvestedAt)
-        .inDays;
+    final picked = DateTime(
+      lot.harvestedAt.year,
+      lot.harvestedAt.month,
+      lot.harvestedAt.day,
+    );
+    final days =
+        DateTime(now.year, now.month, now.day).difference(picked).inDays;
     return switch (days) {
       0 => 'Picked today',
       1 => 'Picked yesterday',

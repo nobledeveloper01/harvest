@@ -112,8 +112,8 @@ class Lot {
     required DateTime now,
   }) {
     // Compared by day, not by instant. A farmer logging this morning's harvest
-    // at nine o'clock has a `harvestedAt` of midnight today, which is in the
-    // past; one logging it at midnight would otherwise be an hour in the
+    // at nine o'clock is picking "today" from a row of days; one logging at
+    // one minute past midnight would otherwise be asking for a moment in the
     // future and be refused.
     final day = DateTime(harvestedAt.year, harvestedAt.month, harvestedAt.day);
     final today = DateTime(now.year, now.month, now.day);
@@ -121,11 +121,25 @@ class Lot {
     if (day.isAfter(today)) return null;
     if (today.difference(day) > harvestBacklog) return null;
 
+    /*
+      The instant is kept, not rounded down to the day. See ADR-0005.
+
+      Rounding down looked like modesty — a harvest happens on a day, not at a
+      second — but midnight is not a neutral point in the day, it is the most
+      pessimistic one available. A farmer who logs ugu at noon from an open
+      pile was told twelve hours had gone against a nine-hour window: the lot
+      was **born overdue**, on the screen whose whole promise is a countdown.
+
+      Never after `now`, because a future harvest is not a thing and the clamp
+      is what keeps a clock skew from producing a negative age.
+    */
+    final picked = harvestedAt.isAfter(now) ? now : harvestedAt;
+
     return Lot._(
       crop: crop,
       quantity: quantity,
       storage: storage,
-      harvestedAt: day,
+      harvestedAt: picked,
       loggedAt: now,
       outcome: null,
     );

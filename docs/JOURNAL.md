@@ -5,6 +5,113 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Two defects a test suite of 326 could not see
+
+**Phase 3.** A pass through the app on a real simulator, tapping it the way a
+farmer would. Two hours, two defects, neither of them findable from the code.
+
+### The pad moved between my first digit and my second
+
+I meant to type forty baskets. I tapped `4`, then tapped where `0` had been, and
+the screen said `15`.
+
+The assumption card — *About 750 kg*, the sentence this screen exists to
+produce — appears on the **first digit**, above the pad. Adding it pushed every
+key down by 197 dp on the 5" floor: two and a half rows. So the second digit
+lands on whatever slid under a thumb that was already aiming, and the lot is
+recorded wrong with nobody told. There is no error state. There is no way for
+the farmer to know. It is the quietest kind of wrong a data-entry screen can be.
+
+A number pad is a keyboard, and keyboards do not move. The pad and Save are
+pinned now; only what is above them scrolls.
+
+Pinning cost the assumption card its place above the fold — on 360×640 there is
+not room for a display, nine measures, a card, twelve keys and a button, and
+something has to be below it. It cannot be the figure. So the figure moved up
+into the typed box, which never scrolls out of view, and what stays in the card
+is where the figure came from and how to overrule it.
+
+Then the card was clipped mid-word with nothing to say there was more, so the
+scroll edge fades. Then the measures — 118 dp of pictures answering a question
+that has already been answered — shrink to a chip row once one is chosen, which
+happens on the tap in that row and never while digits are being pressed. And
+then the row, being shorter, fitted more measures and scrolled the chosen one
+off the right edge, so the answer slid out of sight at the moment it was given.
+That one needed its own fix and its own test.
+
+Four changes, each one caused by the last. None of them visible from the code.
+
+### A lot could be born overdue
+
+Then the real one. I logged four baskets of tomato picked today, kept in the
+shade, and the freshness ring came up **amber with an eighth of its arc left**.
+For a lot logged thirty seconds earlier.
+
+`Lot.record` rounded the harvest date down to midnight. The comment explaining
+why is a good comment — a harvest happens on a day, nobody types a time,
+storing `12:00:00.000` invents precision and makes two lots picked the same
+morning sort by when the farmer opened the app. All true, and all about
+**storing and sorting**. Nobody checked it against the one thing that consumes
+the field: the countdown measures forward from `harvestedAt` as a moment.
+
+Midnight is not a neutral moment. It is the earliest instant the day contains,
+so rounding down does not express uncertainty about the harvest time — it takes
+the most pessimistic reading available, silently, every time. A probe across the
+table:
+
+| Lot | Window | Logged at | State |
+|---|---|---|---|
+| Ugu, out in the open | 9 h | 12:00 | **overdue** |
+| Spinach, in the shade | 13 h | 18:00 | **overdue** |
+| Tomato, out in the open | 18 h | 21:00 | **overdue** |
+
+A farmer walks in from the field, logs their greens, and the app tells them the
+window has closed. That is the wedge failing on first use, and there was no test
+anywhere that could have noticed, because every test that touches a countdown
+supplies its own `harvestedAt`.
+
+ADR-0005 keeps the instant. The honest expression of *not knowing when in the
+day* is the window's own range — which already exists, and which the engine
+already widens when the weather is missing. Adding a second pessimism on top of
+it double-counts the same uncertainty somewhere nobody can see.
+
+### What surprised us
+
+**The rationale was right and the decision was wrong.** I have written a lot of
+comments in this repo defending choices. This is the first one I have found that
+argues its case correctly, in a domain adjacent to the one that mattered, and is
+wrong anyway. "Spurious precision" is a real concern about a stored value; it is
+not a reason to substitute the day's most pessimistic instant. The comment was
+persuasive enough that I read it twice before I stopped agreeing with it.
+
+**Three hundred and twenty-six tests, and both defects survived all of them.**
+Not because the tests are weak — several are the strongest in the portfolio —
+but because both bugs live in the gap between components that are each correct.
+`Lot.record` stores a defensible value. `ShelfLifeEngine` measures correctly
+from whatever it is given. `QuantityScreen` lays out exactly what it is asked
+to. Every unit is right and the product is wrong, and only running it shows you.
+
+That is now five defects from three sessions at the simulator, against zero from
+reading code. The ratio is not subtle any more.
+
+### Proved the gates fire
+
+Four new tests, each broken on purpose first:
+
+- pad position across the first digit, and across a measure chosen after digits
+  — restore the pad to the scroll and it fails with the two rects, 24 dp apart
+- the weight inside the **scroll viewport**, not merely inside the screen. The
+  first version asserted `bottom <= 640`, which a widget scrolled out of view
+  passes for free; moving the box below the measures failed only after the
+  assertion was rewritten against the viewport
+- the chosen measure inside the row's own rect — disable the scroll-back and it
+  is 143 dp past the right edge
+- and the one that matters: for **every** crop, **every** storage condition and
+  six times of day, a lot logged today has spent none of its window. Restore
+  the midnight rounding and it fails on the first combination it tries.
+
+---
+
 ## 2026-09-05 — Phase 3 opens, and the losing case is narrower than it looks
 
 **Phase 3.**

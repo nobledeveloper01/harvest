@@ -271,6 +271,21 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **A lot could be born overdue.** `Lot.record` rounded the harvest date down to
+  midnight, so a farmer logging ugu at noon from an open pile had spent twelve
+  hours of a nine-hour window before putting the phone down — the countdown ran
+  out on the screen whose whole promise is a countdown, for hours the app had
+  invented. The instant is kept now (ADR-0005); the uncertainty about *when in
+  the day* belongs in the window's own range, where it already is, not in a
+  second hidden pessimism nobody can see. Found by using the app.
+- **The number pad moved between two digits.** The assumption card appears on
+  the first digit, which pushed every key down by two and a half rows on the 5"
+  floor — so the second digit landed on whatever had slid under a thumb that was
+  already aiming, and the lot was recorded wrong with nobody told. The pad and
+  Save are pinned now and the kilogram figure moved up into the typed box, which
+  never scrolls out of view. The measures shrink to a chip row once one is
+  chosen, and the chosen one scrolls back into sight. Found by using the app —
+  it took a number off me on the first try.
 - **Assets that existed and would not have shipped.** Flutter's `assets:`
   directory entries do not recurse, so `assets/speech/ha/` bundles the phrases
   and silently skips `assets/speech/ha/crop/` — no build error in either

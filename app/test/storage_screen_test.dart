@@ -110,7 +110,9 @@ void main() {
 
     expect(saved, isNotNull);
     expect(saved!.storage, StorageCondition.openAir);
-    expect(saved!.harvestedAt, DateTime(2026, 9, 5));
+    expect(saved!.harvestedAt, DateTime(2026, 9, 5, 12),
+        reason: 'a lot picked today has not been sitting since midnight');
+    expect(saved!.ageAtLogging, Duration.zero);
     expect(saved!.quantity, basket);
     expect(saved!.crop, Crop.tomato);
   });
@@ -135,8 +137,9 @@ void main() {
     await tester.tap(find.text('Save this lot'));
     await tester.pump();
 
-    expect(saved!.harvestedAt, DateTime(2026, 9, 2));
-    expect(saved!.ageAtLogging, const Duration(days: 3, hours: 12));
+    expect(saved!.harvestedAt, DateTime(2026, 9, 2, 12));
+    expect(saved!.ageAtLogging, const Duration(days: 3),
+        reason: 'three days ago is three days, not three and a bit');
   });
 
   testWidgets('the day row offers exactly what the domain accepts', (tester) async {
@@ -153,7 +156,7 @@ void main() {
     await chooseDay(tester, '14 days ago');
     await tester.tap(find.text('Save this lot'));
     await tester.pump();
-    expect(saved!.harvestedAt, DateTime(2026, 8, 22));
+    expect(saved!.harvestedAt, DateTime(2026, 8, 22, 12));
 
     expect(find.bySemanticsLabel('15 days ago'), findsNothing);
   });

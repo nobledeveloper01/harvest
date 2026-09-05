@@ -29,6 +29,63 @@ void main() {
   const cool = Weather(celsius: 15, relativeHumidity: 85);
   const reference = Weather(celsius: 25, relativeHumidity: 85);
 
+  group('a lot is never born spoiled', () {
+    /*
+      Found by using the app. Ugu logged at noon from an open pile showed the
+      grey ring of a closed window before the farmer had put the phone down —
+      the countdown had spent twelve hours against a nine-hour prediction
+      because `Lot.record` stored midnight as the moment of harvest.
+
+      Across every crop, every condition and every hour somebody might be
+      standing in a field: what is logged as picked today has time left.
+    */
+    test('whatever it is, wherever it is kept, whenever it is logged', () {
+      for (final crop in Crop.values) {
+        for (final storage in StorageCondition.values) {
+          for (final hour in [0, 6, 12, 18, 21, 23]) {
+            final at = DateTime(2026, 9, 5, hour, 45);
+            final fresh = Lot.record(
+              crop: crop,
+              quantity: basket,
+              storage: storage,
+              harvestedAt: at,
+              now: at,
+            )!;
+            final life = ShelfLifeEngine.predict(lot: fresh)!;
+
+            expect(
+              life.spentAt(fresh.harvestedAt, at),
+              0,
+              reason: '${crop.id} in ${storage.id} logged at $hour:45 was '
+                  'already part-spoiled the moment it was recorded',
+            );
+          }
+        }
+      }
+    });
+
+    test('and a day later it has spent about a day, not two', () {
+      final picked = DateTime(2026, 9, 4, 18);
+      final lot = Lot.record(
+        crop: Crop.tomato,
+        quantity: basket,
+        storage: StorageCondition.coldRoom,
+        harvestedAt: picked,
+        now: picked,
+      )!;
+
+      // A cold room is the one condition long enough to measure a day against
+      // without the window closing first.
+      final life = ShelfLifeEngine.predict(lot: lot)!;
+      final aDayOn = picked.add(const Duration(days: 1));
+
+      expect(
+        life.spentAt(lot.harvestedAt, aDayOn),
+        closeTo(const Duration(days: 1).inMinutes / life.shortest.inMinutes, 0.001),
+      );
+    });
+  });
+
   group('the window', () {
     test('is a range, never a number', () {
       /*

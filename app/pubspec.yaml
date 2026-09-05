@@ -60,6 +60,13 @@ dev_dependencies:
   drift_dev: ^2.34.6
   build_runner: ^2.16.1
 
+  # Declared, not borrowed. `test/migration_test.dart` builds a real version-1
+  # database in raw SQL and opens it with drift's migrator, so it imports
+  # sqlite3 directly. It resolved transitively through drift and worked — until
+  # the day a transitive bump moves it, and the test that proves an upgrade
+  # keeps a farmer's lots is the one that stops compiling.
+  sqlite3: ^3.5.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

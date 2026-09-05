@@ -21,18 +21,34 @@ void main() {
 
   group('when it was harvested', () {
     test('today is the ordinary case', () {
-      expect(record()?.harvestedAt, DateTime(2026, 9, 5));
+      expect(record()?.harvestedAt, noon);
     });
 
-    test('the date is kept to the day, not the instant', () {
+    test('the instant is kept, because midnight is not a neutral guess', () {
       /*
-        A harvest happened on a day. Storing 12:00:00.000 would make two lots
-        picked the same morning sort by when the farmer happened to open the
-        app, and would put a spurious precision into every duration computed
-        from it.
+        This was the other way round until ADR-0005. Rounding down to the day
+        reads as modesty about a figure nobody measured, but midnight is the
+        most pessimistic instant the day contains, and the countdown consumes
+        `harvestedAt` as a moment. Ugu logged at noon from an open pile was
+        twelve hours into a nine-hour window before the farmer put the phone
+        down: born overdue, on the screen whose whole promise is a countdown.
       */
       final lot = record(harvestedAt: DateTime(2026, 9, 4, 17, 42));
-      expect(lot!.harvestedAt, DateTime(2026, 9, 4));
+      expect(lot!.harvestedAt, DateTime(2026, 9, 4, 17, 42));
+    });
+
+    test('and never a moment that has not happened yet', () {
+      /*
+        The screen cannot offer a future date, so this is about a clock that
+        moves under the app — and a harvest in the future is an age that runs
+        backwards through every figure computed from it.
+      */
+      final lot = record(
+        harvestedAt: DateTime(2026, 9, 5, 23, 30),
+        now: noon,
+      );
+      expect(lot!.harvestedAt, noon);
+      expect(lot.ageAtLogging, Duration.zero);
     });
 
     test('fourteen days back is allowed, fifteen is not', () {
