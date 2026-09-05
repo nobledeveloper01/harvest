@@ -2,9 +2,20 @@ import 'dart:ui' show Brightness;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 
-/// Remembers which language the farmer chose.
+/// The handful of things the app remembers about the farmer.
+///
+/// It was `Settings` until it held three things. A name that describes
+/// what a class was on the day it was written is a name that lies quietly
+/// afterwards.
+///
+/// All three are scalars that have to be readable before anything is drawn —
+/// the first screen depends on the language, the theme decides how everything
+/// looks, the region decides what a basket weighs — so they are preferences
+/// rather than rows. Opening SQLite to answer "which of five" would put a
+/// database on the launch path.
 ///
 /// FR-1.1 and Phase 1: the picker is the first screen **once**. Somebody who
 /// cannot read the app has already done the hardest thing it asks of them by
@@ -15,8 +26,8 @@ import '../../domain/speech/phrase.dart';
 /// has to be readable before anything else is — the first screen depends on it
 /// — and opening SQLite to answer "which of five" would put a database on the
 /// launch path for one string.
-class LanguageStore {
-  const LanguageStore();
+class Settings {
+  const Settings();
 
   /// The BCP-47 code is stored, not the enum index.
   ///
@@ -68,6 +79,33 @@ class LanguageStore {
   }
 
   static const _brightness = 'theme.brightness';
+
+  /// Where the farmer farms, or null if they have not said.
+  ///
+  /// **Never asked for as a location.** The app has no GPS permission and
+  /// wants none: it asks which trade belt the farmer is in, from five
+  /// pictures, at the moment the answer changes a number in front of them —
+  /// and *"somewhere else"* is one of the five. A basket is a market object
+  /// and market conventions follow trade corridors rather than coordinates, so
+  /// a satellite fix would answer a question nobody asked.
+  Future<Region?> readRegion() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString(_region);
+    if (id == null) return null;
+    for (final region in Region.values) {
+      if (region.id == id) return region;
+    }
+    // Same rule as the language: a stored value this version cannot resolve
+    // means ask again, not guess.
+    return null;
+  }
+
+  Future<void> writeRegion(Region region) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_region, region.id);
+  }
+
+  static const _region = 'lots.region';
 
   /// Forget the choice, so the picker is shown again.
   ///

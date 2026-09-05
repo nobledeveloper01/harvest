@@ -4,7 +4,7 @@ import 'core/theme.dart';
 import 'data/alerts/alarms.dart';
 import 'data/lots/lot_store.dart';
 import 'data/lots/lots_database.dart';
-import 'data/settings/language_store.dart';
+import 'data/settings/settings.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
 import 'domain/lots/lot.dart';
@@ -36,7 +36,7 @@ class HarvestApp extends StatefulWidget {
   });
 
   final Speaker? speaker;
-  final LanguageStore? languages;
+  final Settings? languages;
   final LotStore? lots;
   final Alarms? alarms;
 
@@ -46,7 +46,7 @@ class HarvestApp extends StatefulWidget {
 
 class _HarvestAppState extends State<HarvestApp> {
   late final Speaker _speaker = widget.speaker ?? Speaker();
-  late final LanguageStore _languages = widget.languages ?? const LanguageStore();
+  late final Settings _languages = widget.languages ?? const Settings();
   late final LotStore _lots = widget.lots ?? LotStore(LotsDatabase());
   late final Alarms _alarms = widget.alarms ?? LocalAlarms();
 
@@ -61,6 +61,7 @@ class _HarvestAppState extends State<HarvestApp> {
   Speech? _language;
   Crop? _crop;
   Quantity? _quantity;
+  Region? _region;
 
   /*
     Three states, not two: unknown, none, and chosen.
@@ -82,11 +83,13 @@ class _HarvestAppState extends State<HarvestApp> {
   Future<void> _start() async {
     final language = await _languages.read();
     final brightness = await _languages.readBrightness();
+    final region = await _languages.readRegion();
     final stored = await _lots.all();
     if (!mounted) return;
     setState(() {
       _language = language;
       _brightness = brightness ?? Brightness.dark;
+      _region = region;
       _stored = stored;
       // Straight into logging when there is nothing to show. An empty list
       // above a button is a screen that asks the farmer to read their way to
@@ -207,7 +210,8 @@ class _HarvestAppState extends State<HarvestApp> {
   /// one is "how far through logging are they". Flattening them made a case
   /// the analyzer could prove unreachable, which is a good sign that two
   /// questions were being asked in one place.
-  Widget _logFlow(Speech language) => switch ((_crop, _quantity)) {
+  Widget _logFlow(Speech language) {
+    return switch ((_crop, _quantity)) {
         (null, _) => CropGridScreen(
             speaker: _speaker,
             language: language,
@@ -223,8 +227,13 @@ class _HarvestAppState extends State<HarvestApp> {
             speaker: _speaker,
             language: language,
             crop: crop,
+            region: _region ?? Region.unknown,
             onEntered: (quantity) => setState(() => _quantity = quantity),
             onBack: () => setState(() => _crop = null),
+            onRegionChosen: (region) {
+              _languages.writeRegion(region);
+              setState(() => _region = region);
+            },
           ),
         (final crop?, final quantity?) => StorageScreen(
             speaker: _speaker,
@@ -238,5 +247,6 @@ class _HarvestAppState extends State<HarvestApp> {
             onRecorded: _save,
             onBack: () => setState(() => _quantity = null),
           ),
-      };
+    };
+  }
 }

@@ -50,6 +50,7 @@ NAMES = {
     'crop': ('crops', ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
     'unit': ('units', ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
     'storage': ('storage', ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
+    'region': ('regions', ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
     # Spoken only. There is nothing to draw for "about forty-five kilograms",
     # so this one has no picture directory and `picture-check` never sees it.
     'weight': (None, ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),

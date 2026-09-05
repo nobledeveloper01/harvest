@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:harvest/data/settings/language_store.dart';
+import 'package:harvest/data/settings/settings.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,7 +8,7 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  const store = LanguageStore();
+  const store = Settings();
 
   test('a language chosen once is still chosen next launch', () async {
     expect(await store.read(), isNull);

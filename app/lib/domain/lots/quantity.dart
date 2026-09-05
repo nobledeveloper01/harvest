@@ -63,25 +63,43 @@ enum Unit {
 /// a farmer whose region has not been surveyed.
 enum Region {
   /// Kano, Jigawa, Katsina, Kaduna.
-  northWest('North-West'),
+  northWest('north-west', 'North-West', 'Kano, Jigawa, Katsina, Kaduna'),
 
   /// Plateau, Benue, Nasarawa — the horticultural belt.
-  middleBelt('Middle Belt'),
+  middleBelt('middle-belt', 'Middle Belt', 'Plateau, Benue, Nasarawa'),
 
   /// Lagos, Ogun, Oyo.
-  southWest('South-West'),
+  southWest('south-west', 'South-West', 'Lagos, Ogun, Oyo'),
 
   /// Enugu, Anambra, Abia, Imo.
-  southEast('South-East'),
+  southEast('south-east', 'South-East', 'Enugu, Anambra, Abia, Imo'),
 
   /// Surveyed nowhere in particular. Uses the national median and **says so**,
   /// because a farmer being shown a figure derived from somebody else's market
   /// is entitled to know that.
-  unknown('Nigeria');
+  ///
+  /// Offered in the picker as a real choice rather than hidden as a default:
+  /// *"somewhere else"* is a true answer for most of the country, and a farmer
+  /// who does not want to say where they farm is entitled to that too. Nothing
+  /// about this app requires knowing.
+  unknown('elsewhere', 'Somewhere else', 'Uses the national average');
 
-  const Region(this.label);
+  const Region(this.id, this.label, this.where);
+
+  /// The filename stem for `assets/regions/<id>.png` and
+  /// `assets/speech/<language>/region/<id>.wav`. Same contract as every other
+  /// thing a farmer picks from pictures; see ADR-0003.
+  final String id;
 
   final String label;
+
+  /// The states it covers, for whoever is reading over the farmer's shoulder.
+  ///
+  /// The regions are trade corridors rather than administrative boundaries —
+  /// a basket is a market object and market conventions follow trade, not
+  /// government — so the label alone would not tell anybody which one they are
+  /// in.
+  final String where;
 }
 
 /// How a kilogram figure was arrived at.

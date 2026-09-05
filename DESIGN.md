@@ -87,6 +87,13 @@ still read as a hierarchy at arm's length in bright light.
 Figures are **tabular** wherever they change under the thumb — the quantity display, the
 keypad. A number that shifts sideways as it is typed reads as the app struggling.
 
+## Location
+
+**The app never asks for one.** No GPS, no permission, no coordinates. Where a
+region is needed — what a basket weighs, and later what the weather is — it is
+asked as one of five pictures, at the moment the answer changes a number the
+farmer is looking at. *"Somewhere else"* is one of the five.
+
 ## Speech
 
 Five languages: English, Nigerian Pidgin (`pcm`), Hausa, Yoruba, Igbo. Each named by its

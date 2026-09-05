@@ -10,6 +10,15 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The app knows where you farm, without ever asking where you are.** Until
+  now every basket in the country weighed the national median, and the quantity
+  screen said so honestly on every lot and could do nothing about it. It now
+  asks — from five pictures, at the moment the answer changes a number in front
+  of the farmer, beside the sentence admitting the guess. **No GPS, no
+  permission, no coordinates**: a basket is a market object and market
+  conventions follow trade corridors rather than a satellite fix, and
+  *"somewhere else"* is one of the five choices for anyone whose belt has not
+  been surveyed or who would rather not say.
 - **Warnings, scheduled the moment a lot is logged.** Phase 2's exit gate is
   that alerts fire with the device **permanently offline**, so there is nothing
   later to schedule them — no server, no background job, no next launch. Three
@@ -176,6 +185,11 @@ Entries say *why*, not just what.
   `Lot.record` now agree on the window to the day: fifteen buttons, today and
   the fourteen behind it. A row offering one more would have produced a tap
   that does nothing, on the screen where the farmer is trying to finish.
+- **A question that cost the farmer their work.** Opening the region picker
+  replaced the quantity screen, which destroyed its state — so answering a
+  question the app had asked threw away the amount already typed and the
+  measure already chosen. The picker is pushed over the screen now, and a test
+  asserts the four baskets survive the detour.
 - **A status bar you could not read on the daylight screen.** A transparent app
   bar with no elevation leaves Flutter nothing to infer the style from, so iOS
   kept drawing white icons — the clock rendered white on near-white, on a phone

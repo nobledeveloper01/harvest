@@ -56,6 +56,7 @@ NAMES = {
     'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
     'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
     'weight': (ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
+    'region': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
 }
 
 SPEECH = ROOT / 'app/assets/speech'

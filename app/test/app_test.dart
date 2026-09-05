@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:harvest/data/alerts/alarms.dart';
 import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/lots/lots_database.dart';
-import 'package:harvest/data/settings/language_store.dart';
+import 'package:harvest/data/settings/settings.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
@@ -34,6 +34,10 @@ class _Silent implements Speaker {
   @override
   Future<void> sayStorage(StorageCondition storage, Speech language) async =>
       said.add('storage:${storage.id}');
+
+  @override
+  Future<void> sayRegion(Region region, Speech language) async =>
+      said.add('region:${region.id}');
 
   @override
   Future<void> sayWeight(SpokenWeight weight, Speech language) async =>
@@ -165,7 +169,7 @@ void main() {
     await tester.pumpWidget(
       HarvestApp(
         speaker: speaker,
-        languages: const LanguageStore(),
+        languages: const Settings(),
         // In memory, so a test never touches the farmer's actual database and
         // never needs sqlite3's platform libraries.
         lots: LotStore(database),
@@ -479,5 +483,44 @@ void main() {
     // harvest.
     expect(find.text('Your harvest'), findsOneWidget);
     expect((await LotStore(database).all()).lots, hasLength(1));
+  });
+
+  testWidgets('where the farmer farms is asked once and remembered',
+      (tester) async {
+    /*
+      The whole point of asking. Until this, every basket in the country
+      weighed the national median and the quantity screen said so on every
+      lot — a disclosure the app made honestly and could do nothing about.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await launch(tester);
+
+    await tester.tap(find.bySemanticsLabel('Tomato'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('4'));
+    await tester.pump();
+    final basket = find.bySemanticsLabel('big basket');
+    await tester.ensureVisible(basket);
+    await tester.pumpAndSettle();
+    await tester.tap(basket);
+    await tester.pumpAndSettle();
+
+    // Four big baskets at the national average: 50 kg each.
+    expect(find.text('About 200 kg'), findsOneWidget);
+
+    await tester.tap(find.text('Where do you farm?'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('South-West'));
+    await tester.pumpAndSettle();
+
+    // A South-West big basket is 45 kg, and the sentence stops apologising.
+    expect(find.text('About 180 kg'), findsOneWidget);
+    expect(find.textContaining('national average'), findsNothing);
+    expect(find.textContaining('in South-West'), findsOneWidget);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('lots.region'), 'south-west');
   });
 }

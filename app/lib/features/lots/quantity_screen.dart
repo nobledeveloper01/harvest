@@ -8,6 +8,7 @@ import '../../domain/crops/crop.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_weight.dart';
+import '../settings/region_screen.dart';
 
 /// How much was harvested, in the measure the farmer actually used.
 ///
@@ -27,6 +28,7 @@ class QuantityScreen extends StatefulWidget {
     required this.crop,
     required this.onEntered,
     required this.onBack,
+    required this.onRegionChosen,
     this.region = Region.unknown,
     super.key,
   });
@@ -40,13 +42,22 @@ class QuantityScreen extends StatefulWidget {
   /// in the product and finishing a lot you did not harvest is not a way out.
   final VoidCallback onBack;
 
+  /// Remember where the farmer farms.
+  ///
+  /// The picker itself is pushed **over** this screen rather than replacing
+  /// it, so the amount already typed and the measure already chosen are still
+  /// there when it closes. Replacing the screen destroyed its state and threw
+  /// both away — which makes answering a question the app asked cost the
+  /// farmer their work, and is the same mistake as clearing the amount when
+  /// somebody backs out of a correction.
+  final void Function(Region) onRegionChosen;
+
   /// Where the conversion applies.
   ///
-  /// [Region.unknown] until the app knows where it is — which it does not yet,
-  /// because nothing asks and no location plugin is installed. That is not a
-  /// placeholder pretending to be a feature: `unknown` is a real answer the
-  /// table handles, the screen says out loud that the figure is a national
-  /// average, and the farmer can correct it. Region detection is its own item.
+  /// [Region.unknown] until the farmer says otherwise — and it is a real
+  /// answer rather than a missing one: the table handles it, the screen says
+  /// out loud that the figure is a national average, and there is a control
+  /// beside that sentence to change it.
   final Region region;
 
   @override
@@ -156,6 +167,22 @@ class _QuantityScreenState extends State<QuantityScreen> {
     }
   }
 
+  Future<void> _askWhereTheyFarm() async {
+    widget.speaker.say(Phrase.whereDoYouFarm, widget.language);
+    final chosen = await Navigator.of(context).push<Region>(
+      MaterialPageRoute(
+        builder: (_) => RegionScreen(
+          speaker: widget.speaker,
+          language: widget.language,
+          chosen: widget.region == Region.unknown ? null : widget.region,
+          onChosen: (region) => Navigator.of(context).pop(region),
+          onBack: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+    if (chosen != null) widget.onRegionChosen(chosen);
+  }
+
   void _confirm() {
     if (_assumed case final assumed?) {
       if (_amount <= 0) return;
@@ -246,6 +273,7 @@ class _QuantityScreenState extends State<QuantityScreen> {
                 // the volume down needs a second chance at the one sentence
                 // that says what they have.
                 onSayAgain: _sayWeight,
+                onChangeRegion: _askWhereTheyFarm,
                   onCorrect: quantity == null
                       ? null
                       : () {
@@ -495,6 +523,7 @@ class _Assumption extends StatelessWidget {
     required this.correcting,
     required this.onCorrect,
     required this.onSayAgain,
+    required this.onChangeRegion,
   });
 
   final Quantity? quantity;
@@ -503,6 +532,7 @@ class _Assumption extends StatelessWidget {
   final bool correcting;
   final VoidCallback? onCorrect;
   final VoidCallback onSayAgain;
+  final VoidCallback onChangeRegion;
 
   @override
   Widget build(BuildContext context) {
@@ -617,6 +647,58 @@ class _Assumption extends StatelessWidget {
                         'It may not match yours.',
             style: text.bodyMedium,
           ),
+          if (!unit!.isWeight) ...[
+            const SizedBox(height: Gap.s),
+            /*
+              Asked where it matters.
+
+              The sentence above admits the app is using a figure from
+              somebody else's market. The control to fix that belongs next to
+              the admission, not on a settings screen — this is the one moment
+              a farmer can see what knowing would buy them.
+            */
+            Semantics(
+              button: true,
+              container: true,
+              label: region == Region.unknown
+                  ? 'tell me where you farm'
+                  : 'you farm in ${region.label}, tap to change',
+              child: ExcludeSemantics(
+                child: Pressable(
+                  borderRadius: Radii.pill,
+                  onTap: onChangeRegion,
+                  child: Container(
+                    constraints:
+                        const BoxConstraints(minHeight: Target.standard - 8),
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.m),
+                    decoration: BoxDecoration(
+                      borderRadius: Radii.pill,
+                      border: Border.all(color: freshness.outline),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.public_rounded,
+                            size: 18, color: scheme.onSurfaceVariant),
+                        const SizedBox(width: Gap.s),
+                        Flexible(
+                          child: Text(
+                            region == Region.unknown
+                                ? 'Where do you farm?'
+                                : region.label,
+                            style: text.bodyMedium?.copyWith(
+                              color: scheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (!unit!.isWeight) ...[
             const SizedBox(height: Gap.s),
             Semantics(

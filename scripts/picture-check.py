@@ -42,6 +42,7 @@ SETS = {
     'crops': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
     'units': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
     'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
+    'regions': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
 }
 
 # Beside the directories, not inside them. `assets/crops/` is a pubspec entry,

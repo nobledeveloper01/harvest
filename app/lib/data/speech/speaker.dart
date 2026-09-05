@@ -59,6 +59,10 @@ class Speaker {
   Future<void> sayWeight(SpokenWeight weight, Speech language) =>
       _play('${language.code}/weight/${weight.id}');
 
+  /// Say a region's name, in one language.
+  Future<void> sayRegion(Region region, Speech language) =>
+      _play('${language.code}/region/${region.id}');
+
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {
     await _player.stop();

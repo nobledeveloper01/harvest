@@ -48,3 +48,8 @@ storage/shade.png
 storage/ventilated.png
 storage/cold-room.png
 storage/processed.png
+regions/north-west.png
+regions/middle-belt.png
+regions/south-west.png
+regions/south-east.png
+regions/elsewhere.png

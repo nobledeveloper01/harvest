@@ -9,6 +9,42 @@ point — everything else is in the commit log.
 
 **Phase 2.**
 
+### The app does not want to know where you are
+
+FR-2.2 needs a region and FR-3.2 wants weather "for the lot's location", and the
+obvious reading of both is a GPS fix. The app has never had one, so every basket
+in the country weighed the national median and the quantity screen apologised
+for it on every single lot.
+
+A satellite fix would answer a question nobody asked. A basket is a *market
+object*: what one weighs follows trade corridors, not coordinates, and the four
+regions in the table are produce belts rather than states for exactly that
+reason. So the app asks — five pictures, one tap — and asks it at the moment the
+answer changes a number the farmer is looking at, beside the sentence that
+admits the app is guessing. Not on first launch, before it has done anything for
+them; not on a settings screen they will never open.
+
+*"Somewhere else"* is one of the five choices rather than a hidden default. It
+is a true answer for most of the country and it is the answer for a farmer who
+would rather not say, and burying it would have made declining mean leaving the
+screen.
+
+No permission dialog, no plugin, nothing to deny. The privacy question that
+usually comes with "where is the user" simply does not arise.
+
+### Answering the app's question should not cost you your work
+
+The first version replaced the quantity screen with the picker, which destroyed
+its state — so choosing a region threw away the amount already typed and the
+measure already chosen. A farmer who answers a question the app asked, and is
+charged their work for it, learns not to answer.
+
+Exactly the same shape as clearing the amount when somebody backs out of a
+weight correction, found the same day. The fix is that the picker is *pushed
+over* the screen rather than replacing it, and the test now asserts the four
+baskets are still there when it closes — it fails with `Expected: '4' / Actual:
+'0'` on the old arrangement.
+
 ### "It did not throw" is not "it fires"
 
 The alert scheduling was easy to get to green: a fake `Alarms`, a widget test

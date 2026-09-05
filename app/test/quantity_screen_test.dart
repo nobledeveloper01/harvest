@@ -48,6 +48,10 @@ class _Recording implements Speaker {
       said.add('unit:${unit.id}');
 
   @override
+  Future<void> sayRegion(Region region, Speech language) async =>
+      said.add('region:${region.id}');
+
+  @override
   Future<void> sayCrop(Crop crop, Speech language) async {}
 
   @override
@@ -60,6 +64,7 @@ class _Recording implements Speaker {
 void main() {
   late Quantity? entered;
   late int backs;
+  late int regionAsks;
 
   Future<_Recording> pump(
     WidgetTester tester, {
@@ -68,6 +73,7 @@ void main() {
   }) async {
     entered = null;
     backs = 0;
+    regionAsks = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -82,6 +88,7 @@ void main() {
           region: region,
           onEntered: (quantity) => entered = quantity,
           onBack: () => backs++,
+          onRegionChosen: (region) => regionAsks++,
         ),
       ),
     );
@@ -441,6 +448,67 @@ void main() {
       await tester.pump();
 
       expect(speaker.said, ['weight:kg-45']);
+    });
+  });
+
+  group('asking where the farmer farms', () {
+    testWidgets('is offered beside the sentence that admits the guess',
+        (tester) async {
+      /*
+        The sentence says the app is using a figure from somebody else's
+        market. The control to fix that belongs next to the admission — this
+        is the one moment a farmer can see what knowing would buy them, and a
+        settings screen is a screen they never open.
+      */
+      await pump(tester);
+      await type(tester, '4');
+      await choose(tester, Unit.bigBasket);
+
+      expect(find.textContaining('national average'), findsOneWidget);
+      await tester.tap(find.text('Where do you farm?'));
+      await tester.pumpAndSettle();
+
+      // The picker opened *over* the quantity screen — so the four baskets
+      // are still there underneath, waiting.
+      expect(find.text('Middle Belt'), findsOneWidget);
+      await tester.tap(find.text('Middle Belt'));
+      await tester.pumpAndSettle();
+
+      expect(regionAsks, 1);
+      expect(display(tester), '4', reason: 'the amount survived the detour');
+    });
+
+    testWidgets('and says the question out loud when it is asked',
+        (tester) async {
+      final speaker = await pump(tester);
+      await type(tester, '4');
+      await choose(tester, Unit.bigBasket);
+      speaker.said.clear();
+
+      await tester.tap(find.text('Where do you farm?'));
+      await tester.pumpAndSettle();
+      expect(speaker.said.first, 'phrase:where-do-you-farm');
+    });
+
+    testWidgets('once answered, the control carries the answer',
+        (tester) async {
+      await pump(tester, region: Region.northWest);
+      await type(tester, '4');
+      await choose(tester, Unit.crate);
+
+      // North-West has no crate, so the figure is still national — and the
+      // control still says where the farmer is rather than reverting to the
+      // question, because they have answered it.
+      expect(find.text('North-West'), findsOneWidget);
+      expect(find.text('Where do you farm?'), findsNothing);
+    });
+
+    testWidgets('is not offered for a weight, which needs no region',
+        (tester) async {
+      await pump(tester);
+      await type(tester, '12');
+      await choose(tester, Unit.kilogram);
+      expect(find.text('Where do you farm?'), findsNothing);
     });
   });
 }

@@ -101,6 +101,13 @@ enum Phrase {
   /// gets argued with rather than used.
   timeIsUp('time-is-up'),
 
+  /// *"Where do you farm? It changes what a basket weighs."*
+  ///
+  /// Asked at the moment the answer changes a number the farmer is looking at,
+  /// not on a settings screen they will never open and not on first launch
+  /// before the app has done anything for them.
+  whereDoYouFarm('where-do-you-farm'),
+
   /// *"Where are you keeping it?"*
   ///
   /// FR-2.3. The answer feeds the shelf-life model directly — open air and a
