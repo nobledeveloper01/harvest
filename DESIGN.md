@@ -23,11 +23,16 @@ Built around crop freshness, because that is the one state the whole app communi
 | `textSecondary` | `#5B6558` | `#A3AE9E` |
 | `accent` | `#2E7D32` | `#5CB860` |
 | `fresh` | `#2E7D32` | `#5CB860` |
-| `atRisk` | `#E08A00` | `#F0A93B` |
+| `atRisk` | `#B06A00` | `#F0A93B` |
 | `critical` | `#C62828` | `#EF6B6B` |
 | `sold` | `#5B6558` | `#A3AE9E` |
 
 **Dark is the default**, not `ThemeMode.system`. Both are authored; neither is derived.
+
+**Every pair is asserted in CI**, in both themes, by `test/contrast_test.dart`:
+4.5:1 for text and 3:1 for the colours that carry state. The light `atRisk`
+amber was `#E08A00` until that test was written and failed on it at 2.69:1 — on
+the colour that means *half the window is gone*.
 
 **Colour is never the sole carrier of meaning.** A freshness ring says the same thing three
 ways: the fill fraction, the spoken sentence, and the colour. A colour-blind farmer in

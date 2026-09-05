@@ -187,6 +187,27 @@ The limitation is real and written down: where the farmer stated the weight
 themselves the written figure is exact and the spoken one is still rounded. That
 is worth fixing one day and is not worth a hundred more recordings today.
 
+### The contrast test failed on its first run, which is the point
+
+"Light and dark authored; every pair contrast-asserted in CI" has been on the
+definition of done since Phase 0 and nothing asserted it. Writing the test took
+twenty minutes and it went red immediately: the light-theme `atRisk` amber,
+`#E08A00`, is **2.69:1** against white — under the 3:1 floor for a graphical
+object, on the colour that means *half the window is gone*.
+
+It had been written into `DESIGN.md` and `docs/04-UX-DESIGN.md` and shipped
+into the theme without anybody, me included, looking at it twice. It looks fine
+on a desk. The design floor for this app is a dusty 5" screen in direct
+sunlight, where "fine on a desk" is the whole failure.
+
+`#B06A00` is 4.28:1 and still reads amber next to the critical red. Both design
+documents were corrected, not just the code — a palette that disagrees with the
+theme is the next person's afternoon.
+
+The test also covers the pair nothing else would have: the selected day chip
+paints its label directly on `fresh`, a combination drawn on exactly one control
+in the whole app.
+
 ### Sixty-two megabytes of noise
 
 Adding the weight scale took the placeholder set to 415 clips and the repository

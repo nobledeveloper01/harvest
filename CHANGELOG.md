@@ -16,6 +16,9 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **Every colour pair is asserted in CI**, in both themes — 4.5:1 for text,
+  3:1 for the colours that carry state. The design floor is a dusty screen in
+  direct sunlight, where a pair that looks deliberate on a desk is unreadable.
 - **The app says what the harvest comes to, out loud.** Choosing a measure now
   speaks the measure and then the weight — *"about two hundred kilograms"* — and
   the figure can be tapped to hear again. Nothing is stitched together from
@@ -92,6 +95,11 @@ Entries say *why*, not just what.
   direction. Both asset gates now read `pubspec.yaml` as well as the
   filesystem; the old ones would have stayed green while every crop name was
   silent on a real phone.
+- **The colour meaning *half the window is gone* was unreadable in daylight.**
+  The light-theme amber was `#E08A00`, 2.69:1 against white and below the floor
+  for a graphical object. It is now `#B06A00` at 4.28:1, still amber against the
+  red that means ninety per cent gone. Found by the contrast test on its first
+  run, which is the argument for writing the test.
 - **A harvest date that could be refused after being offered.** The day row and
   `Lot.record` now agree on the window to the day: fifteen buttons, today and
   the fourteen behind it. A row offering one more would have produced a tap

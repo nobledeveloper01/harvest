@@ -83,7 +83,20 @@ abstract final class Palette {
 
   static const light = Freshness(
     fresh: Color(0xFF2E7D32),
-    atRisk: Color(0xFFE08A00),
+
+    /*
+      Darker than the amber the design docs first named.
+
+      `#E08A00` is 2.69:1 against white — below the 3:1 floor for a graphical
+      object, on the colour that means *half the window is gone*. It looked
+      fine on a desk, which is how it got as far as being written down; the
+      design floor for this app is a dusty screen in direct sunlight, where it
+      is worse than it looks here.
+
+      `#B06A00` is 4.28:1 and still reads amber against the red that means
+      ninety per cent gone. Found by `test/contrast_test.dart` on its first run.
+    */
+    atRisk: Color(0xFFB06A00),
     critical: Color(0xFFC62828),
     sold: Color(0xFF5B6558),
   );
