@@ -227,6 +227,38 @@ The loss reasons are a **fixed list with no "other"**. A sixth answer meaning
 pattern worth finding; a missing reason shows up instead as a category that
 stops making sense, which is a signal rather than a shrug.
 
+### The app is allowed to say it does not know
+
+<p align="center">
+  <img src="docs/screenshots/13-diagnosis.png" width="250" alt="Diagnosis: a hedged verdict, the escalation above the steps, and every instruction with a picture and a voice" />
+</p>
+
+**Not reachable in the app yet, and deliberately so** — there is no trained
+model, so there is nothing to reach it with. What is built is the part that
+needed no model, and it is the part Phase 4's exit gate is about.
+
+Certainty is read from **two numbers**, not one: the top score, and how far it
+is clear of second place. A single threshold treats 0.88 against 0.06 exactly
+like 0.88 against 0.84 — the first is a model that knows, the second is a coin
+toss between early blight and late blight, which look alike on a phone camera
+and call for different sprays. So the answer is one of three sentences and never
+a percentage, and **both hedged answers put the escalation above the steps**,
+because a farmer about to act on a maybe should meet the second opinion before
+the instructions.
+
+The guidance never states a dose and never names a product. *"Mix 20 ml in 15
+litres"* is the sentence a farmer actually wants and the one this app has no
+business producing: it cannot read the label on what the local dealer stocks,
+does not know the sprayer's volume or the pre-harvest interval — on an app whose
+whole purpose is telling somebody to sell within days — and the spraying is done
+by a person usually without protective equipment, on food that will be in a
+market that week. Two tests scan every step for a quantity and for a product
+name, because a prose rule is a rule somebody adds one helpful sentence against.
+
+Identifying that the plant is short of nitrogen rather than thirsty is the part
+a farmer standing in the field cannot do. The dose was never the scarce
+information.
+
 ### The farmer's correction wins, for ever
 
 That table is versioned, and a farmer who says the app is wrong is not overruled by a later

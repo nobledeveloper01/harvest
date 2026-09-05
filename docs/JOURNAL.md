@@ -61,6 +61,27 @@ parser wanted the id on the declaration line and a constant carrying a sentence
 wraps. That one exited loudly and cost five minutes — the only one of the three
 that behaved the way a gate should when it cannot do its job.
 
+### Then running it found the third one
+
+The screen worked on the first launch, which is unusual here, and it was still
+wrong in two ways no test had asked about.
+
+The escalation card wore `ask-about-spray.png` — the same drawing as the step
+sitting directly beneath it. Two different cards, the same picture, one above
+the other: it reads as a rendering fault rather than as two things to do.
+
+And being hand-written copy rather than a `Step`, it had **no clip at all**. On
+the one card that exists for a farmer who cannot read, on the screen whose whole
+subject is what the app is not sure about. Every test I wrote asked whether the
+card was *there* and where it sat. None asked whether it could be heard —
+because it did not occur to me that a card could fail to be, which is precisely
+the assumption a screen makes visible in about four seconds.
+
+It is a `Step` now: its own picture, five recordings, a speaker button, and the
+gates that already cover the other eighteen. Which then found the fourth thing —
+the five clips for the phrase it replaced, orphaned on disk, that the audio gate
+had no opinion about at all.
+
 ### Proved the gates fire
 
 Restore the manifest-rewrite and `picture-check` reports 85 of 85 placeholders
@@ -69,6 +90,10 @@ result screen too: make a confident answer nag and the "does not nag" assertion
 fires; move the escalation below the steps and the ordering assertion fires;
 write *"I'm 92% sure"* and the no-numbers assertion catches it — which is the
 one that matters, because 92% is what candour looks like from the inside.
+
+And the audio gate now fails on an orphan: copy a clip to a name no enum
+carries, and it exits 1 naming the file. It exited 0 on five of them an hour
+ago.
 
 ---
 

@@ -28,7 +28,7 @@ Entries say *why*, not just what.
   on a maybe should meet the second opinion before the instructions. The card
   names no officer and no office: an app with no directory of extension staff
   offering a button that goes nowhere is worse than a sentence.
-- **Thirty-one more illustrations** — thirteen ailments and eighteen steps. Each
+- **Thirty-two more illustrations** — thirteen ailments and eighteen steps. Each
   ailment is drawn on the *same* leaf, in the same place, at the same size, so a
   farmer is comparing symptoms rather than silhouettes; the two that change
   outline do it because the outline is the symptom.
@@ -371,6 +371,13 @@ Entries say *why*, not just what.
   illustrations as hatched placeholders, and the gate went back to reporting
   85 of 85. Nothing failed; the count just went up again. The manifest is a
   record of what is **not real**, not an inventory of what exists.
+- **The audio gate never checked for orphans.** The picture gate has failed on
+  them since it was written; this one only ever asked whether what it expected
+  was present, never whether what was present was expected. Renaming a phrase
+  into a step left five recordings behind that nothing would ever ask for and
+  that would have been downloaded onto a 2 GB phone over a metered connection
+  for the life of the product. Caught the day the asymmetry was noticed, which
+  was the day it first cost something.
 - **The audio gate stopped looking.** Three scripts kept three copies of "which
   enums own assets". `Ailment` and `Step` went into two of them, and
   `audio-check` went on reporting a complete set while a hundred and fifty-five

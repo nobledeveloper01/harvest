@@ -1448,6 +1448,26 @@ def step_ask_about_spray():
     return im
 
 
+def step_show_somebody():
+    """Two people and a leaf between them.
+
+    Distinct from `ask-about-spray` on purpose: they sat one above the other on
+    the result screen wearing the same drawing, which reads as a fault rather
+    than as two different things to do.
+    """
+    im, _ = canvas('thing')
+    d = ImageDraw.Draw(im, 'RGBA')
+    for cx, colour, shade in ((44, (150, 128, 100), (96, 122, 158)),
+                              (152, (176, 148, 120), (120, 140, 108))):
+        d.ellipse(box(cx, 74, 19, 19), fill=colour)
+        d.pieslice(box(cx, 130, 32, 40), start=180, end=360, fill=shade)
+    leaf(im, 98, 108, 40, 15, (96, 158, 66), (64, 118, 48), 96)
+    d = ImageDraw.Draw(im, 'RGBA')
+    d.line([px(66, 116), px(80, 110)], fill=(150, 128, 100), width=int(px(9)))
+    d.line([px(130, 116), px(116, 110)], fill=(176, 148, 120), width=int(px(9)))
+    return im
+
+
 def step_sell_soon():
     im, _ = canvas('thing')
     d = ImageDraw.Draw(im, 'RGBA')
@@ -1515,6 +1535,7 @@ DRAWINGS = {
         'needs-nitrogen': step_needs_nitrogen,
         'needs-potassium': step_needs_potassium,
         'ask-about-spray': step_ask_about_spray,
+        'show-somebody': step_show_somebody,
         'sell-soon': step_sell_soon,
     },
     'ailments': {

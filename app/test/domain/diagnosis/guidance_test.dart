@@ -102,11 +102,16 @@ void main() {
     */
     final used = {
       for (final ailment in Ailment.values) ...Guidance.forAilment(ailment),
+      ...Guidance.standalone,
     };
 
     for (final step in Step.values) {
       expect(used, contains(step),
           reason: '${step.id} is written but reachable from no ailment');
     }
+
+    // And the exemption stays small enough to be read. A `standalone` set that
+    // grows is the orphan test being switched off one entry at a time.
+    expect(Guidance.standalone.length, lessThanOrEqualTo(2));
   });
 }

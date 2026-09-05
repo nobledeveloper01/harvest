@@ -72,7 +72,6 @@ en/region/middle-belt.wav
 en/region/north-west.wav
 en/region/south-east.wav
 en/region/south-west.wav
-en/show-somebody.wav
 en/step/air-between.wav
 en/step/ask-about-spray.wav
 en/step/clean-tools.wav
@@ -88,6 +87,7 @@ en/step/remove-affected.wav
 en/step/rotate.wav
 en/step/sell-soon.wav
 en/step/shade-midday.wav
+en/step/show-somebody.wav
 en/step/soapy-water.wav
 en/step/water-at-roots.wav
 en/step/water-more.wav
@@ -217,7 +217,6 @@ ha/region/middle-belt.wav
 ha/region/north-west.wav
 ha/region/south-east.wav
 ha/region/south-west.wav
-ha/show-somebody.wav
 ha/step/air-between.wav
 ha/step/ask-about-spray.wav
 ha/step/clean-tools.wav
@@ -233,6 +232,7 @@ ha/step/remove-affected.wav
 ha/step/rotate.wav
 ha/step/sell-soon.wav
 ha/step/shade-midday.wav
+ha/step/show-somebody.wav
 ha/step/soapy-water.wav
 ha/step/water-at-roots.wav
 ha/step/water-more.wav
@@ -362,7 +362,6 @@ ig/region/middle-belt.wav
 ig/region/north-west.wav
 ig/region/south-east.wav
 ig/region/south-west.wav
-ig/show-somebody.wav
 ig/step/air-between.wav
 ig/step/ask-about-spray.wav
 ig/step/clean-tools.wav
@@ -378,6 +377,7 @@ ig/step/remove-affected.wav
 ig/step/rotate.wav
 ig/step/sell-soon.wav
 ig/step/shade-midday.wav
+ig/step/show-somebody.wav
 ig/step/soapy-water.wav
 ig/step/water-at-roots.wav
 ig/step/water-more.wav
@@ -507,7 +507,6 @@ pcm/region/middle-belt.wav
 pcm/region/north-west.wav
 pcm/region/south-east.wav
 pcm/region/south-west.wav
-pcm/show-somebody.wav
 pcm/step/air-between.wav
 pcm/step/ask-about-spray.wav
 pcm/step/clean-tools.wav
@@ -523,6 +522,7 @@ pcm/step/remove-affected.wav
 pcm/step/rotate.wav
 pcm/step/sell-soon.wav
 pcm/step/shade-midday.wav
+pcm/step/show-somebody.wav
 pcm/step/soapy-water.wav
 pcm/step/water-at-roots.wav
 pcm/step/water-more.wav
@@ -652,7 +652,6 @@ yo/region/middle-belt.wav
 yo/region/north-west.wav
 yo/region/south-east.wav
 yo/region/south-west.wav
-yo/show-somebody.wav
 yo/step/air-between.wav
 yo/step/ask-about-spray.wav
 yo/step/clean-tools.wav
@@ -668,6 +667,7 @@ yo/step/remove-affected.wav
 yo/step/rotate.wav
 yo/step/sell-soon.wav
 yo/step/shade-midday.wav
+yo/step/show-somebody.wav
 yo/step/soapy-water.wav
 yo/step/water-at-roots.wav
 yo/step/water-more.wav

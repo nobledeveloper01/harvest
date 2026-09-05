@@ -165,6 +165,23 @@ void main() {
       expect(find.byKey(const ValueKey('show-somebody')), findsNothing);
     });
 
+    testWidgets('and it can be heard, like every other instruction',
+        (tester) async {
+      /*
+        Found by running the screen. As hand-written copy the card had no clip
+        at all — on the one card that exists for a farmer who cannot read, and
+        on the screen whose whole subject is what the app is not sure about.
+      */
+      final speaker = await pump(tester, blank());
+      await tester.pumpAndSettle();
+      speaker.said.clear();
+
+      await tester.tap(find.byKey(const ValueKey('show-somebody')));
+      await tester.pump();
+
+      expect(speaker.said, ['step:show-somebody']);
+    });
+
     testWidgets('the card names no officer it cannot produce', (tester) async {
       /*
         ADR-0006 applied to people rather than to cold rooms. A button reading

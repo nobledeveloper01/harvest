@@ -100,7 +100,10 @@ class _DiagnosisResultScreenState extends State<DiagnosisResultScreen> {
               _Verdict(diagnosis: diagnosis),
               if (diagnosis.needsAPerson) ...[
                 const SizedBox(height: Gap.m),
-                const _ShowSomebody(),
+                _ShowSomebody(
+                  onSay: () => widget.speaker
+                      .sayStep(Step.showSomebody, widget.language),
+                ),
               ],
               if (ailment != null) ...[
                 const SizedBox(height: Gap.l),
@@ -200,56 +203,42 @@ class _Verdict extends StatelessWidget {
 /// staff for the same reason it has none of cold rooms — ADR-0006 — and a
 /// screen that offered *"contact your extension officer"* as a button, going
 /// nowhere, would be worse than one that says who to show it to and stops.
+///
+/// It is a [Step] rather than copy, which running the screen is what settled:
+/// as copy it borrowed another step's picture and had no recording at all, on
+/// the one card that exists for somebody who cannot read.
 class _ShowSomebody extends StatelessWidget {
-  const _ShowSomebody();
+  const _ShowSomebody({required this.onSay});
+
+  final VoidCallback onSay;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final freshness = Theme.of(context).extension<Freshness>()!;
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
+    return _StepRow(
       key: const ValueKey('show-somebody'),
-      padding: const EdgeInsets.all(Gap.l),
-      decoration: BoxDecoration(
-        color: freshness.high,
-        borderRadius: Radii.card,
-        border: Border.all(color: freshness.outline),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: Radii.chip,
-            child: Image.asset(
-              'assets/steps/ask-about-spray.png',
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            ),
-          ),
-          const SizedBox(width: Gap.m),
-          Expanded(
-            child: Text(
-              'Show this plant to somebody who can see it — an extension '
-              'officer, your agro-dealer, or a farmer who has had it before.',
-              style: text.bodyMedium?.copyWith(color: scheme.onSurface),
-            ),
-          ),
-        ],
-      ),
+      step: Step.showSomebody,
+      onSay: onSay,
+      emphasis: true,
     );
   }
 }
 
 /// One thing to do, with its picture and its voice.
 class _StepRow extends StatelessWidget {
-  const _StepRow({required this.step, required this.onSay});
+  const _StepRow({
+    required this.step,
+    required this.onSay,
+    this.emphasis = false,
+    super.key,
+  });
 
   final Step step;
   final VoidCallback onSay;
+
+  /// The escalation is the same row, tinted. Same shape, same target, same
+  /// speaker button — a farmer should not have to learn two kinds of card, and
+  /// the one thing that differs is the one thing that matters.
+  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
@@ -271,9 +260,13 @@ class _StepRow extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: Target.standard),
               padding: const EdgeInsets.all(Gap.m),
               decoration: BoxDecoration(
-                color: freshness.raised,
+                color: emphasis ? freshness.high : freshness.raised,
                 borderRadius: Radii.card,
-                border: Border.all(color: freshness.outline),
+                border: Border.all(
+                  color: emphasis
+                      ? freshness.fresh.withValues(alpha: 0.55)
+                      : freshness.outline,
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,

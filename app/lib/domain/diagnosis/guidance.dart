@@ -123,6 +123,25 @@ enum Step {
   sellSoon(
     'sell-soon',
     'What is still good is worth selling soon rather than waiting.',
+  ),
+
+  /*
+    The escalation, and it is a step like any other.
+
+    Running the screen is what settled this. The card was hand-built copy with
+    a borrowed picture — it wore `ask-about-spray.png`, which was already on the
+    step directly beneath it, so two different cards showed the same drawing
+    one above the other and read as a rendering fault.
+
+    Worse, being copy rather than a [Step] it had no clip, on the one card that
+    exists to be read by somebody who cannot read. As a step it gets a picture
+    of its own, five recordings, and a speaker button, through the gates that
+    already cover the other eighteen.
+  */
+  showSomebody(
+    'show-somebody',
+    'Show this plant to somebody who can see it — an extension officer, your '
+        'agro-dealer, or a farmer who has had it before.',
   );
 
   const Step(this.id, this.text);
@@ -232,6 +251,14 @@ abstract final class Guidance {
   /// the farmer something to do about, and a diagnosis screen with a name and
   /// no steps has told somebody their crop is sick and left them there.
   static List<Step> forAilment(Ailment ailment) => _steps[ailment]!;
+
+  /// Steps that no ailment lists, because a screen reaches them directly.
+  ///
+  /// Exactly one, and named rather than inferred: the orphan test asks that
+  /// every step is reachable from *something*, and "reachable" has to include
+  /// the escalation card or the test would push [Step.showSomebody] into a
+  /// treatment list where it does not belong.
+  static const standalone = {Step.showSomebody};
 
   /// Whether the first thing to do is show it to a person.
   ///

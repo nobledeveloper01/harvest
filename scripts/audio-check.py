@@ -113,7 +113,24 @@ def main() -> int:
         'assets/speech',
     )
 
-    if missing or silent or unshipped:
+    # Clips on disk that nothing will ever ask for.
+    #
+    # The picture gate has failed on orphans since it was written; this one
+    # never looked, and the asymmetry cost five clips the day a phrase became a
+    # step and the recordings for the old name stayed behind. Nothing at runtime
+    # would ever notice — which is exactly why nobody would either, and why they
+    # would have gone on being downloaded onto a 2 GB phone over a metered
+    # connection for the rest of the product's life.
+    expected = {
+        f'{language}/{stem}.wav' for language in languages for stem in stems
+    }
+    orphans = sorted(
+        str(path.relative_to(SPEECH))
+        for path in SPEECH.rglob('*.wav')
+        if str(path.relative_to(SPEECH)) not in expected
+    )
+
+    if missing or silent or unshipped or orphans:
         # Capped, because 125 identical lines buries the one that differs.
         for rel in missing[:12]:
             print(f'{RED}✗{OFF} no clip: assets/speech/{rel}')
@@ -127,6 +144,10 @@ def main() -> int:
             print(f'{RED}✗{OFF} recorded but not bundled: {path}')
         if len(unshipped) > 12:
             print(f'  … and {len(unshipped) - 12} more undeclared')
+        for rel in orphans[:12]:
+            print(f'{RED}✗{OFF} nothing asks for it: assets/speech/{rel}')
+        if len(orphans) > 12:
+            print(f'  … and {len(orphans) - 12} more orphaned')
         print()
         print('  Everything the app says must exist in every language. A farmer')
         print('  whose language is missing one gets silence on that screen, and')

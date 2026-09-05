@@ -169,10 +169,7 @@ enum Phrase {
   */
   fairlySure('fairly-sure'),
   mightBe('might-be'),
-  doNotRecognise('do-not-recognise'),
-
-  /// What to do when the app is not sure, or is sure and the news is bad.
-  showSomebody('show-somebody');
+  doNotRecognise('do-not-recognise');
 
   const Phrase(this.id);
 
