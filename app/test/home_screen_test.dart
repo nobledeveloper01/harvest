@@ -5,6 +5,7 @@ import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
+import 'package:harvest/domain/lots/outcome.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
@@ -27,6 +28,14 @@ class _Recording implements Speaker {
       said.add('weight:${weight.id}');
 
   @override
+  Future<void> sayOutcome(LotOutcome outcome, Speech language) async =>
+      said.add('outcome:${outcome.id}');
+
+  @override
+  Future<void> sayLoss(LossReason reason, Speech language) async =>
+      said.add('loss:${reason.id}');
+
+  @override
   Future<void> dispose() async {}
 
   @override
@@ -35,6 +44,7 @@ class _Recording implements Speaker {
 
 void main() {
   final noon = DateTime(2026, 9, 5, 12);
+  late List<(int, Outcome)> closed;
 
   Lot lot({
     Crop crop = Crop.tomato,
@@ -56,6 +66,7 @@ void main() {
       );
 
   Future<_Recording> pump(WidgetTester tester, List<Lot> lots) async {
+    closed = [];
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -71,6 +82,7 @@ void main() {
           weather: null,
           onLogAnother: () {},
           onToggleBrightness: () {},
+          onClosed: (index, outcome) => closed.add((index, outcome)),
         ),
       ),
     );
@@ -125,7 +137,7 @@ void main() {
       third one is not optional.
     */
     final speaker = await pump(tester, [lot(crop: Crop.yam)]);
-    await tester.tap(find.text('Yam'));
+    await tester.tap(find.bySemanticsLabel('hear this lot'));
     await tester.pump();
 
     expect(speaker.said, ['crop:yam', 'weight:kg-80', 'phrase:still-fine']);
@@ -139,7 +151,7 @@ void main() {
       that announces a loss it invented gets argued with rather than used.
     */
     final speaker = await pump(tester, [lot(ago: const Duration(days: 30))]);
-    await tester.tap(find.text('Tomato'));
+    await tester.tap(find.bySemanticsLabel('hear this lot'));
     await tester.pump();
 
     expect(speaker.said.last, 'phrase:time-is-up');
@@ -178,6 +190,7 @@ void main() {
           weather: null,
           onLogAnother: () {},
           onToggleBrightness: () {},
+          onClosed: (index, outcome) => closed.add((index, outcome)),
         ),
       ),
     );
@@ -185,5 +198,88 @@ void main() {
 
     expect(find.textContaining('cannot be read'), findsOneWidget);
     expect(find.textContaining('Nothing has been deleted'), findsOneWidget);
+  });
+
+  group('saying what happened to a lot', () {
+    testWidgets('the card opens the question; only the badge speaks',
+        (tester) async {
+      /*
+        They were the same gesture until there was something else to do with a
+        lot. Leaving them merged would have turned "tap to hear" quietly into
+        "tap to close it" for anybody who had learnt the first.
+      */
+      await pump(tester, [lot()]);
+
+      await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+      expect(find.text('What happened to it?'), findsOneWidget);
+    });
+
+    testWidgets('a sale is recorded without being asked why', (tester) async {
+      await pump(tester, [lot()]);
+      await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sold it'));
+      await tester.pumpAndSettle();
+
+      expect(closed, hasLength(1));
+      expect(closed.single.$2.what, LotOutcome.sold);
+      expect(closed.single.$2.why, isNull);
+    });
+
+    testWidgets('a loss asks why, from pictures', (tester) async {
+      /*
+        FR-2.4's fixed illustrated list. It is the only answer in the product
+        that can tell Phase 6 whether the engine was wrong about tomatoes or
+        wrong about tomatoes in the rain.
+      */
+      final speaker = await pump(tester, [lot()]);
+      await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lost it'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Why was it lost?'), findsOneWidget);
+      expect(closed, isEmpty, reason: 'nothing recorded until the reason is in');
+      for (final reason in LossReason.values) {
+        expect(find.text(reason.label), findsOneWidget, reason: reason.id);
+      }
+
+      await tester.tap(find.text('Rain or water'));
+      await tester.pumpAndSettle();
+
+      expect(closed.single.$2.what, LotOutcome.lost);
+      expect(closed.single.$2.why, LossReason.water);
+      expect(speaker.said, contains('loss:water'));
+    });
+
+    testWidgets('changing your mind about why does not undo the loss',
+        (tester) async {
+      // Backing out of the reason returns to the outcomes, not to the list.
+      // Having to say "lost" twice because you hesitated over why is a screen
+      // punishing somebody for thinking.
+      await pump(tester, [lot()]);
+      await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lost it'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsLabel('back'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('What happened to it?'), findsOneWidget);
+      expect(closed, isEmpty);
+    });
+
+    testWidgets('and it can be left without answering at all', (tester) async {
+      await pump(tester, [lot()]);
+      await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('back'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your harvest'), findsOneWidget);
+      expect(closed, isEmpty);
+    });
   });
 }

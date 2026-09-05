@@ -11,6 +11,7 @@ import 'package:harvest/data/weather/weather_store.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
+import 'package:harvest/domain/lots/outcome.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
@@ -41,6 +42,14 @@ class _Silent implements Speaker {
   @override
   Future<void> sayRegion(Region region, Speech language) async =>
       said.add('region:${region.id}');
+
+  @override
+  Future<void> sayOutcome(LotOutcome outcome, Speech language) async =>
+      said.add('outcome:${outcome.id}');
+
+  @override
+  Future<void> sayLoss(LossReason reason, Speech language) async =>
+      said.add('loss:${reason.id}');
 
   @override
   Future<void> sayWeight(SpokenWeight weight, Speech language) async =>
@@ -460,7 +469,9 @@ void main() {
     final speaker = await launch(tester);
     speaker.said.clear();
 
-    await tester.tap(find.text('Yam'));
+    // The badge, not the card: the card now opens the question of what
+    // happened to the lot.
+    await tester.tap(find.bySemanticsLabel('hear this lot'));
     await tester.pumpAndSettle();
 
     // What it is, how much of it, and how it is doing — in the language they
@@ -606,5 +617,55 @@ void main() {
 
     expect(spread(narrow), lessThan(spread(wide)),
         reason: 'knowing narrows the band');
+  });
+
+  testWidgets('saying what happened closes the lot and stops the warnings',
+      (tester) async {
+    /*
+      A lot that sold on Tuesday has no business buzzing on Thursday. A
+      notification about a harvest the farmer no longer has is the fastest way
+      to teach them the app does not know what it is talking about — and the
+      alerts were scheduled days ago, so nothing cancels them unless this does.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await store(tester);
+    await launch(tester);
+
+    await tester.tap(find.text('Yam'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sold it'));
+    await tester.pumpAndSettle();
+
+    expect(alarms.cleared, hasLength(1));
+
+    final read = await LotStore(database).all();
+    expect(read.lots.single.isOpen, isFalse);
+    expect(read.lots.single.outcome!.what, LotOutcome.sold);
+  });
+
+  testWidgets('the prediction is written down when the lot is logged',
+      (tester) async {
+    /*
+      Phase 6's exit gate: a prediction compared against what actually
+      happened, published including where the engine was wrong. The second half
+      of that sentence is impossible without the first half being recorded at
+      the time — the table is versioned, and recomputing later would compare
+      today's model against yesterday's outcome.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await launch(tester);
+    await logAYam(tester);
+
+    final row = await database.select(database.lots).getSingle();
+    expect(row.predictedShortestMinutes, greaterThan(0));
+    expect(row.predictedLongestMinutes,
+        greaterThan(row.predictedShortestMinutes!));
+    // Offline in these tests, so the engine was guessing and says so.
+    expect(row.predictedConfidence, 'estimated');
+    expect(row.shelfLifeTableVersion, ShelfLifeTable.current.version);
   });
 }

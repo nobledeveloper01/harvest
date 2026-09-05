@@ -10,6 +10,7 @@ import 'data/weather/weather_store.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
 import 'domain/lots/lot.dart';
+import 'domain/lots/outcome.dart';
 import 'domain/lots/quantity.dart';
 import 'domain/speech/phrase.dart';
 import 'domain/spoilage/alerts.dart';
@@ -136,6 +137,24 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() => _language = language);
   }
 
+  /// Record what happened to a lot, and stop warning about it.
+  Future<void> _close(int index, Outcome outcome) async {
+    final id = _stored.ids[index];
+    if (id == null) return;
+    await _lots.close(id, outcome);
+    /*
+      The alerts go with it.
+
+      A lot that sold on Tuesday has no business buzzing on Thursday, and a
+      notification about a harvest the farmer no longer has is the fastest way
+      to teach them the app does not know what it is talking about.
+    */
+    await _alarms.clearFor(id);
+    final stored = await _lots.all();
+    if (!mounted) return;
+    setState(() => _stored = stored);
+  }
+
   Future<void> _refreshWeather() async {
     final weather = await _weatherStore.forRegion(_region ?? Region.unknown);
     if (!mounted || weather == null) return;
@@ -155,6 +174,12 @@ class _HarvestAppState extends State<HarvestApp> {
     */
     final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
     if (life != null) {
+      // Stored as it was made. Phase 6 compares this against what actually
+      // happened, and there is no honest way to reconstruct it later — the
+      // table is versioned and recomputing would compare today's model
+      // against yesterday's outcome.
+      await _lots.rememberPrediction(id, life);
+
       final alerts = AlertSchedule.forLot(
         lot: lot,
         life: life,
@@ -223,6 +248,7 @@ class _HarvestAppState extends State<HarvestApp> {
         language: _language ?? Speech.values.first,
         onLogAnother: () => setState(() => _logging = true),
         onToggleBrightness: _flipBrightness,
+        onClosed: _close,
       );
 
   void _flipBrightness() {

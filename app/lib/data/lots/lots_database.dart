@@ -39,6 +39,36 @@ class Lots extends Table {
 
   DateTimeColumn get harvestedAt => dateTime()();
   DateTimeColumn get loggedAt => dateTime()();
+
+  /*
+    The prediction, as it was made.
+
+    Phase 6's exit gate is that a prediction is compared against what actually
+    happened to that lot, and the comparison published — including where the
+    engine was wrong. That is impossible to do afterwards: the shelf-life table
+    is versioned and will be revised, so recomputing a three-month-old lot's
+    window would compare today's model against yesterday's outcome and call the
+    difference an improvement.
+
+    So the window is stored at the moment it was predicted, with the version of
+    the table that produced it. Same discipline as `grams`: a fact about a
+    moment, not a view over a table.
+  */
+  IntColumn get predictedShortestMinutes => integer().nullable()();
+  IntColumn get predictedLongestMinutes => integer().nullable()();
+
+  /// `measured` or `estimated` — whether a real weather reading went into it.
+  /// A model that is wrong when it knew the weather is a different problem
+  /// from one that is wrong when it was guessing.
+  TextColumn get predictedConfidence => text().nullable()();
+  IntColumn get shelfLifeTableVersion => integer().nullable()();
+
+  /// What happened, and when. Null while the lot is still live.
+  TextColumn get outcome => text().nullable()();
+  DateTimeColumn get outcomeAt => dateTime().nullable()();
+
+  /// Why, for a loss only.
+  TextColumn get lossReason => text().nullable()();
 }
 
 @DriftDatabase(tables: [Lots])
@@ -47,5 +77,33 @@ class LotsDatabase extends _$LotsDatabase {
       : super(executor ?? driftDatabase(name: 'harvest'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            /*
+              Added, never rewritten.
+
+              Lots recorded under version 1 have no prediction on them, and
+              there is no honest way to invent one — the window would be
+              computed from today's table and dated to a harvest weeks ago.
+              They stay null, and Phase 6's comparison simply has nothing to
+              say about them, which is the truth.
+            */
+            for (final column in [
+              lots.predictedShortestMinutes,
+              lots.predictedLongestMinutes,
+              lots.predictedConfidence,
+              lots.shelfLifeTableVersion,
+              lots.outcome,
+              lots.outcomeAt,
+              lots.lossReason,
+            ]) {
+              await m.addColumn(lots, column);
+            }
+          }
+        },
+      );
 }

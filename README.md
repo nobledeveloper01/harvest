@@ -48,8 +48,13 @@ for twelve hours, and thrown away rather than reused past that — temperature i
 the biggest lever in the model, so yesterday's reading applied at dawn is not
 stale but wrong. Nothing waits for it.
 
-What is not done: the decision screen and loss recording (the rest of Phase 2),
-prices, diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
+A lot is closed by saying what happened to it — sold, stored, processed, or
+lost — and a loss asks **why** from a fixed illustrated list. That answer is the
+only thing in the product that can tell whether the engine was wrong about
+tomatoes or wrong about tomatoes in the rain.
+
+What is not done: the decision screen, which needs prices (Phase 3), then
+diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
 work — see **The hard part**.
 
 ## The insight
@@ -158,6 +163,29 @@ and 3:1 for the colours that carry state.
 
 That test found a real defect on its first run: the light-theme amber meaning
 *half the window is gone* was 2.69:1 against white.
+
+### The engine has to be able to be wrong
+
+<p align="center">
+  <img src="docs/screenshots/07-outcome.png" width="250" alt="What happened to it: sold, stored, processed, lost" />
+  <img src="docs/screenshots/08-loss.png" width="250" alt="Why was it lost: six reasons, as pictures" />
+</p>
+
+Phase 6's exit gate is that *a prediction the engine made is compared against
+what actually happened to that lot, and the comparison published — including
+where the engine was wrong.* Nothing else in the product can produce the second
+half of that sentence, so the first half is written down at the moment it is
+made: the window, its confidence, and the version of the table that produced
+it, stored on the lot.
+
+It cannot be reconstructed afterwards. The table is versioned and will be
+revised, so recomputing a three-month-old lot's window would compare today's
+model against yesterday's outcome and call the difference an improvement.
+
+The loss reasons are a **fixed list with no "other"**. A sixth answer meaning
+*none of these* would absorb every case the list is missing and hide exactly the
+pattern worth finding; a missing reason shows up instead as a category that
+stops making sense, which is a signal rather than a shrug.
 
 ### The farmer's correction wins, for ever
 

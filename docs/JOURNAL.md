@@ -9,6 +9,38 @@ point — everything else is in the commit log.
 
 **Phase 2.**
 
+### A migration is the one thing you cannot test in production
+
+Adding the calibration columns meant a schema change, and a migration is the
+single piece of code in this app that can destroy a farmer's harvest silently
+and permanently. It runs once per phone, on an upgrade, in a field, with nobody
+watching — the last place to find out whether it works by shipping it.
+
+So there is a test that builds a real version-1 database in raw SQL, with a lot
+in it, sets `user_version` and opens it with version-2 code. Replacing the
+migration with the lazy version — drop the table, recreate it — fails with
+`Expected: an object with length of <1> / Actual: []`, which is precisely the
+sentence that would otherwise have been a farmer's missing harvest.
+
+The migrated rows keep null predictions rather than invented ones. There is no
+honest way to fill them in: the window would be computed from today's table and
+dated to a harvest weeks ago, and Phase 6 would then compare today's model
+against an old outcome and call the difference an improvement. Null means
+"nothing to say about this one", which is true.
+
+### An `ExcludeSemantics` that excluded more than it looked like
+
+The lot card gained a second thing to do: the card opens what-happened-to-it and
+the speaker badge speaks. Both worked perfectly under a finger, and the badge
+was **invisible to a screen reader** — the card's outer `ExcludeSemantics`,
+there to stop its own labels being read twice, swallowed every descendant
+including the badge's own `Semantics`.
+
+Found by a test that could not find `'hear this lot'`. Worth noting because the
+failure mode is exactly backwards from the usual one: the thing that was broken
+was the accessible path, on a screen built for somebody who depends on it, while
+the sighted path looked finished.
+
 ### The failure that is not an error
 
 `WeatherStore.forRegion` swallows everything — no signal, a timeout, a changed

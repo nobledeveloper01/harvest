@@ -57,6 +57,8 @@ NAMES = {
     'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
     'weight': (ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
     'region': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
+    'outcome': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
+    'loss': (ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
 }
 
 SPEECH = ROOT / 'app/assets/speech'

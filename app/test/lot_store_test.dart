@@ -7,7 +7,9 @@ import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/lots/lots_database.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
+import 'package:harvest/domain/lots/outcome.dart';
 import 'package:harvest/domain/lots/quantity.dart';
+import 'package:harvest/domain/spoilage/shelf_life.dart';
 
 void main() {
   late LotsDatabase database;
@@ -184,5 +186,91 @@ void main() {
     final read = await store.all();
     expect(read.unreadable, 2);
     expect(read.lots, hasLength(1));
+  });
+
+  group('the calibration record', () {
+    test('the prediction is stored as it was made, with its table version',
+        () async {
+      /*
+        Phase 6's exit gate is comparing a prediction against what actually
+        happened, and publishing it — including where the engine was wrong.
+        That is impossible to reconstruct afterwards: the shelf-life table is
+        versioned and will be revised, so recomputing a three-month-old lot's
+        window would compare today's model against yesterday's outcome and call
+        the difference an improvement.
+      */
+      final id = await store.add(lot());
+      const life = ShelfLife(
+        shortest: Duration(hours: 30),
+        longest: Duration(hours: 70),
+        confidence: Confidence.measured,
+        tableVersion: 1,
+      );
+      await store.rememberPrediction(id, life);
+
+      final row = await database.select(database.lots).getSingle();
+      expect(row.predictedShortestMinutes, 30 * 60);
+      expect(row.predictedLongestMinutes, 70 * 60);
+      expect(row.predictedConfidence, 'measured');
+      expect(row.shelfLifeTableVersion, 1);
+    });
+
+    test('a lot is open until somebody says otherwise', () async {
+      await store.add(lot());
+      expect((await store.all()).lots.single.isOpen, isTrue);
+    });
+
+    test('what happened comes back with why', () async {
+      final id = await store.add(lot());
+      await store.close(
+        id,
+        Outcome.record(
+          what: LotOutcome.lost,
+          at: noon,
+          why: LossReason.water,
+        )!,
+      );
+
+      final read = (await store.all()).lots.single;
+      expect(read.isOpen, isFalse);
+      expect(read.outcome!.what, LotOutcome.lost);
+      expect(read.outcome!.why, LossReason.water);
+      expect(read.outcome!.at, noon);
+    });
+
+    test('a sale comes back with no reason attached', () async {
+      final id = await store.add(lot());
+      await store.close(id, Outcome.record(what: LotOutcome.sold, at: noon)!);
+      expect((await store.all()).lots.single.outcome!.why, isNull);
+    });
+
+    test('an outcome this version cannot name leaves the lot open', () async {
+      /*
+        Not dropped. Losing the harvest entirely because a future version added
+        a fifth outcome would be worse than showing it as live — the lot is
+        still real, and the farmer can say what happened to it again.
+      */
+      await store.add(lot());
+      await (database.update(database.lots)).write(
+        LotsCompanion(
+          outcome: const Value('bartered'),
+          outcomeAt: Value(noon),
+        ),
+      );
+
+      final read = await store.all();
+      expect(read.unreadable, 0, reason: 'the lot itself is perfectly readable');
+      expect(read.lots.single.isOpen, isTrue);
+    });
+
+    test('the row ids come back, so an outcome can be written to one', () async {
+      await store.add(lot(crop: Crop.yam, daysAgo: 2));
+      await store.add(lot(crop: Crop.okra, daysAgo: 1));
+
+      final read = await store.all();
+      expect(read.ids, hasLength(2));
+      // Newest harvest first, so index 0 is the okra.
+      expect(read.lots[read.ids.keys.first].crop, Crop.okra);
+    });
   });
 }

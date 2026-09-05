@@ -53,3 +53,13 @@ regions/middle-belt.png
 regions/south-west.png
 regions/south-east.png
 regions/elsewhere.png
+outcomes/sold.png
+outcomes/stored.png
+outcomes/processed.png
+outcomes/lost.png
+losses/rotted.png
+losses/pests.png
+losses/damaged.png
+losses/no-buyer.png
+losses/water.png
+losses/animals.png

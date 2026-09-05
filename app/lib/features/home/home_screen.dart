@@ -5,10 +5,12 @@ import '../../core/theme.dart';
 import '../../data/lots/lot_store.dart';
 import '../../data/speech/speaker.dart';
 import '../../domain/lots/lot.dart';
+import '../../domain/lots/outcome.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_weight.dart';
 import '../../domain/spoilage/lot_state.dart';
 import '../../domain/spoilage/shelf_life.dart';
+import '../lots/outcome_sheet.dart';
 import 'freshness_ring.dart';
 
 /// What the farmer has logged.
@@ -28,6 +30,7 @@ class HomeScreen extends StatelessWidget {
     required this.weather,
     required this.onLogAnother,
     required this.onToggleBrightness,
+    required this.onClosed,
     super.key,
   });
 
@@ -57,6 +60,9 @@ class HomeScreen extends StatelessWidget {
   /// early morning or evening, but a light theme that no farmer can reach is a
   /// theme that exists only in a contrast test.
   final VoidCallback onToggleBrightness;
+
+  /// Record what happened to the lot at this index.
+  final void Function(int index, Outcome outcome) onClosed;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +174,7 @@ class HomeScreen extends StatelessWidget {
                             spent: spent,
                             state: state,
                             onSay: () => _sayLot(speaker, language, lot, state),
+                            onTap: () => _askWhatHappened(context, lot, index),
                           );
                         },
                       ),
@@ -227,6 +234,26 @@ Future<void> _sayLot(
   );
 }
 
+/// Ask what happened, and record the answer.
+Future<void> _askWhatHappened(
+  BuildContext context,
+  Lot lot,
+  int index,
+) async {
+  final screen = context.findAncestorWidgetOfExactType<HomeScreen>()!;
+  final outcome = await Navigator.of(context).push<Outcome>(
+    MaterialPageRoute(
+      builder: (_) => OutcomeSheet(
+        speaker: screen.speaker,
+        language: screen.language,
+        lot: lot,
+        now: screen.now,
+      ),
+    ),
+  );
+  if (outcome != null) screen.onClosed(index, outcome);
+}
+
 class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -270,6 +297,7 @@ class _LotCard extends StatelessWidget {
     required this.spent,
     required this.state,
     required this.onSay,
+    required this.onTap,
   });
 
   final Lot lot;
@@ -282,6 +310,12 @@ class _LotCard extends StatelessWidget {
   final LotState? state;
 
   final VoidCallback onSay;
+
+  /// The card opens the lot. The speaker badge, and only the badge, speaks —
+  /// they were the same gesture until there was something else to do with a
+  /// lot, and "tap to hear" quietly became "tap to close it" for anybody who
+  /// had learnt the first.
+  final VoidCallback onTap;
 
   /// How long since it left the ground, in the words somebody would use.
   ///
@@ -304,111 +338,138 @@ class _LotCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final freshness = Theme.of(context).extension<Freshness>()!;
 
-    return Semantics(
-      container: true,
-      label: '${lot.crop.label}, ${tidy(lot.quantity.kilograms)} kilograms, '
-          '${lot.storage.label}, $_since'
-          '${state == null ? '' : ', ${_stateWords[state]!}'}'
-          '. Tap to hear it.',
-      button: true,
-      child: ExcludeSemantics(
-        child: Pressable(
-          borderRadius: Radii.card,
-          onTap: onSay,
-          child: Container(
-            decoration: BoxDecoration(
-              color: freshness.raised,
-              borderRadius: Radii.card,
-              border: Border.all(color: freshness.outline),
-            ),
-            child: Padding(
-            padding: const EdgeInsets.all(Gap.m),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 76,
-                  height: 76,
-                  child: switch ((spent, state)) {
-                    (final fraction?, final lotState?) => FreshnessRing(
-                        spent: fraction,
-                        state: lotState,
-                        // Circular inside the ring, so the two are concentric.
-                        // A rounded square inside a circle leaves its corners
-                        // reaching for the arc, which reads as two objects
-                        // that nearly collide rather than one status.
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/crops/${lot.crop.id}.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    _ => Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: ClipRRect(
-                          borderRadius: Radii.chip,
-                          child: Image.asset(
-                            'assets/crops/${lot.crop.id}.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                  },
-                ),
-                const SizedBox(width: Gap.m),
-                Expanded(
-                  child: Column(
+    /*
+      Two targets in one card, and they are separate all the way down.
+
+      The card was one tappable surface that spoke; then there was something
+      else to do with a lot, and "tap to hear" would have become "tap to close
+      it" for anybody who had learnt the first. So the picture and the words
+      open the question, and the badge — and only the badge — speaks.
+
+      They are separate `Semantics` nodes too, which is not automatic: an
+      `ExcludeSemantics` around the whole card swallowed the badge's label and
+      made it unreachable to a screen reader while remaining perfectly
+      tappable by a finger.
+    */
+    return Container(
+      decoration: BoxDecoration(
+        color: freshness.raised,
+        borderRadius: Radii.card,
+        border: Border.all(color: freshness.outline),
+      ),
+      padding: const EdgeInsets.all(Gap.m),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Semantics(
+              button: true,
+              container: true,
+              label: '${lot.crop.label}, ${tidy(lot.quantity.kilograms)} '
+                  'kilograms, ${lot.storage.label}, $_since'
+                  '${state == null ? '' : ', ${_stateWords[state]!}'}'
+                  '. Tap to say what happened to it.',
+              child: ExcludeSemantics(
+                child: Pressable(
+                  borderRadius: Radii.chip,
+                  onTap: onTap,
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(lot.crop.label, style: text.titleMedium),
-                      const SizedBox(height: Gap.xs),
-                      Text(
-                        '${tidy(lot.quantity.amount)} ${lot.quantity.unit.label}'
-                        ' · ${tidy(lot.quantity.kilograms)} kg',
-                        style: text.bodyMedium?.copyWith(
-                          color: freshness.fresh,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: switch ((spent, state)) {
+                          (final fraction?, final lotState?) => FreshnessRing(
+                              spent: fraction,
+                              state: lotState,
+                              // Circular inside the ring, so the two are
+                              // concentric. A rounded square inside a circle
+                              // leaves its corners reaching for the arc.
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/crops/${lot.crop.id}.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          _ => Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: ClipRRect(
+                                borderRadius: Radii.chip,
+                                child: Image.asset(
+                                  'assets/crops/${lot.crop.id}.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                        },
                       ),
-                      const SizedBox(height: Gap.s),
-                      Wrap(
-                        spacing: Gap.s,
-                        runSpacing: Gap.xs,
-                        children: [
-                          _Tag(icon: Icons.schedule_rounded, label: _since),
-                          _Tag(
-                            icon: Icons.warehouse_rounded,
-                            label: lot.storage.label,
-                          ),
-                        ],
+                      const SizedBox(width: Gap.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(lot.crop.label, style: text.titleMedium),
+                            const SizedBox(height: Gap.xs),
+                            Text(
+                              '${tidy(lot.quantity.amount)} '
+                              '${lot.quantity.unit.label}'
+                              ' · ${tidy(lot.quantity.kilograms)} kg',
+                              style: text.bodyMedium?.copyWith(
+                                color: freshness.fresh,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: Gap.s),
+                            Wrap(
+                              spacing: Gap.s,
+                              runSpacing: Gap.xs,
+                              children: [
+                                _Tag(
+                                    icon: Icons.schedule_rounded,
+                                    label: _since),
+                                _Tag(
+                                  icon: Icons.warehouse_rounded,
+                                  label: lot.storage.label,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // The affordance. Without it the card is a card, and nobody
-                // discovers that it talks by guessing.
-                Padding(
-                  padding: const EdgeInsets.only(left: Gap.s),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: freshness.fresh.withValues(alpha: 0.16),
-                      borderRadius: Radii.pill,
-                    ),
-                    child: Icon(
-                      Icons.volume_up_rounded,
-                      size: 20,
-                      color: freshness.fresh,
-                    ),
-                  ),
-                ),
-                ],
               ),
             ),
           ),
-        ),
+          const SizedBox(width: Gap.s),
+          Semantics(
+            button: true,
+            container: true,
+            label: 'hear this lot',
+            child: ExcludeSemantics(
+              child: Pressable(
+                borderRadius: Radii.pill,
+                onTap: onSay,
+                child: Container(
+                  width: Target.standard - 8,
+                  height: Target.standard - 8,
+                  decoration: BoxDecoration(
+                    color: freshness.fresh.withValues(alpha: 0.16),
+                    borderRadius: Radii.pill,
+                  ),
+                  child: Icon(
+                    Icons.volume_up_rounded,
+                    size: 22,
+                    color: freshness.fresh,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

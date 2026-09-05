@@ -10,6 +10,18 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Saying what happened to a lot.** Sold, put in storage, dried, or lost —
+  from pictures — and a loss asks why from a fixed list of six. Closing a lot
+  cancels its warnings, because a harvest that sold on Tuesday has no business
+  buzzing on Thursday and a notification about a lot the farmer no longer has
+  is the fastest way to teach them the app does not know what it is talking
+  about.
+- **The prediction is written down when the lot is logged** — the window, its
+  confidence, and the version of the table that produced it. Phase 6's exit
+  gate is comparing a prediction against what actually happened, and that
+  cannot be reconstructed later: the table is versioned, so recomputing an old
+  lot would compare today's model against yesterday's outcome and call the
+  difference an improvement.
 - **Weather, when there is a network, and honesty when there is not.** One
   reading per trade belt, taken at its largest produce town, cached and used for
   twelve hours. Past twelve it is thrown away rather than reused: temperature is
@@ -165,6 +177,12 @@ Entries say *why*, not just what.
   anything used one-handed outdoors, both themes authored, dark by default.
 
 ### Changed
+
+- **A lot card now has two targets.** The card opens what-happened-to-it; the
+  speaker badge, and only the badge, speaks. They were one gesture until there
+  was something else to do with a lot, and leaving them merged would have
+  turned "tap to hear" quietly into "tap to close it" for anybody who had learnt
+  the first.
 
 - **The primary action is pinned below the scroll on both logging screens.**
   Found by running the app rather than by testing it: with the assumption card

@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 
 import '../../domain/crops/crop.dart';
 import '../../domain/lots/lot.dart';
+import '../../domain/lots/outcome.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_weight.dart';
@@ -62,6 +63,14 @@ class Speaker {
   /// Say a region's name, in one language.
   Future<void> sayRegion(Region region, Speech language) =>
       _play('${language.code}/region/${region.id}');
+
+  /// Say what happened to a lot.
+  Future<void> sayOutcome(LotOutcome outcome, Speech language) =>
+      _play('${language.code}/outcome/${outcome.id}');
+
+  /// Say why a lot was lost.
+  Future<void> sayLoss(LossReason reason, Speech language) =>
+      _play('${language.code}/loss/${reason.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

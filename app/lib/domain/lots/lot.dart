@@ -11,6 +11,7 @@
 /// clock, on every machine, in every year.
 library;
 
+import 'outcome.dart';
 import 'quantity.dart';
 import '../crops/crop.dart';
 
@@ -62,6 +63,7 @@ class Lot {
     required this.storage,
     required this.harvestedAt,
     required this.loggedAt,
+    required this.outcome,
   });
 
   final Crop crop;
@@ -73,6 +75,17 @@ class Lot {
 
   /// When it came out of the ground, to the day.
   final DateTime harvestedAt;
+
+  /// What happened to it, or null while it is still live.
+  ///
+  /// Not a *state* alongside fresh and at-risk: those are computed from the
+  /// clock and change on their own, and this is a fact the farmer supplied.
+  /// Mixing them into one field would mean a lot could be "sold" one minute
+  /// and "critical" the next because time passed.
+  final Outcome? outcome;
+
+  /// Still on the farmer's hands.
+  bool get isOpen => outcome == null;
 
   /// When the farmer told the app about it.
   ///
@@ -114,8 +127,23 @@ class Lot {
       storage: storage,
       harvestedAt: day,
       loggedAt: now,
+      outcome: null,
     );
   }
+
+  /// The same lot, with what happened to it.
+  ///
+  /// A new value rather than a mutation, and the outcome cannot be taken back
+  /// here — correcting a wrong one is a separate action a screen has to offer
+  /// deliberately, not something a caller can do by passing null.
+  Lot closedWith(Outcome outcome) => Lot._(
+        crop: crop,
+        quantity: quantity,
+        storage: storage,
+        harvestedAt: harvestedAt,
+        loggedAt: loggedAt,
+        outcome: outcome,
+      );
 
   /// Rebuild a lot that was already recorded.
   ///
@@ -131,6 +159,7 @@ class Lot {
     required StorageCondition storage,
     required DateTime harvestedAt,
     required DateTime loggedAt,
+    Outcome? outcome,
   }) =>
       Lot._(
         crop: crop,
@@ -138,6 +167,7 @@ class Lot {
         storage: storage,
         harvestedAt: harvestedAt,
         loggedAt: loggedAt,
+        outcome: outcome,
       );
 
   @override
@@ -147,8 +177,10 @@ class Lot {
       other.quantity == quantity &&
       other.storage == storage &&
       other.harvestedAt == harvestedAt &&
-      other.loggedAt == loggedAt;
+      other.loggedAt == loggedAt &&
+      other.outcome == outcome;
 
   @override
-  int get hashCode => Object.hash(crop, quantity, storage, harvestedAt, loggedAt);
+  int get hashCode =>
+      Object.hash(crop, quantity, storage, harvestedAt, loggedAt, outcome);
 }

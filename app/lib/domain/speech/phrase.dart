@@ -101,6 +101,19 @@ enum Phrase {
   /// gets argued with rather than used.
   timeIsUp('time-is-up'),
 
+  /// *"What happened to it?"*
+  ///
+  /// FR-2.4: terminal states are user-driven. The app can watch a window close
+  /// and cannot know whether that means the crop rotted or the farmer sold it
+  /// on Tuesday and never said.
+  whatHappened('what-happened'),
+
+  /// *"Why was it lost?"*
+  ///
+  /// The one answer in the product that can tell Phase 6 whether the engine
+  /// was wrong about tomatoes or wrong about tomatoes in the rain.
+  whyWasItLost('why-was-it-lost'),
+
   /// *"Where do you farm? It changes what a basket weighs."*
   ///
   /// Asked at the moment the answer changes a number the farmer is looking at,
