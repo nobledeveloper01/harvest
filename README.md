@@ -13,11 +13,30 @@ naira, and **matches** verified buyers to available lots.
 
 See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full analysis.
 
+<p align="center">
+  <img src="docs/screenshots/01-language.png" width="240" alt="Language picker: five languages, each named in its own language, each spoken aloud as it is focused" />
+  <img src="docs/screenshots/02-crops.png" width="240" alt="Crop grid: twenty-five crops as pictures, ordered by how fast each one spoils" />
+  <img src="docs/screenshots/05-home.png" width="240" alt="Home: the lots logged so far, newest harvest first" />
+</p>
+
+> **Every crop tile and every storage tile above is hatched grey on purpose.** Those
+> are placeholders that announce themselves — the illustrations are a release gate
+> (R4), and a stand-in that looked like a drawing would be how a missing feature
+> ships. The same is true of the audio: all 415 clips currently say, in English,
+> that they are placeholders and which language belongs there.
+
 ---
 
 ## Status
 
-Specified, not yet built. Fourth in the portfolio build order.
+**Phase 1 of 7 — voice and logging.** A lot is logged end to end: language, crop,
+quantity in local units, where it is kept, and when it was picked. It is stored in
+SQLite and still there tomorrow. The pure-Dart domain is at 100% coverage and
+`make ci` is green.
+
+What is not done: the spoilage engine and its alerts (Phase 2), prices, diagnosis
+and the marketplace. Push-to-talk is the one Phase 1 item still outstanding, and it
+is blocked on hardware rather than on work — see **The hard part**.
 
 ## The insight
 
@@ -53,11 +72,44 @@ System text-to-speech and speech recognition for Hausa, Yoruba, Igbo and Nigeria
 inconsistent on Android and largely absent on iOS. Building a voice-first interface on system
 speech would mean the primary persona's language works on some devices and not others.
 
-The resolution is a three-tier strategy with **bundled pre-recorded audio as the guaranteed
-path**, composed sentences from those fragments for dynamic content, and system TTS only as an
-optional enhancement. Speech input uses closed-vocabulary recognition over the crop catalogue
-rather than free dictation — dramatically more accurate in a noisy field, and it degrades to a
-grid of pictures rather than to nothing.
+That was checked rather than assumed: `say -v '?'` on the build machine offers **forty-three
+English voices and not one** for Hausa, Yoruba, Igbo or Pidgin. So every fixed prompt is a
+bundled recording, and `make audio-check` fails the build when one is missing in any of the five
+languages — reading the language, phrase, crop, unit and storage lists out of the Dart enums
+rather than a manifest that goes stale. See [ADR-0001](docs/adr/0001-speech-is-bundled-not-synthesised.md).
+
+### Saying a number without stitching words together
+
+<p align="center">
+  <img src="docs/screenshots/03-quantity.png" width="250" alt="Quantity: a number pad, the nine measures as pictures, and the kilogram equivalent always on screen" />
+  <img src="docs/screenshots/04-storage.png" width="250" alt="Storage: five conditions as pictures, and a day row that offers exactly the fifteen days the domain accepts" />
+</p>
+
+The obvious way to say *"about forty-five kilograms"* is a clip per number word and a template
+per sentence. It does not survive contact with these languages. Yoruba counts subtractively —
+forty-five is *marùndínláàádọ́ta*, **five taken from fifty**, one word with nothing in it
+corresponding to "forty" — and a sentence assembled from words recorded in isolation has the
+wrong intonation on every one of them.
+
+So the app says fewer numbers and says them properly: a closed scale of thirty-nine **whole
+recorded sentences**, fine where lots are small and coarse where they are large, chosen by
+nearest ratio. The screen shows 48 kg and the app says *"about fifty"*, which is the honest way
+round given the weight is usually inferred from a table of regional averages.
+
+### The farmer's correction wins, for ever
+
+That table is versioned, and a farmer who says the app is wrong is not overruled by a later
+revision of it. Their weight is stored detached from the table: four baskets, ninety-six
+kilograms, marked as **corrected**, and nothing recomputes it. An app that quietly overrode
+somebody who had weighed their own basket would be teaching them not to bother correcting
+anything.
+
+### Speech input is not yet claimed
+
+Push-to-talk with a closed-vocabulary grammar over the crop catalogue is specified and not built.
+Recognition coverage for these four languages cannot be verified from this machine, and this
+project's rule is that a capability is checked before it is depended on. The illustrated grid is
+the primary path in any case — speech is the accelerator, not the floor.
 
 ## Platforms
 
