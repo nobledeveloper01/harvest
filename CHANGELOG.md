@@ -19,6 +19,14 @@ Entries say *why*, not just what.
   the three sentences `docs/04-UX-DESIGN.md` already writes, and **both
   non-confident outcomes route to a person** — a farmer about to spray a field
   on a maybe is exactly who the escalation is for. ADR-0007.
+- **The classifier port, and a stand-in that recognises nothing.** Scores per
+  class, never an answer — a classifier that returned an `Ailment` would be
+  making the judgement the confidence gate exists to make, and would throw away
+  the runner-up score, which is the number that separates a model that knows
+  from a coin toss. `UntrainedClassifier` returns an empty result for any input,
+  always: the tempting placeholder returns a plausible ailment so the screens
+  demo nicely, and that one is indistinguishable from a working classifier to
+  everybody who is not reading its source. Carried as **R10**.
 - **The diagnosis result screen.** Confidence in words and never a number —
   asserted, because a percentage is the thing this screen most easily becomes:
   the model produces one and printing it feels like candour. The hedge and the

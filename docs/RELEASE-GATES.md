@@ -18,6 +18,8 @@ built past the point anybody can honestly ship it.
 | R4 | Every crop and unit tile is an illustration **somebody who draws for a living has looked at**. All 85 are now drawn rather than hatched — `scripts/illustrate.py`, flat shapes, family-tinted grounds, silhouettes chosen so the three greens and the three peppers are told apart by shape and not only by colour. What is still missing is the judgement of a person who has seen the actual crops in an actual market: whether a Nigerian farmer looking at the `ugu` tile says *ugu*. The gate is no longer "there is nothing to look at" but "nobody qualified has looked" | An illustrator, and somebody who has seen the crops and the measures | Phase 1 |
 | R5 | The bundled clips are **compressed**. 415 placeholder WAVs are 24 MB at 8 kHz, and real recordings at a usable sample rate would be several times that. WAV was chosen so `audio-check` could open a clip and prove it is not silent; that gate has to survive the format change rather than be dropped with it | A decision on format, and a way to check a compressed clip is not silent | Phase 2 |
 
+| R10 | A **trained classifier**, with per-class precision and recall published. `UntrainedClassifier` recognises nothing, always — deliberately, because a stand-in that returned a plausible ailment would be indistinguishable from a working one to everybody not reading its source, and would put a disease name in front of a farmer with nothing behind it. The diagnosis feature is not reachable from the app while this stands | A labelled dataset for these thirteen classes on these crops, and somebody to train and evaluate against it | Phase 4 |
+
 ## Cleared
 
 | # | Gate | How |
