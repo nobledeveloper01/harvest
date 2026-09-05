@@ -189,7 +189,8 @@ void main() {
   testWidgets('Save does nothing until there is something to save', (tester) async {
     await pump(tester);
 
-    final save = () => tester.widget<FilledButton>(find.byType(FilledButton));
+    FilledButton save() =>
+        tester.widget<FilledButton>(find.byType(FilledButton));
     expect(save().onPressed, isNull, reason: 'no amount, no measure');
 
     await type(tester, '3');

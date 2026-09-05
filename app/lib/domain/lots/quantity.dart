@@ -249,6 +249,30 @@ class Quantity {
     );
   }
 
+  /// Rebuild a quantity that was already recorded.
+  ///
+  /// **Applies no rules.** It does not convert, does not consult a table, and
+  /// does not re-derive anything — it hands back exactly what was stored,
+  /// because that is a fact about a moment that has already passed.
+  ///
+  /// For the store, and for nothing else. Every other path in must go through
+  /// [inUnits], [weighed] or [correctedTo], which are the three ways a
+  /// quantity can legitimately come into existence.
+  factory Quantity.restore({
+    required double amount,
+    required Unit unit,
+    required int grams,
+    required HowWeighed how,
+    required int? tableVersion,
+  }) =>
+      Quantity._(
+        amount: amount,
+        unit: unit,
+        grams: grams,
+        how: how,
+        tableVersion: tableVersion,
+      );
+
   /// The farmer says the app's assumption is wrong.
   ///
   /// Keeps [amount] and [unit] — they are still four baskets — and replaces the

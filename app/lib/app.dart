@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
+import 'data/lots/lot_store.dart';
+import 'data/lots/lots_database.dart';
 import 'data/settings/language_store.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
@@ -10,6 +12,7 @@ import 'domain/speech/phrase.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/lots/storage_screen.dart';
 
 /// The app.
@@ -17,14 +20,15 @@ import 'features/lots/storage_screen.dart';
 /// **Dark by default, not `ThemeMode.system`** — the portfolio's standing
 /// choice. Both themes are authored; neither is derived from the other.
 class HarvestApp extends StatefulWidget {
-  /// [speaker] and [languages] are injectable so the whole flow — picker,
-  /// grid, and the choice surviving a relaunch — can be tested without an
-  /// audio device. The defaults are the real ones; nothing in production
-  /// passes either.
-  const HarvestApp({this.speaker, this.languages, super.key});
+  /// [speaker], [languages] and [lots] are injectable so the whole flow —
+  /// picker, grid, quantity, storage, and a lot surviving a relaunch — can be
+  /// tested without an audio device or a file on disk. The defaults are the
+  /// real ones; nothing in production passes any of them.
+  const HarvestApp({this.speaker, this.languages, this.lots, super.key});
 
   final Speaker? speaker;
   final LanguageStore? languages;
+  final LotStore? lots;
 
   @override
   State<HarvestApp> createState() => _HarvestAppState();
@@ -33,11 +37,16 @@ class HarvestApp extends StatefulWidget {
 class _HarvestAppState extends State<HarvestApp> {
   late final Speaker _speaker = widget.speaker ?? Speaker();
   late final LanguageStore _languages = widget.languages ?? const LanguageStore();
+  late final LotStore _lots = widget.lots ?? LotStore(LotsDatabase());
+
+  StoredLots _stored = const StoredLots(lots: [], unreadable: 0);
+
+  /// True while the farmer is part-way through logging one.
+  bool _logging = false;
 
   Speech? _language;
   Crop? _crop;
   Quantity? _quantity;
-  Lot? _lot;
 
   /*
     Three states, not two: unknown, none, and chosen.
@@ -53,12 +62,21 @@ class _HarvestAppState extends State<HarvestApp> {
   @override
   void initState() {
     super.initState();
-    _languages.read().then((language) {
-      if (!mounted) return;
-      setState(() {
-        _language = language;
-        _loaded = true;
-      });
+    _start();
+  }
+
+  Future<void> _start() async {
+    final language = await _languages.read();
+    final stored = await _lots.all();
+    if (!mounted) return;
+    setState(() {
+      _language = language;
+      _stored = stored;
+      // Straight into logging when there is nothing to show. An empty list
+      // above a button is a screen that asks the farmer to read their way to
+      // the only thing they can do.
+      _logging = stored.lots.isEmpty;
+      _loaded = true;
     });
   }
 
@@ -76,13 +94,24 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() => _language = language);
   }
 
+  Future<void> _save(Lot lot) async {
+    await _lots.add(lot);
+    final stored = await _lots.all();
+    if (!mounted) return;
+    setState(() {
+      _stored = stored;
+      _crop = null;
+      _quantity = null;
+      _logging = false;
+    });
+  }
+
   void _forgetLanguage() {
     _languages.clear();
     setState(() {
       _language = null;
       _crop = null;
       _quantity = null;
-      _lot = null;
     });
   }
 
@@ -96,71 +125,50 @@ class _HarvestAppState extends State<HarvestApp> {
       darkTheme: Palette.theme(brightness: Brightness.dark),
       home: !_loaded
           ? const Scaffold(body: SizedBox.shrink())
-          : switch ((_language, _crop)) {
-              (null, _) => LanguageScreen(speaker: _speaker, onChosen: _choose),
-              (final language?, null) => CropGridScreen(
-                  speaker: _speaker,
-                  language: language,
-                  onChosen: (crop) => setState(() => _crop = crop),
-                  onChangeLanguage: _forgetLanguage,
-                ),
-              (final language?, final crop?) => switch ((_quantity, _lot)) {
-                  (null, _) => QuantityScreen(
-                      speaker: _speaker,
-                      language: language,
-                      crop: crop,
-                      onEntered: (quantity) =>
-                          setState(() => _quantity = quantity),
-                    ),
-                  (final quantity?, null) => StorageScreen(
-                      speaker: _speaker,
-                      language: language,
-                      crop: crop,
-                      quantity: quantity,
-                      // The one place the clock is read. Every screen and
-                      // every rule below this takes `now` as a parameter, so
-                      // this line is the whole app's contact with the present
-                      // moment — which is what makes any of it testable at a
-                      // date boundary.
-                      now: DateTime.now(),
-                      onRecorded: (lot) => setState(() => _lot = lot),
-                    ),
-                  (_, final lot?) => _NextStep(language: language, lot: lot),
-                },
+          : switch (_language) {
+              null => LanguageScreen(speaker: _speaker, onChosen: _choose),
+              final language =>
+                _logging ? _logFlow(language) : _home(),
             },
     );
   }
-}
 
-/// Where the work stops today.
-///
-/// Deliberately a stub that names what is missing rather than a plausible
-/// quantity screen. A placeholder that looks like the real thing is how a
-/// missing feature ships, and the same rule that governs the hatched crop tiles
-/// governs this.
-class _NextStep extends StatelessWidget {
-  const _NextStep({required this.language, required this.lot});
+  Widget _home() => HomeScreen(
+        stored: _stored,
+        now: DateTime.now(),
+        onLogAnother: () => setState(() => _logging = true),
+      );
 
-  final Speech language;
-  final Lot lot;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            '${lot.crop.label} · ${lot.quantity.amount} '
-            '${lot.quantity.unit.label} · ${lot.quantity.kilograms} kg\n'
-            '${lot.storage.label}\n\n'
-            'The home screen and the spoilage clock go here.\n'
-            'Nothing is stored yet — this lot disappears when the app does.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
+  /// The four steps of logging one lot, in order.
+  ///
+  /// A method rather than another arm of the outer switch: the outer question
+  /// is "has a language been chosen, and is the farmer logging" and the inner
+  /// one is "how far through logging are they". Flattening them made a case
+  /// the analyzer could prove unreachable, which is a good sign that two
+  /// questions were being asked in one place.
+  Widget _logFlow(Speech language) => switch ((_crop, _quantity)) {
+        (null, _) => CropGridScreen(
+            speaker: _speaker,
+            language: language,
+            onChosen: (crop) => setState(() => _crop = crop),
+            onChangeLanguage: _forgetLanguage,
           ),
-        ),
-      ),
-    );
-  }
+        (final crop?, null) => QuantityScreen(
+            speaker: _speaker,
+            language: language,
+            crop: crop,
+            onEntered: (quantity) => setState(() => _quantity = quantity),
+          ),
+        (final crop?, final quantity?) => StorageScreen(
+            speaker: _speaker,
+            language: language,
+            crop: crop,
+            quantity: quantity,
+            // One of the two places the clock is read. Every screen and every
+            // rule below this takes `now` as a parameter, which is what makes
+            // any of it testable at a date boundary.
+            now: DateTime.now(),
+            onRecorded: _save,
+          ),
+      };
 }

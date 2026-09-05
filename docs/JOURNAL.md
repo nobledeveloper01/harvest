@@ -136,6 +136,34 @@ now holds the quantity from the moment the farmer says it is wrong, and a
 widget test asserts the four baskets survive — it fails on the old code with
 `Expected: <4> / Actual: <96.0>`.
 
+### Two rules that are not the same rule
+
+`Lot.record` refuses a harvest dated more than a fortnight back. Correct at the
+moment of logging — a lot older than that has been sold or lost, and the
+spoilage clock has nothing left to say about it.
+
+Applying the same check when reading from the database would delete a farmer's
+history. A lot recorded legitimately three weeks ago fails it today, and the
+list would simply be shorter each time they opened the app, with nothing
+anywhere saying why. `Lot.restore` exists for that reason and is documented as
+the reason. A validation rule for new input is not a validation rule for
+history, and the two only look alike because they touch the same field.
+
+The same argument produced `Quantity.restore`, and the store has a test that a
+ninety-day-old lot still reads back. Breaking it — swapping `restore` for
+`record` in the mapper — loses the lot, which is what makes the test worth
+having.
+
+### A row nobody can name
+
+Crops, units and storage conditions are only ever added, never removed; a row
+naming one that no longer exists cannot become a `Lot`. There are two honest
+things to do with such a row, and dropping it is neither. `StoredLots` carries
+an `unreadable` count and the home screen says it out loud. It should always be
+zero, and the counter is how anybody would ever find out that it was not — the
+alternative is a farmer opening the app to a missing harvest with nothing
+admitting it existed.
+
 ### What surprised us
 
 That 130 placeholder WAVs are 18 MB. The P0 vocabulary is a fraction of v1.0's

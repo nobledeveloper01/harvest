@@ -117,6 +117,29 @@ class Lot {
     );
   }
 
+  /// Rebuild a lot that was already recorded.
+  ///
+  /// **The date is not re-checked, and must not be.** [record] refuses a
+  /// harvest more than a fortnight back, which is right at the moment of
+  /// logging and wrong at every moment after it: a lot recorded legitimately
+  /// three weeks ago would fail that check today and vanish from the farmer's
+  /// list. A validation rule for new input is not a validation rule for
+  /// history.
+  static Lot restore({
+    required Crop crop,
+    required Quantity quantity,
+    required StorageCondition storage,
+    required DateTime harvestedAt,
+    required DateTime loggedAt,
+  }) =>
+      Lot._(
+        crop: crop,
+        quantity: quantity,
+        storage: storage,
+        harvestedAt: harvestedAt,
+        loggedAt: loggedAt,
+      );
+
   @override
   bool operator ==(Object other) =>
       other is Lot &&

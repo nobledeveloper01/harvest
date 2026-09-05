@@ -16,6 +16,11 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **Lots that are still there tomorrow.** A harvest is written to SQLite and
+  the app opens on the list of them, newest harvest first — by when the crop
+  left the ground, not by when the farmer got round to telling the app. With
+  nothing logged it opens on the question instead, because an empty list above
+  a button asks somebody to read their way to the only thing they can do.
 - **A lot, logged end to end.** Language, crop, quantity, where it is kept and
   when it was picked — five taps and one number from a cold start. The date
   defaults to today and stays there for nearly every lot, so the whole path
@@ -64,6 +69,12 @@ Entries say *why*, not just what.
   belongs there. Neither can be mistaken for the finished thing.
 - The design system at the floor it was written for: 56 dp targets, 64 for
   anything used one-handed outdoors, both themes authored, dark by default.
+
+### Changed
+
+- **The freshness rings move to Phase 2**, with the `ShelfLifeEngine` that fills
+  them. A ring drawn before there is a model behind it is decoration that looks
+  like information, on the one screen where a farmer would act on it.
 
 ### Fixed
 

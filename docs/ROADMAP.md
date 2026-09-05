@@ -41,7 +41,13 @@ R2.
 
 Language selection persisted, composed-audio templates, push-to-talk with a
 constrained grammar, the crop catalogue and its illustrations, unit conversion,
-lot creation, and the home screen with freshness rings.
+lot creation, and the home screen.
+
+**The freshness rings moved to Phase 2**, with the engine that fills them. A
+ring drawn before there is a shelf-life model behind it is decoration that looks
+like information, on the one screen where a farmer would act on it — the same
+failure as a placeholder that does not announce itself. Each lot card says how
+long it has been out of the ground, which is true today.
 
 **Exit gate**. *A lot is logged end to end in Hausa, without reading a word, in
 under sixty seconds, offline.*

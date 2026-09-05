@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
+import 'package:drift/native.dart';
+import 'package:harvest/data/lots/lot_store.dart';
+import 'package:harvest/data/lots/lots_database.dart';
 import 'package:harvest/data/settings/language_store.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
@@ -34,10 +37,21 @@ class _Silent implements Speaker {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late LotsDatabase database;
+
+  setUp(() => database = LotsDatabase(NativeDatabase.memory()));
+  tearDown(() => database.close());
+
   Future<_Silent> launch(WidgetTester tester) async {
     final speaker = _Silent();
     await tester.pumpWidget(
-      HarvestApp(speaker: speaker, languages: const LanguageStore()),
+      HarvestApp(
+        speaker: speaker,
+        languages: const LanguageStore(),
+        // In memory, so a test never touches the farmer's actual database and
+        // never needs sqlite3's platform libraries.
+        lots: LotStore(database),
+      ),
     );
     await tester.pumpAndSettle();
     return speaker;
@@ -168,8 +182,55 @@ void main() {
     await tester.tap(find.text('Save this lot'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Tomato'), findsWidgets);
-    expect(find.textContaining('In the shade'), findsOneWidget);
+    // And it lands on the harvest, which is now saved rather than held in
+    // memory until the app closes.
+    expect(find.text('Your harvest'), findsOneWidget);
+    expect(find.text('Tomato'), findsOneWidget);
     expect(find.textContaining('88.0 kg'), findsOneWidget);
+    expect(find.textContaining('Picked today'), findsOneWidget);
+
+    expect((await LotStore(database).all()).lots, hasLength(1));
+  });
+
+  testWidgets('a lot logged yesterday is there when the app opens again',
+      (tester) async {
+    /*
+      The point of storing it at all. A farmer who logs a harvest and closes
+      the app has not logged anything unless it is still there — and the app
+      opens on the list rather than on the logging flow, because there is now
+      something to show.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await LotStore(database).add(
+      Lot.record(
+        crop: Crop.okra,
+        quantity: Quantity.inUnits(
+          amount: 2,
+          unit: Unit.bigBasket,
+          region: Region.unknown,
+        )!,
+        storage: StorageCondition.shade,
+        harvestedAt: DateTime.now().subtract(const Duration(days: 1)),
+        now: DateTime.now(),
+      )!,
+    );
+
+    await launch(tester);
+
+    expect(find.text('Your harvest'), findsOneWidget);
+    expect(find.text('Okra'), findsOneWidget);
+    expect(find.textContaining('Picked yesterday'), findsOneWidget);
+  });
+
+  testWidgets('with nothing logged, it goes straight to logging', (tester) async {
+    /*
+      An empty list above a button asks the farmer to read their way to the
+      only thing they can do. On a first launch there is nothing to show, so
+      the app shows the question instead.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await launch(tester);
+    expect(find.text('What did you harvest?'), findsOneWidget);
+    expect(find.text('Your harvest'), findsNothing);
   });
 }
