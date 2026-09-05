@@ -274,6 +274,7 @@ class _LanguagePill extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
+                        fontVariations: weightAxis(600),
                       ),
                 ),
               ],
@@ -446,6 +447,7 @@ class _CropTile extends StatelessWidget {
                               // for the decision itself.
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w600,
+                              fontVariations: weightAxis(600),
                             ),
                       ),
                     ),

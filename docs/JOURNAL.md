@@ -5,6 +5,60 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-06 — One glyph, and two bugs behind it
+
+A light-theme pass on the decision screen. The numbers were right, the colours
+were right, and `₦180,000` had a line struck through the 1.
+
+### The wrong suspect, which found a real bug
+
+First theory: synthetic bold. Inter is bundled as a single `InterVariable.ttf`
+with a `wght` axis and no per-weight assets, so `fontWeight: w700` gives Skia
+nothing to instance and it fakes bold by smearing the outline sideways — which
+would push a crossbar into the next glyph exactly like this.
+
+The theory was wrong. The overhang is still there with the axis set properly.
+
+But it was **true**, and it had been true for weeks: no weight anywhere in this
+app was reaching the font. Every heading, every emphasised figure, the "Best"
+badge, the crop labels — all faux-bold. The type scale's own doc comment says
+the hierarchy is carried by *weight and tracking* rather than by size, which
+means the hierarchy was the thing being faked. Nineteen places now pair the
+weight with `FontVariation('wght', …)`, and a source scan fails when they are
+separated, because a twentieth will be written by somebody who has not read
+this.
+
+### The right answer, checked outside the framework
+
+Then the actual cause, and the way to be sure of it: render the raw TTF through
+FreeType, with no Flutter anywhere near it. The same overhang. **Inter draws ₦
+with crossbars longer than its advance.** Not a framework bug, not a fallback
+font, not a bug at all — a typeface decision that collides with a following
+digit.
+
+So a hair space, U+200A, between the sign and the number. Narrower than a word
+space, ignored by screen readers, and enough. Not a full space, because ₦180,000
+is written closed up here. Not a different typeface, because `pubspec.yaml`
+already refuses that trade: Inter was chosen for Hausa's hooked consonants,
+Yoruba's and Igbo's tone marks, and this very glyph. Trading four languages'
+diacritics for a nick in a crossbar is not a trade.
+
+### What surprised us
+
+**The wrong theory was the more valuable one.** Synthetic bold explained the
+symptom plausibly and was not the cause — and chasing it turned up a defect
+affecting every bold glyph on every screen, which nothing was ever going to
+report, because faux-bold looks like bold. The visible bug was a crossbar. The
+one underneath it was the entire weight axis.
+
+**And it took rendering the font outside Flutter to stop guessing.** Two
+measurements inside the framework were worthless: the font metrics in the TTF
+tables describe the default instance and not the one being drawn, and a widget
+test measures in Ahem, where every glyph is a 1 em square and every string is
+exactly as wide as it is long. Both looked like evidence. Neither was.
+
+---
+
 ## 2026-09-05 — The gates went blind, twice, in the tooling written to stop that
 
 The diagnosis result screen is built and Phase 4's one achievable gate clause is

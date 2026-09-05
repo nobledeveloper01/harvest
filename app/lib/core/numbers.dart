@@ -18,6 +18,12 @@ String tidy(num value) {
 }
 
 
+/// The gap between the naira sign and the first digit.
+///
+/// U+200A HAIR SPACE. Exported so that a test can say what it is asserting
+/// about, and so nobody writes a bare `'₦40,000'` literal that will not match.
+const hairSpace = '\u200A';
+
 /// Naira, with the separators a person writes.
 ///
 /// `₦40000` is a number a computer produced. `₦40,000` is a sum of money, and
@@ -27,6 +33,22 @@ String tidy(num value) {
 /// Rounded to whole naira. Kobo have not been meaningful in Nigerian produce
 /// trade for a long time, and a decimal place here would be precision the
 /// underlying price estimate does not have.
+///
+/// ## The hair space after the sign
+///
+/// **Inter draws ₦ with crossbars that overhang its advance**, so `₦180,000`
+/// sets with the bars struck through the 1 — on the largest, most-looked-at
+/// number in the product. Checked rather than assumed: rendering the raw
+/// `InterVariable.ttf` through FreeType, outside Flutter entirely, reproduces
+/// it, so it is the typeface and not the framework. (Synthetic bold was the
+/// first suspect and was wrong — though chasing it did find that no weight in
+/// the app was reaching the variable axis at all, which was a real bug.)
+///
+/// [hairSpace] is U+200A: narrower than a word space, ignored by screen
+/// readers, and enough. A full space would be wrong — Nigerian convention
+/// writes ₦180,000 closed up — and changing typeface to fix one glyph would
+/// trade a nick in a crossbar for the tone marks in four languages, which is
+/// the trade `pubspec.yaml` already refuses.
 String naira(num amount) {
   final whole = amount.round().abs();
   final digits = whole.toString();
@@ -35,5 +57,5 @@ String naira(num amount) {
     if (i > 0 && (digits.length - i) % 3 == 0) grouped.write(',');
     grouped.write(digits[i]);
   }
-  return '${amount < 0 ? '-' : ''}₦$grouped';
+  return '${amount < 0 ? '-' : ''}₦$hairSpace$grouped';
 }

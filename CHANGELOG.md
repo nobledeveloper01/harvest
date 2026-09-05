@@ -379,6 +379,21 @@ Entries say *why*, not just what.
   illustrations as hatched placeholders, and the gate went back to reporting
   85 of 85. Nothing failed; the count just went up again. The manifest is a
   record of what is **not real**, not an inventory of what exists.
+- **No weight in the app was reaching the font.** Inter ships as one
+  `InterVariable.ttf` with a `wght` axis and no per-weight assets, so
+  `fontWeight` alone gave Skia nothing to instance and it **synthesised** bold
+  by smearing the regular outline. Every heading in the product had been faked
+  for weeks. The type scale's own documentation says the hierarchy is carried by
+  *weight and tracking* rather than by size, so this was the hierarchy. Nineteen
+  places now pair the weight with `FontVariation('wght', …)`, and a source scan
+  fails when the two are separated.
+- **The naira sign was struck through the first digit.** Inter draws ₦ with
+  crossbars that overhang its advance, so `₦180,000` set with the bars crossing
+  the 1 — on the largest, most-looked-at number in the product. Checked rather
+  than assumed: rendering the raw font through FreeType, outside Flutter
+  entirely, reproduces it, so it is the typeface and not the framework. A hair
+  space (U+200A) after the sign — invisible, ignored by screen readers, and not
+  wide enough to read as `₦ 180,000`, which is not how it is written here.
 - **A state colour was 4.09:1 as text on its own tint.** The decision headline
   and the diagnosis verdict tint a card with a state colour at 12% and put the
   *same colour* on it as text — a composition that gets quietly worse the more

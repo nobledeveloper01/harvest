@@ -139,6 +139,7 @@ class _StorageOfferScreenState extends State<StorageOfferScreen> {
                                 style: text.bodyMedium?.copyWith(
                                   color: freshness.atRisk,
                                   fontWeight: FontWeight.w600,
+                                  fontVariations: weightAxis(600),
                                 ),
                               ),
                             ],

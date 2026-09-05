@@ -263,6 +263,7 @@ class _Conditions extends StatelessWidget {
                           maxLines: 2,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
+                                fontVariations: weightAxis(600),
                                 color: condition == chosen
                                     ? freshness.fresh
                                     : scheme.onSurface,

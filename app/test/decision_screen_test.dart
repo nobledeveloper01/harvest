@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harvest/core/numbers.dart';
 import 'package:harvest/core/theme.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
@@ -122,7 +123,7 @@ void main() {
       await pump(tester, decision());
 
       expect(find.text('If you wait, you could lose'), findsOneWidget);
-      expect(find.text('₦20,000'), findsOneWidget);
+      expect(find.text(naira(20000)), findsOneWidget);
     });
 
     testWidgets('and says so out loud', (tester) async {
@@ -356,7 +357,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('After ₦8,000 transport and 10% commission'),
+        find.text('After ${naira(8000)} transport and 10% commission'),
         findsOneWidget,
       );
     });

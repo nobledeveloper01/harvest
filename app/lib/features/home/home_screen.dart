@@ -433,6 +433,7 @@ class _LotCard extends StatelessWidget {
                               style: text.bodyMedium?.copyWith(
                                 color: freshness.fresh,
                                 fontWeight: FontWeight.w600,
+                                fontVariations: weightAxis(600),
                               ),
                             ),
                             const SizedBox(height: Gap.s),

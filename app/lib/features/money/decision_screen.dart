@@ -328,6 +328,7 @@ class _OptionCard extends StatelessWidget {
                       style: text.bodyMedium?.copyWith(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
+                        fontVariations: weightAxis(700),
                         color: freshness.onAccent,
                       ),
                     ),
@@ -460,6 +461,7 @@ class _Another extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurface,
                             fontWeight: FontWeight.w600,
+                            fontVariations: weightAxis(600),
                           ),
                     ),
                   ),

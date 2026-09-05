@@ -159,6 +159,7 @@ class _PriceScreenState extends State<PriceScreen> {
                                 style: text.bodyMedium?.copyWith(
                                   color: freshness.fresh,
                                   fontWeight: FontWeight.w600,
+                                  fontVariations: weightAxis(600),
                                 ),
                               ),
                             ],

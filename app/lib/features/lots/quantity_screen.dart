@@ -664,6 +664,7 @@ class _UnitTile extends StatelessWidget {
                                 .bodyMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.w600,
+                                  fontVariations: weightAxis(600),
                                   color: picked
                                       ? freshness.fresh
                                       : scheme.onSurface,
@@ -732,6 +733,7 @@ class _UnitTile extends StatelessWidget {
                                 fontSize: 13,
                                 height: 1.2,
                                 fontWeight: FontWeight.w600,
+                                fontVariations: weightAxis(600),
                                 color: picked
                                     ? freshness.fresh
                                     : scheme.onSurface,
@@ -877,6 +879,7 @@ class _Assumption extends StatelessWidget {
                             style: text.bodyMedium?.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w600,
+                              fontVariations: weightAxis(600),
                             ),
                           ),
                         ),
@@ -922,6 +925,7 @@ class _Assumption extends StatelessWidget {
                             style: text.bodyMedium?.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w600,
+                              fontVariations: weightAxis(600),
                             ),
                           ),
                         ),

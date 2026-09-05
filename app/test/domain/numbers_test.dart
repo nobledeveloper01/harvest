@@ -32,23 +32,44 @@ void main() {
     test('groups the thousands a person writes', () {
       // The difference matters most at exactly the magnitudes this app deals
       // in: six figures, glanced at, in a market.
-      expect(naira(40000), '₦40,000');
-      expect(naira(142000), '₦142,000');
-      expect(naira(900), '₦900');
-      expect(naira(1000), '₦1,000');
-      expect(naira(1234567), '₦1,234,567');
+      expect(naira(40000), '₦$hairSpace' '40,000');
+      expect(naira(142000), '₦$hairSpace' '142,000');
+      expect(naira(900), '₦$hairSpace' '900');
+      expect(naira(1000), '₦$hairSpace' '1,000');
+      expect(naira(1234567), '₦$hairSpace' '1,234,567');
     });
 
     test('rounds to whole naira', () {
       // Kobo have not been meaningful in produce trade for a long time, and a
       // decimal here would be precision the price estimate does not have.
-      expect(naira(1999.4), '₦1,999');
-      expect(naira(1999.6), '₦2,000');
+      expect(naira(1999.4), '₦$hairSpace' '1,999');
+      expect(naira(1999.6), '₦$hairSpace' '2,000');
     });
 
     test('a loss keeps its sign outside the symbol', () {
-      expect(naira(-5000), '-₦5,000');
-      expect(naira(0), '₦0');
+      expect(naira(-5000), '-₦$hairSpace' '5,000');
+      expect(naira(0), '₦$hairSpace' '0');
+    });
+
+    test('the sign is held off the first digit', () {
+      /*
+        Inter draws ₦ with crossbars that overhang its advance, so `₦180,000`
+        sets with the bars struck through the 1 — on the largest number in the
+        product. Reproduced by rendering the raw font through FreeType, outside
+        Flutter, so it is the typeface rather than the framework.
+
+        Asserted as *a separator that is not a word space*, rather than as the
+        exact codepoint, because what matters is that something invisible holds
+        them apart and that it is not wide enough to read as `₦ 180,000`.
+      */
+      final written = naira(180000);
+      expect(written.substring(0, 1), '₦');
+      expect(written.substring(1, 2), isNot('1'),
+          reason: 'the sign is against the digit and its bars will cross it');
+      expect(written, isNot(contains(' ')),
+          reason: 'a word space reads as ₦ 180,000, which is not how it is '
+              'written here');
+      expect(written.replaceAll(hairSpace, ''), '₦180,000');
     });
   });
 }

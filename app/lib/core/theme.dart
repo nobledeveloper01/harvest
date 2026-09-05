@@ -124,6 +124,14 @@ class Freshness extends ThemeExtension<Freshness> {
 ///
 /// **56 dp, not 48.** The design floor is work-hardened hands on a dusty 5"
 /// screen in direct sunlight, and Material's 48 is a figure for an office.
+/// The variable axis that actually produces a weight.
+///
+/// Public because twelve screens set a weight on a `copyWith` and every one of
+/// them needs this beside it — see [Palette] for what happens without it, and
+/// `test/font_weight_test.dart`, which fails when the two are separated.
+List<FontVariation> weightAxis(double weight) =>
+    [FontVariation('wght', weight)];
+
 abstract final class Target {
   /// Everything tappable.
   static const double standard = 56;
@@ -248,11 +256,32 @@ abstract final class Palette {
   /// The hierarchy is carried by **weight and tracking** rather than by size
   /// alone, which is what lets the scale come down and still read as a
   /// hierarchy at arm's length in bright light.
+  /// A weight, and the variable axis that actually produces it.
+  ///
+  /// **`fontWeight` alone does not reach a variable font.** Inter is shipped as
+  /// a single `InterVariable.ttf` with a `wght` axis from 100 to 900, declared
+  /// in `pubspec.yaml` with no per-weight assets — so asking for w700 gives
+  /// Skia nothing to instance and it *synthesises* bold instead, smearing the
+  /// regular outline sideways.
+  ///
+  /// Which looked fine, for weeks, on every screen. It was found on the naira
+  /// sign: ₦ has two horizontal crossbars, the smear pushed them past the
+  /// glyph's advance, and "₦180,000" rendered with the bars struck through the
+  /// 1. The font's own metrics say its ink stops 46 units *inside* the advance,
+  /// so nothing about the file was wrong — the app had simply never asked for
+  /// the weight it was drawing.
+  ///
+  /// Everything else the smear touched is subtler and worse: it is the whole
+  /// type hierarchy, which this scale explicitly says is carried by **weight
+  /// and tracking** rather than by size.
+  static List<FontVariation> _wght(double weight) => weightAxis(weight);
+
   static TextTheme _type(Color primary, Color secondary) => TextTheme(
         displaySmall: TextStyle(
           fontSize: 22,
           height: 1.15,
           fontWeight: FontWeight.w700,
+          fontVariations: _wght(700),
           // Tight, because large text at default tracking looks loose and
           // large text is the only place tightening is safe.
           letterSpacing: -0.6,
@@ -262,6 +291,7 @@ abstract final class Palette {
           fontSize: 18,
           height: 1.2,
           fontWeight: FontWeight.w700,
+          fontVariations: _wght(700),
           letterSpacing: -0.4,
           color: primary,
         ),
@@ -269,6 +299,7 @@ abstract final class Palette {
           fontSize: 17,
           height: 1.25,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           letterSpacing: -0.2,
           color: primary,
         ),
@@ -276,24 +307,28 @@ abstract final class Palette {
           fontSize: 15,
           height: 1.3,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           color: primary,
         ),
         bodyLarge: TextStyle(
           fontSize: 15,
           height: 1.45,
           fontWeight: FontWeight.w400,
+          fontVariations: _wght(400),
           color: primary,
         ),
         bodyMedium: TextStyle(
           fontSize: 14,
           height: 1.45,
           fontWeight: FontWeight.w400,
+          fontVariations: _wght(400),
           color: secondary,
         ),
         labelLarge: TextStyle(
           fontSize: 15,
           height: 1.2,
           fontWeight: FontWeight.w600,
+          fontVariations: _wght(600),
           letterSpacing: 0.1,
           color: primary,
         ),
