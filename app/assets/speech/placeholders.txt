@@ -1,0 +1,17 @@
+# Clips that are not yet native-speaker recordings.
+#
+# Each one currently says, in English, that it is a placeholder and which
+# language belongs there — deliberately, rather than silence or an English
+# voice reading Hausa. A placeholder that announces itself cannot be mistaken
+# for the product working.
+#
+# `scripts/audio-check.py` counts these and warns. They do not block a phase;
+# they block the release, as R1 in docs/RELEASE-GATES.md.
+#
+# Delete a line when the real recording lands.
+
+en/choose-language.wav
+pcm/choose-language.wav
+ha/choose-language.wav
+yo/choose-language.wav
+ig/choose-language.wav

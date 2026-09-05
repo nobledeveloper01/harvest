@@ -1,0 +1,39 @@
+# Three jobs, none of which need Flutter installed on the host.
+#
+#   make docker-verify   analyze + the full test suite
+#   make docker-apk      writes build/grid-debug.apk to the host
+#   make docker-shell    a toolchain prompt for poking at things
+#
+# iOS is absent on purpose — see the note at the top of the Dockerfile.
+#
+# Nothing here bind-mounts the source. It is tempting, and it breaks the build:
+# generated sources (`*.g.dart`) are not committed, the image produces them
+# during its own build, and mounting the host directory over `/app` hides them
+# again. The failure is a wall of missing-symbol errors that look nothing like
+# a mounting problem.
+services:
+  # `docker compose build verify` is the whole check — analyze and the suite
+  # run as build steps, so a failure fails the build rather than printing to a
+  # log nobody reads.
+  verify:
+    build:
+      context: .
+      target: verify
+    command: >
+      bash -lc "echo 'analyze and tests passed during image build'"
+
+  apk:
+    build:
+      context: .
+      target: apk
+    volumes:
+      - ./build:/out
+    command: >
+      bash -lc "cp build/app/outputs/flutter-apk/app-debug.apk /out/grid-debug.apk
+                && ls -la /out/grid-debug.apk"
+
+  shell:
+    build:
+      context: .
+      target: base
+    command: bash

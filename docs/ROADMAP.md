@@ -1,0 +1,109 @@
+# Harvest — Roadmap
+
+`PHASE` holds the current number. `make phase` prints it and its gate. The
+delivery plan this is derived from, with week estimates and the risk register,
+is `docs/06-ROADMAP.md` and stays local.
+
+Every phase has an **exit gate**: one sentence, machine-checkable where it can
+be, that must be true before the next phase starts. A gate that cannot fail is
+not a gate — so each one is broken on purpose, watched to fail, and put back.
+
+Release gates are a different question and live in
+[`RELEASE-GATES.md`](RELEASE-GATES.md). A phase gate blocks the next phase; a
+release gate blocks v1.0.
+
+---
+
+## Phase 0 — Foundation · **current**
+
+Scaffold, theme and design-system primitives at 56 dp, the five languages, the
+bundled-audio pipeline, the domain-purity lint, and the audio-asset
+completeness gate.
+
+**Exit gate**. *The app says one sentence in five languages, from bundled
+assets, with no network and no system TTS.*
+
+Both halves matter. **Five languages** because a picker that speaks only the
+one the farmer cannot read is the failure the whole product is built to avoid.
+**From bundled assets** because system TTS has no voice for Hausa, Igbo or
+Nigerian Pidgin — checked on this machine, which offers forty-three English
+voices and none for any of the four Nigerian languages. A capability that is
+absent for the primary user is not a capability.
+
+`make audio-check` proves the set is complete and reads the languages out of
+the Dart enum rather than a list beside it, so adding a phrase without
+recording it fails the build.
+
+**Android is unproven here** — no JDK, so nothing Android has been compiled.
+R2.
+
+## Phase 1 — Voice and logging
+
+Language selection persisted, composed-audio templates, push-to-talk with a
+constrained grammar, the crop catalogue and its illustrations, unit conversion,
+lot creation, and the home screen with freshness rings.
+
+**Exit gate**. *A lot is logged end to end in Hausa, without reading a word, in
+under sixty seconds, offline.*
+
+## Phase 2 — The spoilage engine
+
+`ShelfLifeEngine` in pure Dart, weather integration and caching, alerts
+scheduled at log time, lot lifecycle, the decision screen, loss recording.
+
+**Exit gate**. *Alerts fire correctly with the device permanently offline, on
+both platforms, and the engine's predictions are checked against recorded
+outcomes rather than against itself.*
+
+## Phase 3 — Prices and storage
+
+Price reporting and ingest, outlier filtering, reputation weighting, net
+realisable price, the market and storage directories, the cost-benefit
+calculator.
+
+**Exit gate**. *Every figure on screen names its source and its age, and the
+calculator says "do not store" when storing loses money.*
+
+## Phase 4 — Diagnosis
+
+Labelling, training, INT8 quantisation, pre-capture guidance, isolate
+inference, the confidence gate, illustrated guidance in five languages.
+
+**Exit gate**. *Per-class precision and recall are published, inference is
+under two seconds on the 2 GB reference device, and an uncertain result routes
+to a person rather than guessing.*
+
+## Phase 5 — Marketplace, and v1.0
+
+Backend, accounts, listings, enquiries with voice notes, buyer verification
+tiers, deals, ratings, moderation, the device matrix, performance and size
+gates, staged rollout.
+
+**Exit gate**. *Every gate in [`RELEASE-GATES.md`](RELEASE-GATES.md) is true, and
+somebody has watched each one be true.*
+
+**v1.0 ships to both stores.**
+
+## Phase 6 — Depth · *v1.1*
+
+Buyer aggregation and route planning, storage booking, the operator console,
+SMS fallback alerts, price alerts, model calibration from recorded outcomes.
+
+**Exit gate**. *A prediction the engine made is compared against what actually
+happened to that lot, and the comparison is published — including where the
+engine was wrong.*
+
+## Phase 7 — Reach · *v1.2*
+
+Extension-officer dashboard, outbreak mapping, more crops and diseases, more
+languages, a Flutter Web buyer console.
+
+**Exit gate**. *A sixth language is added without touching any screen — if it
+takes more than recordings and a catalogue entry, the speech architecture was
+wrong.*
+
+---
+
+Read [`../CHANGELOG.md`](../CHANGELOG.md) for what changed and why,
+[`JOURNAL.md`](JOURNAL.md) for what surprised us, and [`adr/`](adr/) for the
+decisions that are settled.
