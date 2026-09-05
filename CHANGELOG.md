@@ -309,6 +309,11 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **"It would cost you about -₦180 more than it is worth."** The one sentence
+  Phase 3's exit gate is written about, carrying a double negative: `net` is
+  negative when storing loses, and the words already carry the sign. The figure
+  is unsigned now. The test that was meant to catch this asserted the sentence
+  *contained a naira symbol* — which "-₦180" does.
 - **The tile scrim was eating the illustrations.** Sized against hatched
   placeholders, which had nothing in them to lose, a 28 dp opaque fade took the
   stems off the okra and the base off the bitterleaf the moment there were real

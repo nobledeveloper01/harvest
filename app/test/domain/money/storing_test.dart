@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harvest/core/numbers.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/money/sourced.dart';
 import 'package:harvest/domain/money/storing.dart';
@@ -61,7 +62,19 @@ void main() {
       expect(answer.worthIt, isFalse);
       expect(answer.net.value, lessThan(0));
       expect(answer.sentence(noon), startsWith('Do not store this.'));
-      expect(answer.sentence(noon), contains('₦'));
+
+      /*
+        The figure, unsigned, and the sentence free of a minus.
+
+        `contains('₦')` was the first version of this and it passed for
+        "-₦180" — which reads *"it would cost you about minus one hundred and
+        eighty naira more than it is worth"*, a double negative, on the one
+        sentence Phase 3's exit gate is written about. An assertion that a
+        currency symbol appears is not an assertion that a sentence is true.
+      */
+      expect(answer.sentence(noon), contains(naira(answer.net.value.abs())));
+      expect(answer.sentence(noon), isNot(contains('-')),
+          reason: 'the words carry the sign; the figure must not carry it too');
     });
 
     test('and says how much better off, when it does pay', () {

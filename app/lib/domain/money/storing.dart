@@ -96,11 +96,19 @@ class StorageVerdict {
   /// and a gate about what the calculator *says* needs somewhere to be
   /// asserted. It moves out with that screen — and the spoken version needs
   /// composed audio for money, which is R9.
+  /// The sign is carried by the **words**, so the figure is unsigned.
+  ///
+  /// `net` is negative when storing loses, and printing it straight produced
+  /// *"it would cost you about -₦180 more than it is worth"* — a double
+  /// negative on the one sentence Phase 3's exit gate is written about. The
+  /// test that was meant to catch it asserted the sentence contained a naira
+  /// sign, which "-₦180" does.
   String sentence(DateTime now) => worthIt
       ? 'Storing could leave you about ${naira(net.value)} better off. '
           'Based on prices from ${net.ageInWordsAt(now)}.'
-      : 'Do not store this. It would cost you about ${naira(net.value)} more '
-          'than it is worth. Based on prices from ${net.ageInWordsAt(now)}.';
+      : 'Do not store this. It would cost you about ${naira(net.value.abs())} '
+          'more than it is worth. Based on prices from '
+          '${net.ageInWordsAt(now)}.';
 }
 
 abstract final class Storing {

@@ -81,6 +81,23 @@ apart by hue alone, drawn by me, in the same session in which I wrote that
 colour is never the sole carrier of meaning. Knowing a rule and applying it to
 the thing in front of you are separate skills.
 
+### And a third gate that passed for the wrong reason
+
+Reading the storage verdict while checking Phase 3's exit gate — *the calculator
+says "do not store" when storing loses money* — the sentence turned out to read:
+
+> Do not store this. It would cost you about **-₦180** more than it is worth.
+
+`net` is negative when storing loses and the words already carry the sign, so
+the figure carried it twice. The double negative is on the one sentence the
+phase gate is written about.
+
+The test that was meant to catch it asserted `contains('₦')`. "-₦180" contains
+₦. That is the third gate in two days that passed for a reason unrelated to what
+it was checking, and all three shared a shape: **asserting that something is
+present rather than that it is right.** A currency symbol appearing is not a
+sentence being true.
+
 ### Proved the gates fire
 
 The scaling test was watched to fail before it was trusted: put the wordmark
