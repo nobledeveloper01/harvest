@@ -83,8 +83,8 @@ class _OutcomeSheetState extends State<OutcomeSheet> {
                 borderRadius: Radii.chip,
                 child: Image.asset(
                   'assets/crops/${widget.lot.crop.id}.png',
-                  width: 36,
-                  height: 36,
+                  width: 30,
+                  height: 30,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
                 ),

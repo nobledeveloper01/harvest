@@ -112,7 +112,7 @@ class _CostsScreenState extends State<CostsScreen> {
                               naira(_transport),
                               key: const ValueKey('transport'),
                               style: text.displaySmall?.copyWith(
-                                fontSize: 40,
+                                fontSize: 34,
                                 fontFeatures: const [
                                   FontFeature.tabularFigures()
                                 ],

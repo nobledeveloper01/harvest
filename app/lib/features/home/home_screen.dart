@@ -391,8 +391,8 @@ class _LotCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 76,
-                        height: 76,
+                        width: 62,
+                        height: 62,
                         child: switch ((spent, state)) {
                           (final fraction?, final lotState?) => FreshnessRing(
                               spent: fraction,
@@ -561,7 +561,14 @@ class _Tag extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.s, vertical: Gap.xs),
+      /*
+        Tight on purpose. Two tags side by side is one line; two tags that wrap
+        is two, on every card in the list, and the difference is a lot per
+        screen. The `Wrap` still catches the long ones — "Picked 12 days ago"
+        beside "Dried or processed" does not fit at any padding — so this buys
+        density in the common case without a truncated tag in the rare one.
+      */
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: Gap.xs),
       decoration: BoxDecoration(
         color: freshness.high,
         borderRadius: Radii.pill,
@@ -569,8 +576,8 @@ class _Tag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: scheme.onSurfaceVariant),
-          const SizedBox(width: Gap.xs + 2),
+          Icon(icon, size: 14, color: scheme.onSurfaceVariant),
+          const SizedBox(width: Gap.xs),
           /*
             Flexible, with an ellipsis.
 
@@ -586,7 +593,7 @@ class _Tag extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: scheme.onSurfaceVariant,
                   ),
             ),

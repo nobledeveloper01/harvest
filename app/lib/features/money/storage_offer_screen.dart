@@ -110,7 +110,7 @@ class _StorageOfferScreenState extends State<StorageOfferScreen> {
                               naira(_perDay),
                               key: const ValueKey('perDay'),
                               style: text.displaySmall?.copyWith(
-                                fontSize: 40,
+                                fontSize: 34,
                                 fontFeatures: const [
                                   FontFeature.tabularFigures()
                                 ],

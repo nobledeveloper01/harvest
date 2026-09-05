@@ -30,14 +30,18 @@ Entries say *why*, not just what.
 - **Every README screenshot recaptured**, and two added — the costs screen and a
   store's quote as a third course, neither of which had ever been shown. The old
   ten were a tour of grey hatching.
-- **The type scale came down a step** — display 30→26, title 22→19, body 18→16,
-  secondary 16→15, with the radii following. The 5" floor sets the *minimum* a
-  farmer in sunlight can read; it was being used as an instruction to set
-  everything at that minimum, and on a 6.1" phone the result read as shouting —
-  three and a half rows of a twenty-five crop grid, a headline crowding the
-  thing it introduces. **The touch targets did not move**: 56 dp and 64 dp are
-  about work-hardened hands on a dusty screen, which is a different constraint
-  from legibility and is not negotiable against how a screen looks.
+- **The type scale came down two steps** — display 30→22, headline 24→18, title
+  22→17, body 18→15, secondary 16→14, with the radii, the app-bar thumbnails,
+  the freshness ring and the number displays following. The 5" floor sets the
+  *minimum* a farmer in sunlight can read; it was being used as an instruction
+  to set everything at that minimum, and on a 6.1" phone the result read as
+  shouting — three and a half rows of a twenty-five crop grid, a headline
+  crowding the thing it introduces. There is now one exception below 14 sp: a
+  single 13 sp used for marks that only qualify something already legible — a
+  provenance line, a badge, a tile caption — and nothing else may go there.
+  **The touch targets did not move**: 56 dp and 64 dp are about work-hardened
+  hands on a dusty screen, which is a different constraint from legibility and
+  is not negotiable against how a screen looks.
 - **The crop tile's picture is wider than tall**, so more of the catalogue is on
   screen. Square was the first version; a farmer looking for *garden egg* is
   better served by seeing more of the grid than by seeing each entry larger.

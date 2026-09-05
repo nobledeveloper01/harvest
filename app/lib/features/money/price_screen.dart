@@ -123,7 +123,7 @@ class _PriceScreenState extends State<PriceScreen> {
                                   naira(_offered),
                                   key: const ValueKey('offered'),
                                   style: text.displaySmall?.copyWith(
-                                    fontSize: 40,
+                                    fontSize: 34,
                                     fontFeatures: const [
                                       FontFeature.tabularFigures()
                                     ],

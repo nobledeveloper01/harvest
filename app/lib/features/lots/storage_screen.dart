@@ -98,8 +98,8 @@ class _StorageScreenState extends State<StorageScreen> {
                 borderRadius: Radii.chip,
                 child: Image.asset(
                   'assets/crops/${widget.crop.id}.png',
-                  width: 36,
-                  height: 36,
+                  width: 30,
+                  height: 30,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
                 ),
@@ -337,7 +337,7 @@ class _DayRow extends StatelessWidget {
                       child: Text(
                         days == 0 ? 'Today' : '$days',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontSize: days == 0 ? 17 : 20,
+                              fontSize: days == 0 ? 15 : 18,
                               color: picked
                                   ? freshness.onAccent
                                   : scheme.onSurface,

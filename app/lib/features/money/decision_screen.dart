@@ -100,8 +100,8 @@ class _DecisionScreenState extends State<DecisionScreen> {
                 borderRadius: Radii.chip,
                 child: Image.asset(
                   'assets/crops/${widget.lot.crop.id}.png',
-                  width: 36,
-                  height: 36,
+                  width: 30,
+                  height: 30,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
                 ),
@@ -255,7 +255,7 @@ class _Provenance extends StatelessWidget {
           child: Text(
             '${figure.from.label} · ${figure.ageInWordsAt(now)}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: scheme.onSurfaceVariant,
                 ),
           ),

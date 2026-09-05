@@ -225,8 +225,8 @@ class _QuantityScreenState extends State<QuantityScreen> {
                 borderRadius: Radii.chip,
                 child: Image.asset(
                   'assets/crops/${widget.crop.id}.png',
-                  width: 36,
-                  height: 36,
+                  width: 30,
+                  height: 30,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
                 ),
@@ -420,7 +420,7 @@ class _Typed extends StatelessWidget {
                 typed.isEmpty ? '0' : typed,
                 key: const ValueKey('typed'),
                 style: text.displaySmall?.copyWith(
-                  fontSize: 38,
+                  fontSize: 32,
                   // Tabular figures, so the number does not shift sideways as
                   // digits are typed. A display that jiggles under the thumb
                   // reads as the app struggling.

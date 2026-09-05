@@ -46,11 +46,14 @@ instruction to set everything at that minimum, and on a 6.1" phone the result
 was three and a half rows of a twenty-five crop grid and a headline crowding the
 thing it introduces.
 
-Display 30 → 26, title 22 → 19, body 18 → 16, secondary 16 → 15, radii
-following, crop pictures wider than tall. **The touch targets did not move.**
-56 dp and 64 dp are about hands, not eyes; they are a different constraint and
-they are not negotiable against how a screen looks. Keeping that line is most of
-what made the rest safe to trim.
+Display 30 → 26 → 22, headline 24 → 18, title 22 → 17, body 18 → 15, secondary
+16 → 14, radii following, crop pictures wider than tall. Two steps rather than
+one, because the first was a compromise with an argument I had already lost:
+"the floor is 5 inches" is a statement about the *minimum*, and I had been
+reading it as a mandate. **The touch targets did not move.** 56 dp and 64 dp are
+about hands, not eyes; they are a different constraint and they are not
+negotiable against how a screen looks. Keeping that line is most of what made
+the rest safe to trim twice.
 
 ### And the thing that had never been checked
 

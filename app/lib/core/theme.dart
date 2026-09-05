@@ -217,14 +217,21 @@ abstract final class Palette {
 
   /// The type scale.
   ///
-  /// Inter, bundled. Display 26 sp, title 19, body 16, secondary 15.
+  /// Inter, bundled. Display 22 sp, title 17, body 15, secondary 14.
   ///
-  /// It came down a step from 30/22/18/16 after the app was looked at on a
+  /// It has come down twice, from 30/22/18/16, after the app was looked at on a
   /// 6.1" phone rather than reasoned about from the 5" floor. The floor sets
   /// the *minimum* a farmer in sunlight can read; it is not an instruction to
   /// use that minimum everywhere, and at the larger sizes the screens read as
   /// shouting — three rows of crops where five fit, a headline crowding the
   /// thing it introduces.
+  ///
+  /// 14 sp is the floor for **anything a farmer has to read in order to act**,
+  /// and it is a floor rather than a starting point: smaller stops being
+  /// readable at arm's length in bright light, which is the condition this
+  /// product is designed for. Supporting marks that only qualify something
+  /// already legible — a provenance line, a badge, a tile's caption — go to 13
+  /// and no further, and there is exactly one such size in the app.
   ///
   /// **What did not move is the touch targets.** [Target.standard] and
   /// [Target.primary] are 56 and 64 dp because of work-hardened hands on a
@@ -236,7 +243,7 @@ abstract final class Palette {
   /// hierarchy at arm's length in bright light.
   static TextTheme _type(Color primary, Color secondary) => TextTheme(
         displaySmall: TextStyle(
-          fontSize: 26,
+          fontSize: 22,
           height: 1.15,
           fontWeight: FontWeight.w700,
           // Tight, because large text at default tracking looks loose and
@@ -245,39 +252,39 @@ abstract final class Palette {
           color: primary,
         ),
         headlineSmall: TextStyle(
-          fontSize: 21,
+          fontSize: 18,
           height: 1.2,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.4,
           color: primary,
         ),
         titleLarge: TextStyle(
-          fontSize: 19,
+          fontSize: 17,
           height: 1.25,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.2,
           color: primary,
         ),
         titleMedium: TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           height: 1.3,
           fontWeight: FontWeight.w600,
           color: primary,
         ),
         bodyLarge: TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           height: 1.45,
           fontWeight: FontWeight.w400,
           color: primary,
         ),
         bodyMedium: TextStyle(
-          fontSize: 15,
+          fontSize: 14,
           height: 1.45,
           fontWeight: FontWeight.w400,
           color: secondary,
         ),
         labelLarge: TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           height: 1.2,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.1,
@@ -587,7 +594,7 @@ class SectionQuestion extends StatelessWidget {
       padding: const EdgeInsets.only(top: Gap.m, bottom: Gap.xs),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: freshness.fresh),
+          Icon(icon, size: 20, color: freshness.fresh),
           const SizedBox(width: Gap.s),
           Flexible(
             child: Text(text, style: Theme.of(context).textTheme.titleMedium),

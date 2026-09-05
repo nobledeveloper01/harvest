@@ -76,15 +76,15 @@ class _LanguageScreenState extends State<LanguageScreen> {
                       else set up for them.
                     */
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: freshness.fresh,
                         borderRadius: Radii.chip,
                       ),
                       child: Icon(
                         Icons.eco_rounded,
-                        size: 30,
+                        size: 26,
                         color: freshness.onAccent,
                       ),
                     ),
