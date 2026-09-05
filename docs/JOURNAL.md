@@ -66,6 +66,41 @@ so that when the engine lands, a test can assert its base hours fall inside the
 crop's bucket. Naming the number now is what makes that test writable later —
 the alternative was a qualitative bucket and a hope.
 
+### Two gates that could not fail, in one afternoon
+
+Both written by me, both in the crop grid's tests, and both found by the habit
+of breaking a gate rather than by reading it.
+
+The first claimed *nothing truncates at 200% text*. Reverting the screen to a
+fixed aspect ratio did not fail it. The reason is that a fixed ratio does not
+truncate the label at all — the label takes what it needs, the `Expanded`
+picture above it gives way, and the **illustration** collapses to a sliver.
+Nothing throws. A grid of collapsed pictures is unusable by precisely the
+person an illustrated grid is for, and the test was watching the wrong half of
+the tile.
+
+The second was the replacement. *The pictures are still pictures at 200%* —
+which passed under the same break, because by then 200% had become a single
+column with room for everything. Picture starvation is a **three-column**
+failure. The test now runs at 1.0 and 1.3, where the columns are narrow, and it
+fails on the break in 48 dp of picture.
+
+The pattern in both: a check aimed at the scale where the symptom was first
+noticed rather than the scale where the mechanism bites.
+
+### The test font is not a font
+
+The first fix for the truncation was elegant — measure the widest unbreakable
+word and pick a column count that holds it. It is also untestable. Widget tests
+render in Ahem, where every glyph is a full em square, so "Bitterleaf" measures
+180 px at 18 sp in a test and roughly half that on a phone. A layout rule that
+consults text metrics behaves differently in every test that touches it.
+
+Replaced with a declared threshold: above 130% system type, one column. Worse
+design, better engineering — identical in a test and on a device. And the
+test no longer asserts that a label *fits*, because in Ahem that assertion is
+about Ahem. Fitting is checked on hardware, where it is a real question.
+
 ### What surprised us
 
 That 130 placeholder WAVs are 18 MB. The P0 vocabulary is a fraction of v1.0's

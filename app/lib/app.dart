@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
 import 'data/speech/speaker.dart';
+import 'domain/crops/crop.dart';
 import 'domain/speech/phrase.dart';
 import 'features/language/language_screen.dart';
+import 'features/lots/crop_grid_screen.dart';
 
 /// The app.
 ///
@@ -19,6 +21,7 @@ class HarvestApp extends StatefulWidget {
 class _HarvestAppState extends State<HarvestApp> {
   final _speaker = Speaker();
   Speech? _language;
+  Crop? _crop;
 
   @override
   void dispose() {
@@ -34,25 +37,33 @@ class _HarvestAppState extends State<HarvestApp> {
       themeMode: ThemeMode.dark,
       theme: Palette.theme(brightness: Brightness.light),
       darkTheme: Palette.theme(brightness: Brightness.dark),
-      home: _language == null
-          ? LanguageScreen(
-              speaker: _speaker,
-              onChosen: (language) => setState(() => _language = language),
-            )
-          : _Chosen(language: _language!),
+      home: switch ((_language, _crop)) {
+        (null, _) => LanguageScreen(
+            speaker: _speaker,
+            onChosen: (language) => setState(() => _language = language),
+          ),
+        (final language?, null) => CropGridScreen(
+            speaker: _speaker,
+            language: language,
+            onChosen: (crop) => setState(() => _crop = crop),
+          ),
+        (final language?, final crop?) => _NextStep(language: language, crop: crop),
+      },
     );
   }
 }
 
-/// Phase 0 ends here.
+/// Where the work stops today.
 ///
-/// Deliberately a stub that names what it is rather than a fake home screen.
-/// Phase 1 puts logging behind this; a plausible-looking placeholder would make
-/// the next phase's work look done.
-class _Chosen extends StatelessWidget {
-  const _Chosen({required this.language});
+/// Deliberately a stub that names what is missing rather than a plausible
+/// quantity screen. A placeholder that looks like the real thing is how a
+/// missing feature ships, and the same rule that governs the hatched crop tiles
+/// governs this.
+class _NextStep extends StatelessWidget {
+  const _NextStep({required this.language, required this.crop});
 
   final Speech language;
+  final Crop crop;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +72,9 @@ class _Chosen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '${language.endonym}\n\nPhase 1 puts harvest logging here.',
+            '${crop.label} · ${language.endonym}\n\n'
+            'How much, in baskets or bags, goes here next.\n'
+            'The conversion behind it is built; the screen is not.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),

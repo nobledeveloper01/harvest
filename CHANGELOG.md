@@ -16,6 +16,12 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **The crop grid.** Twenty-five illustrated tiles, three columns, and no
+  typing anywhere. Tapping one says its name aloud in the language you chose
+  and takes the choice; long-pressing says it without choosing, for a picture
+  you are not sure about. Past 130% system type it becomes a single column of
+  large tiles — three narrow ones cut "Bitterleaf" off mid-word, with no
+  ellipsis to admit it.
 - **A crop catalogue of twenty-five, ordered by how fast each one spoils.** The
   grid is navigated by position by people who do not read it, so position is a
   decision: the crops the spoilage clock helps most with are in the first rows.
