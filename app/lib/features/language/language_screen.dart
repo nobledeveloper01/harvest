@@ -89,7 +89,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
                       ),
                     ),
                     const SizedBox(width: Gap.m),
-                    Text('Harvest', style: text.displaySmall),
+                    // Flexible, because at 200% "Harvest" is wider than the
+                    // screen left beside the mark, and an unflexed Row does not
+                    // wrap — it overflows by 168 px into a striped bar, on the
+                    // first screen of the app.
+                    Flexible(
+                      child: Text('Harvest', style: text.displaySmall),
+                    ),
                   ],
                 ),
                 const SizedBox(height: Gap.l),

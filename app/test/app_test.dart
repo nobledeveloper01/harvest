@@ -151,12 +151,12 @@ void main() {
   /// A lot on disk, so the app opens on the harvest list rather than on the
   /// logging flow.
   ///
-  /// **Yam, deliberately.** `Lot.record` dates a harvest to the day, so a lot
-  /// logged today has been "out of the ground" since midnight — and by evening
-  /// an okra lot, whose window is about a day, is genuinely at risk. Its state
-  /// would then depend on the hour the suite happens to run, which is a test
-  /// that fails on a Tuesday afternoon and passes on a Wednesday morning. A
-  /// yam has three weeks, so it is fresh whenever this runs.
+  /// **Yam, deliberately.** These tests build the lot with an explicit
+  /// `harvestedAt` of *now*, so ADR-0005 keeps them fresh at any hour — but the
+  /// margin still matters, because a lot whose window is about a day is one
+  /// `pumpAndSettle` away from the boundary and its state would depend on when
+  /// the suite happens to run. That is a test failing on a Tuesday afternoon
+  /// and passing on a Wednesday morning. A yam has three weeks.
   Future<void> store(WidgetTester tester) => LotStore(database).add(
         Lot.record(
           crop: Crop.yam,

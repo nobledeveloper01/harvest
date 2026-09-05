@@ -135,13 +135,17 @@ abstract final class Target {
 
 /// Corner radii.
 ///
-/// Generous, and consistent. A 20 dp radius on a 110 dp tile reads as a
+/// Generous, and consistent. A 16 dp radius on a 100 dp tile reads as a
 /// deliberately soft object; the same radius on a 56 dp chip reads as a pill,
 /// which is why those are named separately rather than reused by accident.
+///
+/// They came down with the type scale. A radius is proportional to the thing
+/// it rounds, and rounding a smaller tile by the old amount turns a card into
+/// a lozenge.
 abstract final class Radii {
-  static const BorderRadius tile = BorderRadius.all(Radius.circular(20));
-  static const BorderRadius card = BorderRadius.all(Radius.circular(24));
-  static const BorderRadius chip = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius tile = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius card = BorderRadius.all(Radius.circular(20));
+  static const BorderRadius chip = BorderRadius.all(Radius.circular(12));
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
 }
 
@@ -213,16 +217,26 @@ abstract final class Palette {
 
   /// The type scale.
   ///
-  /// Inter, bundled. Display 30 sp, title 22, body 18, secondary 16 — moderate
-  /// on purpose, because a headline that fills the screen leaves no room for
-  /// the thing it introduces.
+  /// Inter, bundled. Display 26 sp, title 19, body 16, secondary 15.
+  ///
+  /// It came down a step from 30/22/18/16 after the app was looked at on a
+  /// 6.1" phone rather than reasoned about from the 5" floor. The floor sets
+  /// the *minimum* a farmer in sunlight can read; it is not an instruction to
+  /// use that minimum everywhere, and at the larger sizes the screens read as
+  /// shouting — three rows of crops where five fit, a headline crowding the
+  /// thing it introduces.
+  ///
+  /// **What did not move is the touch targets.** [Target.standard] and
+  /// [Target.primary] are 56 and 64 dp because of work-hardened hands on a
+  /// dusty screen, which is a different constraint from legibility and is not
+  /// negotiable against how the screen looks.
   ///
   /// The hierarchy is carried by **weight and tracking** rather than by size
-  /// alone, which is what lets the scale stay moderate and still read as a
+  /// alone, which is what lets the scale come down and still read as a
   /// hierarchy at arm's length in bright light.
   static TextTheme _type(Color primary, Color secondary) => TextTheme(
         displaySmall: TextStyle(
-          fontSize: 30,
+          fontSize: 26,
           height: 1.15,
           fontWeight: FontWeight.w700,
           // Tight, because large text at default tracking looks loose and
@@ -231,39 +245,39 @@ abstract final class Palette {
           color: primary,
         ),
         headlineSmall: TextStyle(
-          fontSize: 24,
+          fontSize: 21,
           height: 1.2,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.4,
           color: primary,
         ),
         titleLarge: TextStyle(
-          fontSize: 22,
+          fontSize: 19,
           height: 1.25,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.2,
           color: primary,
         ),
         titleMedium: TextStyle(
-          fontSize: 18,
+          fontSize: 16,
           height: 1.3,
           fontWeight: FontWeight.w600,
           color: primary,
         ),
         bodyLarge: TextStyle(
-          fontSize: 18,
+          fontSize: 16,
           height: 1.45,
           fontWeight: FontWeight.w400,
           color: primary,
         ),
         bodyMedium: TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           height: 1.45,
           fontWeight: FontWeight.w400,
           color: secondary,
         ),
         labelLarge: TextStyle(
-          fontSize: 17,
+          fontSize: 16,
           height: 1.2,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.1,

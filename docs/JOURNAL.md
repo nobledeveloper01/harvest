@@ -5,6 +5,90 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Fifty-four drawings, and a type scale that was reading as shouting
+
+Two pieces of feedback from looking at it, both right, and both about things no
+test in this repo was ever going to raise.
+
+### The grid had nothing in it
+
+Every tile was diagonal hatching on grey. That was deliberate — a placeholder
+must announce itself, and a grey square cannot be mistaken for a drawing of a
+tomato — but it had been deliberate for long enough to become the product.
+"Reading is optional" is the first thing this project says it never trades, and
+a farmer who cannot read was being offered twenty-five identical grey squares.
+
+So: `scripts/illustrate.py`, fifty-four drawings, flat shapes at 4x downsampled,
+family-tinted grounds. A script rather than a folder of binaries, because fifty
+four PNGs are not reviewable and *why is the ugu that shade of green* has to have
+an answer somebody can read.
+
+The first pass was drawn as rotated ellipses and it failed in a way that is
+worth writing down: **the bananas read as rainbows.** An arc of constant width
+is not a fruit. What fixes it is a spine and a width function — fat in the
+middle, pointed at one end, squared at the stalk — and the same primitive then
+drew the chillies, the cucumber, the cassava roots and the okra pods, all of
+which had been failing for the same reason.
+
+The other failure was subtler. Ugu, green and bitterleaf came out as the same
+rosette in three shades of green. That is a **direct violation of the rule the
+palette is written under** — colour is never the sole carrier of meaning — and I
+had walked straight into it while drawing the assets whose whole job is to carry
+meaning without words. They are now three silhouettes: ugu's five-lobed vine
+leaves, efo tete's soft ovals on long stems, bitterleaf's narrow lances down a
+woody stem. Told apart at a glance, in greyscale, at 40 dp.
+
+### Everything was a size too big
+
+The design floor — 5", 720p, sunlight, dust, work-hardened hands — sets the
+*minimum* that can be read and tapped. Somewhere it had been read as an
+instruction to set everything at that minimum, and on a 6.1" phone the result
+was three and a half rows of a twenty-five crop grid and a headline crowding the
+thing it introduces.
+
+Display 30 → 26, title 22 → 19, body 18 → 16, secondary 16 → 15, radii
+following, crop pictures wider than tall. **The touch targets did not move.**
+56 dp and 64 dp are about hands, not eyes; they are a different constraint and
+they are not negotiable against how a screen looks. Keeping that line is most of
+what made the rest safe to trim.
+
+### And the thing that had never been checked
+
+The definition of done has required 200% text scaling since the first day, with
+the words *check it, do not assume it* next to it. Nothing checked it. One test
+now walks the whole app — language picker, crop grid, quantity in five states,
+storage, harvest list, decision, price — at 200% on a 360×640 screen, taking the
+exception after each step so the screen that overflowed is named rather than the
+one three steps later.
+
+It failed on the first screen of the app. "Harvest" beside its mark at 200% is
+168 px wider than the phone, and had been shipping into a yellow-striped bar
+since the day the screen was written.
+
+### What surprised us
+
+**A placeholder that is honest is still a placeholder.** The hatched tiles were
+the right call and every argument in their favour still holds. What none of
+those arguments did was expire. The gate counted them, the manifest listed them,
+the release-gates document blocked on them — an entire apparatus for tracking
+the absence, and nothing that ever said *this has been absent long enough*.
+
+**I broke my own most-repeated rule while implementing it.** Three greens told
+apart by hue alone, drawn by me, in the same session in which I wrote that
+colour is never the sole carrier of meaning. Knowing a rule and applying it to
+the thing in front of you are separate skills.
+
+### Proved the gates fire
+
+The scaling test was watched to fail before it was trusted: put the wordmark
+back in an unflexed Row and it reports the overflow, on the language picker, by
+name. And it was nearly a gate that passed for the wrong reason — the final tap
+landed off screen, did nothing, and left `takeException` inspecting a price
+screen that had never been built. It now scrolls the control into view and
+asserts the screen actually arrived.
+
+---
+
 ## 2026-09-05 — Two defects a test suite of 326 could not see
 
 **Phase 3.** A pass through the app on a real simulator, tapping it the way a

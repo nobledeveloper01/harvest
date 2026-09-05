@@ -174,12 +174,20 @@ class _CropGridScreenState extends State<CropGridScreen> {
             };
             final tileWidth =
                 (constraints.maxWidth - padding * 2 - gap * (columns - 1)) / columns;
-            // Square by preference, never smaller than the outdoor touch
-            // target however large the type gets — a picture below that is not
-            // one anybody can recognise a crop from — and never so tall that a
-            // single-column tile fills the screen and hides that the grid
-            // scrolls.
-            final pictureHeight = tileWidth.clamp(Target.primary, 200.0);
+            /*
+              A little wider than tall, never smaller than the outdoor touch
+              target however large the type gets — a picture below that is not
+              one anybody can recognise a crop from — and never so tall that a
+              single-column tile fills the screen and hides that the grid
+              scrolls.
+
+              Square was the first version and it put three and a half rows of
+              twenty-five crops on a 6.1" phone. The picture is the tile's
+              whole job, but a farmer looking for *garden egg* is served better
+              by seeing more of the catalogue than by seeing each entry larger.
+            */
+            final pictureHeight =
+                (tileWidth * 0.78).clamp(Target.primary, 200.0);
 
             return CustomScrollView(
               slivers: [
@@ -338,8 +346,13 @@ class _CropTile extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(19),
+                        // One less than the tile's own radius, so the picture
+                        // sits inside the border rather than under it. A
+                        // literal here went stale the moment `Radii.tile` came
+                        // down with the type scale and left a bright sliver in
+                        // each top corner.
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(Radii.tile.topLeft.x - 1),
                         ),
                         child: Image.asset(
                           'assets/crops/${crop.id}.png',
@@ -356,14 +369,20 @@ class _CropTile extends StatelessWidget {
                         Not decoration: the label sits directly beneath, and
                         without it a pale illustration and a pale card meet at a
                         hard line that reads as two objects rather than one
-                        tile. It also gives the speaker badge something to sit
-                        on whatever the picture turns out to be.
+                        tile.
+
+                        Half the height it was, and no longer opaque at the
+                        bottom. It was sized against hatched placeholders, which
+                        had nothing in them to lose; over a drawing it ate the
+                        stems off the okra and the base off the bitterleaf. A
+                        seam is worth softening, not worth a third of the
+                        picture.
                       */
                       Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        height: 28,
+                        height: 14,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -371,7 +390,7 @@ class _CropTile extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: [
                                 freshness.raised.withValues(alpha: 0),
-                                freshness.raised,
+                                freshness.raised.withValues(alpha: 0.75),
                               ],
                             ),
                           ),

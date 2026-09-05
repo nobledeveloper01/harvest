@@ -10,6 +10,37 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Fifty-four illustrations, drawn rather than hatched.** `scripts/illustrate.py`
+  draws every crop, measure, storage condition, region, outcome and loss reason
+  — flat shapes, two or three tones each, family-tinted grounds. A script rather
+  than a folder of binaries because it is reviewable, regenerable, and the only
+  form in which *why is the ugu that shade of green* has an answer somebody can
+  read. The silhouettes are the point: the three greens and the three peppers
+  are told apart by **shape**, not only by colour, which is the rule the whole
+  palette is written under. A farmer who does not read now has a grid they can
+  actually choose from.
+- **The whole flow is checked at 200% type on the 5" floor.** `docs/DESIGN.md`
+  and the definition of done both required it and both said the same thing about
+  it — *check it, do not assume it* — and nothing did. The new test walks the
+  app from the language picker to the price screen and fails on the screen that
+  overflowed rather than three screens later.
+
+### Changed
+
+- **The type scale came down a step** — display 30→26, title 22→19, body 18→16,
+  secondary 16→15, with the radii following. The 5" floor sets the *minimum* a
+  farmer in sunlight can read; it was being used as an instruction to set
+  everything at that minimum, and on a 6.1" phone the result read as shouting —
+  three and a half rows of a twenty-five crop grid, a headline crowding the
+  thing it introduces. **The touch targets did not move**: 56 dp and 64 dp are
+  about work-hardened hands on a dusty screen, which is a different constraint
+  from legibility and is not negotiable against how a screen looks.
+- **The crop tile's picture is wider than tall**, so more of the catalogue is on
+  screen. Square was the first version; a farmer looking for *garden egg* is
+  better served by seeing more of the grid than by seeing each entry larger.
+
+### Added
+
 - **What comes off the top, entered and applied.** The lorry and the agent's
   share, taken off **every course alike** — comparing a gross "sell today"
   against a gross "wait" compares two wrong numbers fairly, but comparing either
@@ -271,6 +302,12 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The tile scrim was eating the illustrations.** Sized against hatched
+  placeholders, which had nothing in them to lose, a 28 dp opaque fade took the
+  stems off the okra and the base off the bitterleaf the moment there were real
+  drawings under it. Half the height and no longer opaque.
+- **The wordmark overflowed the first screen at 200% type**, by 168 px, into a
+  yellow-striped bar. Caught by the new scaling test on its first run.
 - **A lot could be born overdue.** `Lot.record` rounded the harvest date down to
   midnight, so a farmer logging ugu at noon from an open pile had spent twelve
   hours of a nine-hour window before putting the phone down — the countdown ran

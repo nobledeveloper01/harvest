@@ -1,65 +1,14 @@
 # Tiles that are hatched placeholders, not illustrations.
 #
-# Diagonal hatching on grey, so that nobody mistakes one for a drawing and
-# nobody has to be told which crops are still unillustrated — the grid shows it.
+# **Empty, since the illustrations landed.** `scripts/illustrate.py` draws all
+# fifty-four: flat, two or three tones each, family-tinted grounds, and
+# silhouettes chosen so that the three greens and the two peppers are told apart
+# by shape rather than only by colour — which is the rule the whole palette is
+# written under.
 #
-# `scripts/picture-check.py` counts these and warns. They do not block a phase;
-# they block the release, as R4 in docs/RELEASE-GATES.md.
+# They are drawn, not photographed, and not drawn by somebody who draws for a
+# living. R4 in `docs/RELEASE-GATES.md` stays open for that review; what it no
+# longer blocks on is a grid of grey hatching.
 #
-# Written by `scripts/make-placeholders.py`. Delete a line when the real
-# illustration lands.
-
-crops/tomato.png
-crops/ugu.png
-crops/spinach.png
-crops/bitterleaf.png
-crops/okra.png
-crops/cassava.png
-crops/maize.png
-crops/tatashe.png
-crops/rodo.png
-crops/shombo.png
-crops/cucumber.png
-crops/garden-egg.png
-crops/cabbage.png
-crops/carrot.png
-crops/banana.png
-crops/plantain.png
-crops/mango.png
-crops/pineapple.png
-crops/watermelon.png
-crops/orange.png
-crops/onion.png
-crops/sweet-potato.png
-crops/yam.png
-crops/ginger.png
-crops/garlic.png
-units/kilogram.png
-units/tonne.png
-units/small-basket.png
-units/big-basket.png
-units/bag.png
-units/crate.png
-units/mudu.png
-units/congo.png
-units/paint-rubber.png
-storage/open-air.png
-storage/shade.png
-storage/ventilated.png
-storage/cold-room.png
-storage/processed.png
-regions/north-west.png
-regions/middle-belt.png
-regions/south-west.png
-regions/south-east.png
-regions/elsewhere.png
-outcomes/sold.png
-outcomes/stored.png
-outcomes/processed.png
-outcomes/lost.png
-losses/rotted.png
-losses/pests.png
-losses/damaged.png
-losses/no-buyer.png
-losses/water.png
-losses/animals.png
+# `scripts/picture-check.py` counts the lines below and warns. They do not block
+# a phase; they block the release, as R4.

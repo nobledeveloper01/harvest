@@ -420,7 +420,7 @@ class _Typed extends StatelessWidget {
                 typed.isEmpty ? '0' : typed,
                 key: const ValueKey('typed'),
                 style: text.displaySmall?.copyWith(
-                  fontSize: 44,
+                  fontSize: 38,
                   // Tabular figures, so the number does not shift sideways as
                   // digits are typed. A display that jiggles under the thumb
                   // reads as the app struggling.
@@ -575,7 +575,7 @@ class _UnitRowState extends State<_UnitRow> {
     final compact = widget.chosen != null;
 
     return SizedBox(
-      height: compact ? Target.standard : 118,
+      height: compact ? Target.standard : 104,
       child: ListView.separated(
         key: const ValueKey('units'),
         scrollDirection: Axis.horizontal,
@@ -625,7 +625,7 @@ class _UnitTile extends StatelessWidget {
       label: unit.label,
       child: ExcludeSemantics(
         child: SizedBox(
-          width: compact ? null : 84,
+          width: compact ? null : 78,
           child: Pressable(
             onTap: onTap,
             child: AnimatedContainer(
@@ -683,13 +683,13 @@ class _UnitTile extends StatelessWidget {
                   : Column(
                 children: [
                   SizedBox(
-                    height: 66,
+                    height: 58,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(19),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(Radii.tile.topLeft.x - 1),
                           ),
                           child: Image.asset(
                             'assets/units/${unit.id}.png',

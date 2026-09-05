@@ -223,8 +223,8 @@ class _Conditions extends StatelessWidget {
                           fit: StackFit.expand,
                           children: [
                             ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(19),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(Radii.tile.topLeft.x - 1),
                               ),
                               child: Image.asset(
                                 'assets/storage/${condition.id}.png',

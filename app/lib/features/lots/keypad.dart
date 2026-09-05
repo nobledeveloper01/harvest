@@ -84,7 +84,7 @@ class Keypad extends StatelessWidget {
                                 .textTheme
                                 .titleLarge
                                 ?.copyWith(
-                                  fontSize: 26,
+                                  fontSize: 23,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
                                   ],
