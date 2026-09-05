@@ -111,4 +111,27 @@ void main() {
 
     expect(await alarms.pendingCount(), 1);
   });
+
+  testWidgets('each pending request knows which lot it is about',
+      (tester) async {
+    /*
+      Dropping the payload is invisible to every other check: the notification
+      still schedules, still fires, still says the right thing — and lands the
+      farmer on the list of every lot instead of the one it was warning about.
+      Only the platform can be asked what it actually stored.
+    */
+    final soon = DateTime.now().add(const Duration(days: 1));
+    await alarms.setFor(
+      7,
+      [
+        Alert(at: soon, kind: AlertKind.halfGone),
+        Alert(at: soon.add(const Duration(days: 1)), kind: AlertKind.timeIsUp),
+      ],
+      (alert) => 'Tomato — open Harvest',
+    );
+
+    final payloads = await alarms.pendingPayloads();
+    expect(payloads, hasLength(2));
+    expect(payloads.every((p) => p == '7'), isTrue, reason: '$payloads');
+  });
 }

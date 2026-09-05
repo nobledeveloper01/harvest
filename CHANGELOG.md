@@ -10,6 +10,13 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A warning lands on the lot it was about.** Tapping a spoilage alert opens
+  that lot's decision, not the list of every lot — `docs/04-UX-DESIGN.md` calls
+  the decision screen the alert destination, and a warning that opens a list has
+  handed the farmer back the work of finding the harvest it just told them they
+  were losing money on. Both paths work: a tap while the app is running, and a
+  tap that starts it from cold, which is the common one because the warning
+  arrives on a phone in a pocket.
 - **The storage calculator, reachable.** A farmer quoted a daily rate at the
   door of a cold room can enter it and be told what a week of it actually comes
   to — the multiplication nobody does out loud, because a daily rate is the form
@@ -264,6 +271,12 @@ Entries say *why*, not just what.
   `Lot.record` now agree on the window to the day: fifteen buttons, today and
   the fourteen behind it. A row offering one more would have produced a tap
   that does nothing, on the screen where the farmer is trying to finish.
+- **Two databases where there should have been one.** The price store was
+  lazily opening a second `LotsDatabase` — Drift's own warning says two
+  instances over one file will race and can corrupt it. Found because a test
+  injected one database and the app quietly used another. The app now takes the
+  database rather than the stores, which makes the mistake impossible rather
+  than merely fixed.
 - **A question that cost the farmer their work.** Opening the region picker
   replaced the quantity screen, which destroyed its state — so answering a
   question the app had asked threw away the amount already typed and the

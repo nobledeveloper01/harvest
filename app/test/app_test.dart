@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:harvest/data/alerts/alarms.dart';
@@ -91,6 +93,17 @@ class _Ledger implements Alarms {
   final List<int> cleared = [];
   bool allowed = true;
 
+  /// The lot a cold start came from, if the test is pretending there was one.
+  int? launchedFrom;
+
+  final tapped = StreamController<int>.broadcast();
+
+  @override
+  Stream<int> get taps => tapped.stream;
+
+  @override
+  Future<int?> launchedBy() async => launchedFrom;
+
   @override
   Future<void> start() async {}
 
@@ -111,6 +124,12 @@ class _Ledger implements Alarms {
   @override
   Future<int> pendingCount() async =>
       set.fold<int>(0, (total, entry) => total + entry.$2.length);
+
+  @override
+  Future<List<String?>> pendingPayloads() async => [
+        for (final entry in set)
+          for (var i = 0; i < entry.$2.length; i++) '${entry.$1}',
+      ];
 }
 
 void main() {
@@ -208,7 +227,7 @@ void main() {
         languages: const Settings(),
         // In memory, so a test never touches the farmer's actual database and
         // never needs sqlite3's platform libraries.
-        lots: LotStore(database),
+        database: database,
         alarms: alarms,
         weather: weather,
       ),
@@ -667,5 +686,82 @@ void main() {
     // Offline in these tests, so the engine was guessing and says so.
     expect(row.predictedConfidence, 'estimated');
     expect(row.shelfLifeTableVersion, ShelfLifeTable.current.version);
+  });
+
+  group('a tapped warning', () {
+    testWidgets('lands on the decision, not on the list', (tester) async {
+      /*
+        `docs/04-UX-DESIGN.md` calls the decision screen the alert destination.
+        A warning that opens a list of every lot has handed the farmer back the
+        work of finding the one it was warning about — at the moment it just
+        told them they were losing money on it.
+      */
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await tester.binding.setSurfaceSize(const Size(360, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await store(tester);
+      final id = (await LotStore(database).all()).ids[0]!;
+
+      await launch(tester);
+      expect(find.text('Your harvest'), findsOneWidget);
+
+      alarms.tapped.add(id);
+      await tester.pumpAndSettle();
+
+      expect(find.text('I do not know what this is worth'), findsOneWidget);
+      expect(find.text('Your harvest'), findsNothing);
+    });
+
+    testWidgets('works when the tap started the app from cold', (tester) async {
+      /*
+        The common path, and the one that would never be found by testing with
+        the app already open: the warning arrives on a phone in a pocket.
+      */
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await tester.binding.setSurfaceSize(const Size(360, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await store(tester);
+      alarms.launchedFrom = (await LotStore(database).all()).ids[0]!;
+
+      await launch(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('I do not know what this is worth'), findsOneWidget);
+    });
+
+    testWidgets('about a lot that has been sold does nothing', (tester) async {
+      /*
+        A notification can outlive the thing it was about. An error message
+        about a harvest the farmer has already dealt with would be the app
+        arguing with them.
+      */
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await tester.binding.setSurfaceSize(const Size(360, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await store(tester);
+      final id = (await LotStore(database).all()).ids[0]!;
+      await LotStore(database)
+          .close(id, Outcome.record(what: LotOutcome.sold, at: DateTime.now())!);
+
+      alarms.launchedFrom = id;
+      await launch(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('I do not know what this is worth'), findsNothing);
+    });
+
+    testWidgets('about a lot that no longer exists does nothing',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await tester.binding.setSurfaceSize(const Size(360, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await store(tester);
+      alarms.launchedFrom = 9999;
+
+      await launch(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your harvest'), findsOneWidget);
+    });
   });
 }

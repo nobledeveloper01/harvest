@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -25,6 +27,22 @@ import '../../domain/spoilage/alerts.dart';
 /// why these are local notifications scheduled at log time and not messages
 /// pushed from a server the design floor assumes is unreachable.
 abstract interface class Alarms {
+  /// Which lot the farmer tapped a notification about, if any.
+  ///
+  /// **The alert has to land on the decision, not on the list.**
+  /// `docs/04-UX-DESIGN.md` calls the decision screen the alert destination,
+  /// and a warning that opens a list of every lot has handed the farmer back
+  /// the work of finding the one it was warning about — at the moment it just
+  /// told them they were losing money on it.
+  ///
+  /// Two paths, both of which have to work: a tap while the app is running,
+  /// and a tap that starts it from cold. The second is the common one, because
+  /// the alert arrives on a phone in a pocket.
+  Stream<int> get taps;
+
+  /// The lot a cold start came from, consumed once.
+  Future<int?> launchedBy();
+
   /// Get the plugin and the timezone database ready. Asks nothing of anybody.
   ///
   /// Separate from [ready] because the two are separable and conflating them
@@ -52,6 +70,14 @@ abstract interface class Alarms {
   /// ask iOS what it actually accepted, which is the closest a machine can get
   /// to the gate without waiting three days for a tomato.
   Future<int> pendingCount();
+
+  /// The lot ids the operating system is holding, one per pending request.
+  ///
+  /// Exists because dropping the payload is invisible to every other check:
+  /// the notification still schedules, still fires, still says the right
+  /// thing — and lands the farmer on the list instead of the lot it was about.
+  /// Only the platform can be asked what it actually stored.
+  Future<List<String?>> pendingPayloads();
 }
 
 /// The real one.
@@ -61,6 +87,11 @@ class LocalAlarms implements Alarms {
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _started = false;
+
+  final _taps = StreamController<int>.broadcast();
+
+  @override
+  Stream<int> get taps => _taps.stream;
 
   /*
     Notification ids are integers and a lot needs three of them.
@@ -82,6 +113,10 @@ class LocalAlarms implements Alarms {
       tz.setLocalLocation(tz.getLocation(zone.identifier));
 
       await _plugin.initialize(
+        onDidReceiveNotificationResponse: (response) {
+          final id = int.tryParse(response.payload ?? '');
+          if (id != null) _taps.add(id);
+        },
         settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
           iOS: DarwinInitializationSettings(
@@ -129,6 +164,8 @@ class LocalAlarms implements Alarms {
         title: 'Harvest',
         body: body(alert),
         scheduledDate: tz.TZDateTime.from(alert.at, tz.local),
+        // The lot, so the tap can land on it rather than on the list.
+        payload: '$lotId',
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'spoilage',
@@ -142,6 +179,20 @@ class LocalAlarms implements Alarms {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     }
+  }
+
+  @override
+  Future<List<String?>> pendingPayloads() async =>
+      (await _plugin.pendingNotificationRequests())
+          .map((request) => request.payload)
+          .toList();
+
+  @override
+  Future<int?> launchedBy() async {
+    await start();
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch == null || !launch.didNotificationLaunchApp) return null;
+    return int.tryParse(launch.notificationResponse?.payload ?? '');
   }
 
   @override

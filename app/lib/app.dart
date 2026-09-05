@@ -41,7 +41,7 @@ class HarvestApp extends StatefulWidget {
   const HarvestApp({
     this.speaker,
     this.languages,
-    this.lots,
+    this.database,
     this.alarms,
     this.weather,
     super.key,
@@ -49,7 +49,14 @@ class HarvestApp extends StatefulWidget {
 
   final Speaker? speaker;
   final Settings? languages;
-  final LotStore? lots;
+  /// The database both stores are built on.
+  ///
+  /// **One instance, injected as one thing.** Lots and prices were separate
+  /// parameters until `_prices` was found lazily opening a *second*
+  /// `LotsDatabase` — Drift's own warning says two instances over one file
+  /// will race and can corrupt it. Passing the stores separately made that
+  /// possible; passing the database makes it impossible.
+  final LotsDatabase? database;
   final Alarms? alarms;
   final WeatherStore? weather;
 
@@ -60,9 +67,12 @@ class HarvestApp extends StatefulWidget {
 class _HarvestAppState extends State<HarvestApp> {
   late final Speaker _speaker = widget.speaker ?? Speaker();
   late final Settings _languages = widget.languages ?? const Settings();
-  late final LotsDatabase _database = LotsDatabase();
-  late final LotStore _lots = widget.lots ?? LotStore(_database);
+  late final LotsDatabase _database = widget.database ?? LotsDatabase();
+  late final LotStore _lots = LotStore(_database);
   late final Alarms _alarms = widget.alarms ?? LocalAlarms();
+
+  /// So a notification tap can push a screen without a widget's context.
+  final _navigator = GlobalKey<NavigatorState>();
   late final WeatherStore _weatherStore = widget.weather ?? WeatherStore();
   late final PriceStore _prices = PriceStore(_database);
 
@@ -72,6 +82,9 @@ class _HarvestAppState extends State<HarvestApp> {
   /// reading is still current, and asking it once a launch is enough for a
   /// model whose readings are good for twelve hours.
   Weather? _weather;
+
+  /// Watches for the farmer tapping a warning while the app is running.
+  StreamSubscription<int>? _taps;
 
   StoredLots _stored = const StoredLots(lots: [], unreadable: 0);
 
@@ -131,10 +144,24 @@ class _HarvestAppState extends State<HarvestApp> {
       waits for nothing.
     */
     unawaited(_refreshWeather());
+
+    /*
+      The alert has to land on the decision, not on the list.
+
+      Two paths, and the second is the common one because the warning arrives
+      on a phone in a pocket: a tap while the app is running, and a tap that
+      starts it from cold. Handling only the first would work perfectly every
+      time it was tested by hand with the app already open, and never in the
+      field.
+    */
+    _taps = _alarms.taps.listen(_openLotById);
+    final launchedBy = await _alarms.launchedBy();
+    if (launchedBy != null) await _openLotById(launchedBy);
   }
 
   @override
   void dispose() {
+    _taps?.cancel();
     _speaker.dispose();
     super.dispose();
   }
@@ -165,12 +192,51 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() => _stored = stored);
   }
 
+  /// Open the decision for the lot a warning was about.
+  ///
+  /// Silently does nothing when the lot is gone — sold, or deleted on another
+  /// device. A notification can outlive the thing it was about, and an error
+  /// message about a harvest the farmer has already dealt with would be the
+  /// app arguing with them.
+  Future<void> _openLotById(int id) async {
+    final stored = await _lots.all();
+    if (!mounted) return;
+    for (final entry in stored.ids.entries) {
+      if (entry.value != id) continue;
+      final lot = stored.lots[entry.key];
+      if (!lot.isOpen) return;
+      setState(() {
+        _stored = stored;
+        _logging = false;
+      });
+      /*
+        The navigator's context, fetched after the rebuild rather than before.
+
+        A tap can arrive at any moment — including while the farmer is
+        part-way through logging something else — so the tree this pushes onto
+        is not the tree that existed when the notification fired.
+      */
+      /*
+        The navigator's *state*, not its context.
+
+        `Navigator.of(context)` given the navigator's own context searches
+        upwards for an ancestor navigator and finds none — the push silently
+        never happens, and the warning lands on the list after all. The key
+        holds the state directly.
+      */
+      final navigator = _navigator.currentState;
+      if (navigator == null) return;
+      await _decideAbout(navigator, lot);
+      return;
+    }
+  }
+
   /// Open the money question for a lot.
   ///
   /// Everything the screen needs is worked out here rather than inside it: the
   /// window, the prices, and what the three courses come to. A screen that
   /// reaches for a database is a screen that cannot be tested without one.
-  Future<void> _decideAbout(BuildContext context, Lot lot) async {
+  Future<void> _decideAbout(NavigatorState navigator, Lot lot) async {
     final language = _language;
     if (language == null) return;
 
@@ -200,8 +266,7 @@ class _HarvestAppState extends State<HarvestApp> {
       );
     }
 
-    if (!context.mounted) return;
-    await Navigator.of(context).push<void>(
+    await navigator.push<void>(
       MaterialPageRoute(
         builder: (_) => _DecisionHost(
           speaker: _speaker,
@@ -285,6 +350,7 @@ class _HarvestAppState extends State<HarvestApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigator,
       title: 'Harvest',
       debugShowCheckedModeBanner: false,
       // Dark by default and light by choice. `ThemeMode.system` is still not
@@ -316,7 +382,8 @@ class _HarvestAppState extends State<HarvestApp> {
         onLogAnother: () => setState(() => _logging = true),
         onToggleBrightness: _flipBrightness,
         onClosed: _close,
-        onDecide: _decideAbout,
+        onDecide: (context, lot) =>
+            _decideAbout(Navigator.of(context), lot),
       );
 
   void _flipBrightness() {
@@ -360,6 +427,7 @@ class _HarvestAppState extends State<HarvestApp> {
               // A new region is a new place to ask about, and the old
               // reading was for somewhere else.
               unawaited(_refreshWeather());
+
             },
           ),
         (final crop?, final quantity?) => StorageScreen(

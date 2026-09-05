@@ -9,6 +9,42 @@ point — everything else is in the commit log.
 
 **Phase 3.**
 
+### The test caught a corruption hazard, not a test bug
+
+The alert-destination test failed and the reason had nothing to do with alerts.
+`_prices` was declared as `PriceStore(_database)`, and `_database` was a lazy
+`LotsDatabase()` — so when a test injected a `LotStore` built on an in-memory
+database, the price store quietly opened a **second** one. Drift prints a
+warning for exactly this: two instances over one file race, and can corrupt it.
+
+In production both instances point at the same file and everything appears to
+work, which is the worst version of the problem. The test only found it because
+injecting one thing and using another produces a visible discrepancy where
+production produces an invisible one.
+
+The fix is not "pass the price store too". It is that the app takes **the
+database**, and builds both stores from it — which makes the mistake impossible
+rather than merely corrected.
+
+### Navigator.of, given the navigator
+
+The tap handler pushed through `Navigator.of(_navigator.currentContext!)`, which
+searches *upwards* from that context for an ancestor navigator — and the
+navigator's own context has none. No exception, no error: the push simply never
+happened and the warning landed on the list after all, which is precisely the
+behaviour the whole change was removing.
+
+`GlobalKey<NavigatorState>.currentState` is the state itself. Written down
+because the wrong version compiles, runs, and looks right.
+
+### The payload nothing on this machine could check
+
+Dropping the notification's payload is invisible to every test that runs here:
+it still schedules, still fires, still says the right thing — and lands the
+farmer on the list instead of the lot. The only thing that can be asked what was
+actually stored is the platform, so `pendingPayloads()` exists and the on-device
+suite asserts it. Five assertions there now, all green against real iOS.
+
 ### A lazy list makes "it is not there" mean nothing
 
 The decision screen stops offering *"a store quoted me a price"* once a store
