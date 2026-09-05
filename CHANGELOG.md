@@ -10,6 +10,14 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The storage calculator, reachable.** A farmer quoted a daily rate at the
+  door of a cold room can enter it and be told what a week of it actually comes
+  to — the multiplication nobody does out loud, because a daily rate is the form
+  in which storage sounds cheapest. **What the store saves is not a number
+  anybody has to estimate**: it is the difference between what would be lost
+  outside and what would be lost inside, and the engine computes both. Asking
+  the farmer or the operator would be asking the one question neither of them
+  can answer and the app can.
 - **The decision screen, leading with the money.** *"If you wait, you could lose
   ₦20,000"* — not "shelf life 72 hours", because the unit a farmer decides in is
   naira and hours are a fact they have to convert first. Every figure on it

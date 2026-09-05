@@ -25,6 +25,28 @@ class StorageOffer {
     required this.spoilageAvoided,
   });
 
+  /// What a quoted offer actually buys, worked out from the two windows.
+  ///
+  /// **Not a number anybody has to invent.** The share of the lot saved is the
+  /// difference between what would be lost outside and what would be lost in
+  /// the store, and the engine already computes both — one for the lot as it
+  /// is, one for the same lot in a cold room. Asking a farmer, or a storage
+  /// operator, to estimate "how much would this save" would be asking the one
+  /// question neither of them can answer and the app can.
+  static StorageOffer fromWindows({
+    required double nairaPerKgPerDay,
+    required int days,
+    required double lostOutside,
+    required double lostInside,
+  }) =>
+      StorageOffer(
+        nairaPerKgPerDay: nairaPerKgPerDay,
+        days: days,
+        // Never negative: a store that somehow makes things worse buys nothing
+        // rather than owing the farmer crop.
+        spoilageAvoided: (lostOutside - lostInside).clamp(0.0, 1.0),
+      );
+
   final double nairaPerKgPerDay;
 
   /// How long the farmer would leave it there.

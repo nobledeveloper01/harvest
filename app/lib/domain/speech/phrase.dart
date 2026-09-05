@@ -101,6 +101,9 @@ enum Phrase {
   /// gets argued with rather than used.
   timeIsUp('time-is-up'),
 
+  /// *"What does the store charge you a day?"*
+  whatDoesTheStoreCost('what-does-the-store-cost'),
+
   /// *"If you wait, you could lose money on this."*
   ///
   /// The sentence, without the sum. The naira figure itself cannot be spoken

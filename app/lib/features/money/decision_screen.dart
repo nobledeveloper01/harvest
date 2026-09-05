@@ -29,6 +29,7 @@ class DecisionScreen extends StatefulWidget {
     required this.decision,
     required this.now,
     required this.onReportPrice,
+    required this.onQuoteStorage,
     super.key,
   });
 
@@ -41,6 +42,9 @@ class DecisionScreen extends StatefulWidget {
 
   /// Ask the farmer what they were offered.
   final VoidCallback onReportPrice;
+
+  /// Ask what a store quoted them.
+  final VoidCallback onQuoteStorage;
 
   @override
   State<DecisionScreen> createState() => _DecisionScreenState();
@@ -116,7 +120,27 @@ class _DecisionScreenState extends State<DecisionScreen> {
                     now: widget.now,
                   ),
                 const SizedBox(height: Gap.m),
-                _ReportAnother(onReportPrice: widget.onReportPrice),
+                _Another(
+                  icon: Icons.handshake_outlined,
+                  label: 'Somebody offered me a price',
+                  onTap: widget.onReportPrice,
+                ),
+                if (decision.of(Course.store) == null) ...[
+                  const SizedBox(height: Gap.m),
+                  /*
+                    Offered only when there is no storage figure yet.
+
+                    The app has no directory of stores and will not invent one.
+                    What it can do is the arithmetic on an offer the farmer has
+                    already been given — which is the part they cannot do
+                    standing at the door of a cold room being told a daily rate.
+                  */
+                  _Another(
+                    icon: Icons.warehouse_rounded,
+                    label: 'A store quoted me a price',
+                    onTap: widget.onQuoteStorage,
+                  ),
+                ],
               ],
             ],
           ),
@@ -360,10 +384,16 @@ class _NoPrice extends StatelessWidget {
   }
 }
 
-class _ReportAnother extends StatelessWidget {
-  const _ReportAnother({required this.onReportPrice});
+class _Another extends StatelessWidget {
+  const _Another({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
-  final VoidCallback onReportPrice;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -373,11 +403,11 @@ class _ReportAnother extends StatelessWidget {
     return Semantics(
       button: true,
       container: true,
-      label: 'somebody offered me a price',
+      label: label.toLowerCase(),
       child: ExcludeSemantics(
         child: Pressable(
           borderRadius: Radii.pill,
-          onTap: onReportPrice,
+          onTap: onTap,
           child: Container(
             constraints: const BoxConstraints(minHeight: Target.standard),
             alignment: Alignment.center,
@@ -385,20 +415,16 @@ class _ReportAnother extends StatelessWidget {
               borderRadius: Radii.pill,
               border: Border.all(color: freshness.outline),
             ),
-            // Flexible, because the label is a sentence and the pill is as
-            // wide as the page — at large type an unflexed row overflows into
-            // a yellow-striped bar rather than wrapping.
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.handshake_outlined,
-                    size: 18, color: scheme.onSurfaceVariant),
+                Icon(icon, size: 18, color: scheme.onSurfaceVariant),
                 const SizedBox(width: Gap.s),
                 Flexible(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: Gap.s),
                     child: Text(
-                      'Somebody offered me a price',
+                      label,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurface,
                             fontWeight: FontWeight.w600,

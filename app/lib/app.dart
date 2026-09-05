@@ -18,6 +18,7 @@ import 'domain/spoilage/alerts.dart';
 import 'domain/money/decision.dart';
 import 'domain/money/price.dart';
 import 'domain/money/sourced.dart';
+import 'domain/money/storing.dart';
 import 'domain/spoilage/shelf_life.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
@@ -25,6 +26,7 @@ import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/price_screen.dart';
+import 'features/money/storage_offer_screen.dart';
 import 'features/lots/storage_screen.dart';
 
 /// The app.
@@ -172,6 +174,8 @@ class _HarvestAppState extends State<HarvestApp> {
     final language = _language;
     if (language == null) return;
 
+    Quote? quoted;
+
     Future<Decision?> decide() async {
       final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
       if (life == null) return null;
@@ -192,6 +196,7 @@ class _HarvestAppState extends State<HarvestApp> {
         // is how much of the lot still exists — which is the honest half and
         // the one nobody else counts.
         pricePerKgLater: price.nairaPerKg,
+        storage: quoted == null ? null : _offerFrom(lot, life, quoted!),
       );
     }
 
@@ -204,6 +209,7 @@ class _HarvestAppState extends State<HarvestApp> {
           lot: lot,
           weather: _weather,
           decide: decide,
+          onQuoted: (quote) async => quoted = quote,
           onReported: (perKg) => _prices.record(
             crop: lot.crop,
             nairaPerKg: perKg,
@@ -385,6 +391,7 @@ class _DecisionHost extends StatefulWidget {
     required this.weather,
     required this.decide,
     required this.onReported,
+    required this.onQuoted,
   });
 
   final Speaker speaker;
@@ -393,6 +400,7 @@ class _DecisionHost extends StatefulWidget {
   final Weather? weather;
   final Future<Decision?> Function() decide;
   final Future<void> Function(double perKg) onReported;
+  final Future<void> Function(Quote quote) onQuoted;
 
   @override
   State<_DecisionHost> createState() => _DecisionHostState();
@@ -415,6 +423,21 @@ class _DecisionHostState extends State<_DecisionHost> {
       _decision = decision;
       _ready = true;
     });
+  }
+
+  Future<void> _quoteStorage() async {
+    final quote = await Navigator.of(context).push<Quote>(
+      MaterialPageRoute(
+        builder: (_) => StorageOfferScreen(
+          speaker: widget.speaker,
+          language: widget.language,
+          lot: widget.lot,
+        ),
+      ),
+    );
+    if (quote == null) return;
+    await widget.onQuoted(quote);
+    await _reload();
   }
 
   Future<void> _reportPrice() async {
@@ -447,6 +470,39 @@ class _DecisionHostState extends State<_DecisionHost> {
       decision: _decision,
       now: DateTime.now(),
       onReportPrice: _reportPrice,
+      onQuoteStorage: _quoteStorage,
     );
   }
+}
+
+/// Turn a quoted rate into an offer the calculator can weigh.
+///
+/// The share of the lot a store saves is **not a number anybody has to
+/// estimate**: it is the difference between what would be lost outside and what
+/// would be lost inside, and the engine already computes both — the lot as it
+/// is, and the same lot in a cold room. Asking a farmer, or the storage
+/// operator, to guess "how much would this save" would be asking the one
+/// question neither of them can answer and the app can.
+StorageOffer _offerFrom(Lot lot, ShelfLife outside, Quote quote) {
+  final until = lot.harvestedAt.add(Duration(days: quote.days));
+  final inside = ShelfLifeEngine.predict(
+    lot: Lot.restore(
+      crop: lot.crop,
+      quantity: lot.quantity,
+      storage: StorageCondition.coldRoom,
+      harvestedAt: lot.harvestedAt,
+      loggedAt: lot.loggedAt,
+    ),
+  );
+
+  return StorageOffer.fromWindows(
+    // Quoted for the whole lot, per day — which is how stores quote. The
+    // calculator works per kilogram, so the division happens once, here.
+    nairaPerKgPerDay: lot.quantity.kilograms <= 0
+        ? 0
+        : quote.nairaPerDay / lot.quantity.kilograms,
+    days: quote.days,
+    lostOutside: outside.lostBy(lot.harvestedAt, until),
+    lostInside: inside?.lostBy(lot.harvestedAt, until) ?? 0,
+  );
 }

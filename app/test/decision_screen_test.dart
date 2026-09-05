@@ -66,9 +66,11 @@ void main() {
       );
 
   late int reports;
+  late int quotes;
 
   Future<_Recording> pump(WidgetTester tester, Decision? given) async {
     reports = 0;
+    quotes = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(const Size(360, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -84,6 +86,7 @@ void main() {
           decision: given,
           now: noon,
           onReportPrice: () => reports++,
+          onQuoteStorage: () => quotes++,
         ),
       ),
     );
@@ -233,6 +236,52 @@ void main() {
 
       expect(find.text('Put it in storage'), findsOneWidget);
       expect(find.textContaining('Do not store this'), findsOneWidget);
+    });
+  });
+
+  group('quoting a store', () {
+    testWidgets('is offered while there is no storage figure', (tester) async {
+      /*
+        The app has no directory of stores and will not invent one. What it can
+        do is the arithmetic on an offer the farmer has already been given —
+        which is the part they cannot do standing at the door of a cold room
+        being told a daily rate.
+      */
+      await pump(tester, decision());
+      await tester.tap(find.text('A store quoted me a price'));
+      await tester.pump();
+      expect(quotes, 1);
+    });
+
+    testWidgets('and is gone once there is one', (tester) async {
+      /*
+        Asking again for a number already on the screen is a control that has
+        stopped meaning anything.
+
+        **Scrolled to the bottom first.** A `ListView` builds only what is
+        visible, so asserting the absence of something below the fold finds
+        nothing whether or not it is there — which is exactly how this test
+        passed with the condition removed the first time it was broken on
+        purpose.
+      */
+      await pump(
+        tester,
+        decision(
+          storage: const StorageOffer(
+            nairaPerKgPerDay: 1,
+            days: 4,
+            spoilageAvoided: 0.5,
+          ),
+        ),
+      );
+      expect(find.text('Put it in storage'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      // The price control is still there, so the list really did reach its end.
+      expect(find.text('Somebody offered me a price'), findsOneWidget);
+      expect(find.text('A store quoted me a price'), findsNothing);
     });
   });
 }

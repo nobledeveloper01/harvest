@@ -9,6 +9,33 @@ point — everything else is in the commit log.
 
 **Phase 3.**
 
+### A lazy list makes "it is not there" mean nothing
+
+The decision screen stops offering *"a store quoted me a price"* once a store
+has. Breaking that — making the control unconditional — did not fail the test.
+
+`ListView` builds only what is on screen, and the control sits below three
+option cards. `findsNothing` therefore passes whether the widget exists or not,
+which is the purest form of the gate that cannot fail: an assertion about
+absence, in a structure that produces absence for free.
+
+The test now scrolls to the end first, and checks that the *other* control is
+there as proof the list really reached its bottom. The break then fails
+properly. Worth writing down because every `findsNothing` in a scrolling screen
+has this shape, and there are several in this codebase.
+
+### The question neither party can answer
+
+A storage offer needs to know what fraction of the lot the store saves. Both
+obvious sources are wrong: the farmer does not know, and the operator has every
+incentive not to.
+
+The app does. It is the difference between two windows the engine already
+computes — the lot as it stands, and the same lot in a cold room — so the number
+nobody could supply falls out of arithmetic that was already there. Clamped at
+zero, because a store that somehow made things worse would otherwise show up
+downstream as paying the farmer to take their tomatoes.
+
 ### The range was already the answer
 
 Valuing "wait" needs to know how much of a lot will be gone by Friday, and the
