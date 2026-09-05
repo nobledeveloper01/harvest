@@ -28,12 +28,21 @@ class CropGridScreen extends StatefulWidget {
     required this.speaker,
     required this.language,
     required this.onChosen,
+    required this.onChangeLanguage,
     super.key,
   });
 
   final Speaker speaker;
   final Speech language;
   final void Function(Crop) onChosen;
+
+  /// Back to the language picker.
+  ///
+  /// The one control on this screen that is not a crop, and it carries the
+  /// language's **endonym** rather than a gear icon — somebody who chose Igbo
+  /// by mistake needs to see the word `Hausa` to know they can get back to it,
+  /// and a settings glyph tells them nothing.
+  final VoidCallback onChangeLanguage;
 
   @override
   State<CropGridScreen> createState() => _CropGridScreenState();
@@ -82,6 +91,18 @@ class _CropGridScreenState extends State<CropGridScreen> {
       appBar: AppBar(
         title: Text('What did you harvest?', style: text.titleLarge),
         toolbarHeight: Target.primary,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: widget.onChangeLanguage,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(Target.standard, Target.standard),
+              ),
+              child: Text(widget.language.endonym, style: text.bodyLarge),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: LayoutBuilder(

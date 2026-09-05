@@ -16,6 +16,11 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **The language is asked once.** Somebody who cannot read the app has already
+  done the hardest thing it asks of them by finding their language in a list;
+  the choice now survives a relaunch. The grid carries that language's own name
+  as a button, so choosing wrongly on the first screen is not a dead end for
+  the person least able to read their way out of one.
 - **The crop grid.** Twenty-five illustrated tiles, three columns, and no
   typing anywhere. Tapping one says its name aloud in the language you chose
   and takes the choice; long-pressing says it without choosing, for a picture
@@ -55,6 +60,14 @@ Entries say *why*, not just what.
   direction. Both asset gates now read `pubspec.yaml` as well as the
   filesystem; the old ones would have stayed green while every crop name was
   silent on a real phone.
+- **An app that spoke in the wrong language on every launch.** Reading the
+  stored language is a disk round trip, and the picker was being built while it
+  was still in flight — the picker announces itself on arrival, so it started
+  talking and then vanished. Nothing is built now until the answer is in.
+- **`make setup` on a fresh clone.** It ran `build_runner`, which is not a
+  dependency, and failed with a message about a missing package rather than
+  anything a new reader could act on. Code generation is now guarded until
+  something needs generating.
 - **A citation pointing at nothing.** `make domain-purity` referred readers to
   ADR-0002, which had never been written. `make doc-check` now fails on any
   `ADR-NNNN` reference with no document behind it, because a dangling citation

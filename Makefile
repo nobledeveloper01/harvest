@@ -33,13 +33,24 @@ placeholders: ## Write stand-in clips and tiles for anything not yet made (macOS
 # --- code -------------------------------------------------------------------
 
 .PHONY: setup
-setup: ## Install dependencies and run code generation
+setup: ## Install dependencies, and run code generation if any is configured
 	cd $(APP) && $(FLUTTER) pub get
-	cd $(APP) && dart run build_runner build --delete-conflicting-outputs
+	@$(MAKE) --no-print-directory gen
 
 .PHONY: gen
+# Guarded, because it was not.
+#
+# `dart run build_runner build` on a project without build_runner fails with
+# "Could not find package `build_runner`" — so `make setup`, the first command
+# anybody runs after cloning, ended in an error that says nothing about what to
+# do. Drift and Riverpod arrive with lot storage and will bring the generator
+# with them; until then there is nothing to generate and the target says so.
 gen: ## Re-run code generation (Drift tables, Riverpod providers)
-	cd $(APP) && dart run build_runner build --delete-conflicting-outputs
+	@if grep -q '^  build_runner:' $(APP)/pubspec.yaml; then \
+	  cd $(APP) && dart run build_runner build --delete-conflicting-outputs; \
+	else \
+	  echo "\033[0;33m!\033[0m nothing to generate — build_runner is not a dependency yet"; \
+	fi
 
 .PHONY: analyze
 analyze: ## Static analysis, plus the domain-purity check

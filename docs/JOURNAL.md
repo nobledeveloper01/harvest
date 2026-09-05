@@ -88,6 +88,23 @@ fails on the break in 48 dp of picture.
 The pattern in both: a check aimed at the scale where the symptom was first
 noticed rather than the scale where the mechanism bites.
 
+### A third gate that could not fail, and why
+
+*The picker never flashes before the stored answer arrives.* Removing the guard
+did not fail it. `pump()` flushes the microtask that resolves the read before it
+returns, so the frame in which the picker exists is never observable from a
+test — the assertion was looking for something a widget test cannot see.
+
+The fix was to stop asserting on the frame and start asserting on the harm. The
+picker **speaks** on arrival; that is the whole point of it. So the question is
+not "was it on screen for a frame" but "was the speaker asked to say
+`chooseLanguage` when the language was already known". That survives the frame
+it happened in, and it fails on the break.
+
+It also confirmed the bug was real rather than theoretical: without the guard,
+the app says "choose your language" out loud on **every** launch, in a language
+the farmer did not pick, and then replaces the screen.
+
 ### The test font is not a font
 
 The first fix for the truncation was elegant — measure the widest unbreakable
