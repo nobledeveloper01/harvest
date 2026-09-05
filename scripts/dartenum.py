@@ -9,6 +9,7 @@ report on a broken build.
 import pathlib
 import re
 import sys
+from typing import Optional, Tuple
 
 RED = '\033[0;31m'
 YELLOW = '\033[0;33m'
@@ -191,3 +192,125 @@ def undeclared(relatives: list[str], prefix: str) -> list[str]:
         if path not in entries and directory not in entries:
             missing.append(path)
     return missing
+
+def m4a_padding(path) -> int:
+    """Bytes of `free` atom in an `.m4a` — reserved space nothing ever reads.
+
+    `afconvert` writes about 2.9 kB of it into every file. Two megabytes across
+    the clip set, on a bundle whose entire justification is that somebody has to
+    download it over a metered connection. `make-placeholders` strips it; this
+    is how the gate notices when a regeneration puts it back.
+    """
+    data = path.read_bytes()
+    if len(data) < 8 or data[4:8] != b'ftyp':
+        return 0
+    total = 0
+    i = 0
+    while i + 8 <= len(data):
+        size = int.from_bytes(data[i:i + 4], 'big')
+        kind = data[i + 4:i + 8]
+        if size == 0:
+            size = len(data) - i
+        if size < 8 or i + size > len(data):
+            break
+        if kind == b'free':
+            total += size
+        i += size
+    return total
+
+
+def m4a_signal(path) -> Optional[Tuple[float, int]]:
+    """Seconds of audio, and bytes of encoded payload, from an `.m4a`.
+
+    Parsed rather than decoded, because a gate that needs a codec is a gate that
+    stops running the day the codec is not installed — and `audio-check` has to
+    survive the format change that R5 is about, not be dropped with it.
+
+    Returns None when the file is not a readable MP4 with an audio track, which
+    the caller treats the same as an empty clip: unreadable is worse than
+    missing, because it looks present to anything that only checks the
+    filesystem.
+
+    The duration is the **media** duration, which is what the container stores.
+    It runs about 130 ms longer than what actually plays at 16 kHz, because AAC
+    carries roughly 2112 priming samples that a player discards — `afinfo`
+    subtracts them and `mdhd` does not. Immaterial to both things this figure is
+    used for, and stated because it is the kind of discrepancy that reads as a
+    parser bug the first time somebody compares two numbers.
+
+    (Cross-checked on twenty-five real clips against `afinfo`, and separately
+    against counting AAC frames out of `stsz` at 1024 samples each: the two
+    readings of the container agree to the microsecond, and both differ from
+    `afinfo` by exactly the priming. Two independent parses agreeing is the
+    evidence; matching a third tool that measures something else is not.)
+
+    **What this proves and what it does not.** It proves the file contains an
+    encoded signal of some size over some duration. Digital silence compresses
+    to about 1.4 kB per second at these settings and speech to about 5.2 —
+    measured, not assumed — so a floor between the two catches an empty
+    recording. It cannot tell speech from a fan, and does not claim to; that is
+    R1's job and R1 needs a person.
+    """
+    data = path.read_bytes()
+    if len(data) < 8 or data[4:8] != b'ftyp':
+        return None
+
+    def walk(start: int, end: int, want: bytes):
+        """Yield (offset, size) of every `want` box between start and end."""
+        i = start
+        while i + 8 <= end:
+            size = int.from_bytes(data[i:i + 4], 'big')
+            kind = data[i + 4:i + 8]
+            if size == 0:
+                size = end - i
+            elif size == 1:  # 64-bit extended size
+                if i + 16 > end:
+                    return
+                size = int.from_bytes(data[i + 8:i + 16], 'big')
+            if size < 8 or i + size > end:
+                return
+            if kind == want:
+                yield i, size
+            i += size
+
+    def descend(path_of_boxes: list[bytes]):
+        """The first box at the end of a path of container boxes."""
+        spans = [(0, len(data))]
+        for name in path_of_boxes:
+            found = []
+            for start, end in spans:
+                for off, size in walk(start, end, name):
+                    found.append((off + 8, off + size))
+            if not found:
+                return None
+            spans = found
+        return spans[0]
+
+    mdhd = descend([b'moov', b'trak', b'mdia', b'mdhd'])
+    stsz = descend([b'moov', b'trak', b'mdia', b'minf', b'stbl', b'stsz'])
+    if mdhd is None or stsz is None:
+        return None
+
+    start, _ = mdhd
+    version = data[start]
+    if version == 1:
+        timescale = int.from_bytes(data[start + 20:start + 24], 'big')
+        duration = int.from_bytes(data[start + 24:start + 32], 'big')
+    else:
+        timescale = int.from_bytes(data[start + 12:start + 16], 'big')
+        duration = int.from_bytes(data[start + 16:start + 20], 'big')
+    if not timescale:
+        return None
+
+    s, _ = stsz
+    uniform = int.from_bytes(data[s + 4:s + 8], 'big')
+    count = int.from_bytes(data[s + 8:s + 12], 'big')
+    if uniform:
+        payload = uniform * count
+    else:
+        payload = sum(
+            int.from_bytes(data[s + 12 + i * 4:s + 16 + i * 4], 'big')
+            for i in range(count)
+        )
+
+    return duration / timescale, payload

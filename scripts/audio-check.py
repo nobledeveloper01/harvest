@@ -17,9 +17,9 @@ crop is what the farmer grew and a basket is how they measured it, neither is
 something the app has to *say* — but all three must be recorded in all five
 languages, so all three are gated here, under
 
-    assets/speech/<language>/<phrase>.wav
-    assets/speech/<language>/crop/<crop>.wav
-    assets/speech/<language>/unit/<unit>.wav
+    assets/speech/<language>/<phrase>.m4a
+    assets/speech/<language>/crop/<crop>.m4a
+    assets/speech/<language>/unit/<unit>.m4a
 
 Reading the enums out of the Dart source rather than a hand-written list is the
 whole point: a manifest kept beside an enum goes stale the first time somebody
@@ -40,12 +40,12 @@ Exit codes: 1 if a clip is missing or empty, 0 otherwise.
 
 import pathlib
 import sys
-import wave
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
     asset_sets,
-    GREEN, OFF, RED, ROOT, YELLOW, enum_values, manifest, undeclared,
+    GREEN, OFF, RED, ROOT, YELLOW, enum_values, m4a_padding, m4a_signal,
+    manifest, undeclared,
 )
 
 PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
@@ -56,13 +56,25 @@ PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 # behind the generator that writes them. It did, once, and reported 570 of 570
 # while a hundred and fifty-five clips were outside its knowledge entirely.
 
+# What a clip has to contain to count as one. ADR-0009.
+#
+# Measured rather than guessed: at 16 kHz mono AAC-LC, digital silence encodes
+# to about **62 bytes per second** of payload and speech to about **3,700**. The
+# floor sits between them with sixty times the margin in each direction, which
+# is the room a real recording of a quiet voice needs.
+#
+# It proves a clip contains a signal. It cannot tell speech from a fan, and does
+# not claim to — that is R1, and R1 needs a person with the language.
+FLOOR = 800      # bytes of encoded audio per second
+SHORTEST = 0.25  # seconds; anything less is a click, not a word
+
 SPEECH = ROOT / 'app/assets/speech'
 MANIFEST = SPEECH / 'placeholders.txt'
 
 
 def main() -> int:
     languages = enum_values(PHRASES, 'Speech')
-    # `<language>/<stem>.wav` — the crop names sit in their own subdirectory so
+    # `<language>/<stem>.m4a` — the crop names sit in their own subdirectory so
     # that a crop and a phrase can never collide on a filename, and so that a
     # glance at the tree tells you which is which.
     stems = enum_values(PHRASES, 'Phrase')
@@ -76,29 +88,28 @@ def main() -> int:
 
     missing: list[str] = []
     silent: list[str] = []
+    padded: list[str] = []
     pending: list[str] = []
 
     for language in languages:
         for stem in stems:
-            rel = f'{language}/{stem}.wav'
+            rel = f'{language}/{stem}.m4a'
             clip = SPEECH / rel
             if not clip.exists():
                 missing.append(rel)
                 continue
-            try:
-                with wave.open(str(clip)) as handle:
-                    if handle.getnframes() == 0:
-                        silent.append(rel)
-            except (wave.Error, EOFError):
+            signal = m4a_signal(clip)
+            if signal is None:
                 # Unreadable is worse than missing: it looks present to
                 # anything that only checks the filesystem.
-                #
-                # `EOFError` as well as `wave.Error` — a zero-byte file raises
-                # the first, and catching only the second made this gate fail
-                # with a traceback rather than a sentence. It still blocked,
-                # illegibly: nobody reading that stack learns which clip is
-                # empty, which is the one thing the gate exists to say.
                 silent.append(rel)
+            else:
+                seconds, payload = signal
+                if seconds < SHORTEST or payload < seconds * FLOOR:
+                    silent.append(rel)
+            if m4a_padding(clip) > 512:
+                padded.append(rel)
+
             if rel in placeholders:
                 pending.append(rel)
 
@@ -109,7 +120,7 @@ def main() -> int:
     # `assets/speech/ha/crop/` — with no build error, because an undeclared
     # asset only fails when a device asks for it.
     unshipped = undeclared(
-        [f'{language}/{stem}.wav' for language in languages for stem in stems],
+        [f'{language}/{stem}.m4a' for language in languages for stem in stems],
         'assets/speech',
     )
 
@@ -122,28 +133,33 @@ def main() -> int:
     # would have gone on being downloaded onto a 2 GB phone over a metered
     # connection for the rest of the product's life.
     expected = {
-        f'{language}/{stem}.wav' for language in languages for stem in stems
+        f'{language}/{stem}.m4a' for language in languages for stem in stems
     }
     orphans = sorted(
         str(path.relative_to(SPEECH))
-        for path in SPEECH.rglob('*.wav')
+        for path in SPEECH.rglob('*.m4a')
         if str(path.relative_to(SPEECH)) not in expected
     )
 
-    if missing or silent or unshipped or orphans:
+    if missing or silent or unshipped or orphans or padded:
         # Capped, because 125 identical lines buries the one that differs.
         for rel in missing[:12]:
             print(f'{RED}✗{OFF} no clip: assets/speech/{rel}')
         if len(missing) > 12:
             print(f'  … and {len(missing) - 12} more missing')
         for rel in silent[:12]:
-            print(f'{RED}✗{OFF} empty or unreadable: assets/speech/{rel}')
+            print(f'{RED}✗{OFF} silent or unreadable: assets/speech/{rel}')
         if len(silent) > 12:
             print(f'  … and {len(silent) - 12} more empty')
         for path in unshipped[:12]:
             print(f'{RED}✗{OFF} recorded but not bundled: {path}')
         if len(unshipped) > 12:
             print(f'  … and {len(unshipped) - 12} more undeclared')
+        for rel in padded[:6]:
+            print(f'{RED}✗{OFF} carries reserved padding: assets/speech/{rel}')
+        if len(padded) > 6:
+            print(f'  … and {len(padded) - 6} more padded — re-run '
+                  f'`make placeholders`, which strips it')
         for rel in orphans[:12]:
             print(f'{RED}✗{OFF} nothing asks for it: assets/speech/{rel}')
         if len(orphans) > 12:

@@ -123,7 +123,7 @@ enum Crop {
   const Crop(this.id, this.label, this.family, this.perishability, {this.also});
 
   /// The filename stem, in kebab-case, for **both** `assets/crops/<id>.webp`
-  /// and `assets/speech/<language>/crop/<id>.wav`.
+  /// and `assets/speech/<language>/crop/<id>.m4a`.
   ///
   /// One id for both is not a saving; it is the reason a crop cannot be half
   /// added. `scripts/audio-check.py` and `scripts/crop-check.py` read this enum

@@ -89,7 +89,7 @@ class Speaker {
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {
     await _player.stop();
-    await _player.play(AssetSource('speech/$stem.wav'));
+    await _player.play(AssetSource('speech/$stem.m4a'));
     await _player.onPlayerComplete.first;
   }
 

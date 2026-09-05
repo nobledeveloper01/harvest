@@ -87,7 +87,7 @@ enum SpokenWeight {
 
   const SpokenWeight(this.id, this.kilograms);
 
-  /// `assets/speech/<language>/weight/<id>.wav`. Same contract as every other
+  /// `assets/speech/<language>/weight/<id>.m4a`. Same contract as every other
   /// spoken thing; see ADR-0003.
   final String id;
 

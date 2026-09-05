@@ -40,7 +40,7 @@ enum Unit {
   const Unit(this.id, this.label);
 
   /// The filename stem, in kebab-case, for `assets/units/<id>.png` and
-  /// `assets/speech/<language>/unit/<id>.wav`.
+  /// `assets/speech/<language>/unit/<id>.m4a`.
   ///
   /// Same contract as [Crop.id], for the same reason: a unit picker that a
   /// farmer cannot read is a picker of pictures and spoken names, and the gates
@@ -87,7 +87,7 @@ enum Region {
   const Region(this.id, this.label, this.where);
 
   /// The filename stem for `assets/regions/<id>.png` and
-  /// `assets/speech/<language>/region/<id>.wav`. Same contract as every other
+  /// `assets/speech/<language>/region/<id>.m4a`. Same contract as every other
   /// thing a farmer picks from pictures; see ADR-0003.
   final String id;
 

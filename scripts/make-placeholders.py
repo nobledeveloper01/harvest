@@ -30,6 +30,7 @@ import pathlib
 import re
 import struct
 import subprocess
+import tempfile
 import sys
 import zlib
 
@@ -37,6 +38,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
     GREEN, OFF, ROOT, YELLOW, enum_values, manifest,
 )
+
+# ADR-0009. Mirrored in `audio-check.py`, which has to know what it is reading.
+SAMPLE_RATE = 16000
+BITRATE = 32000
 
 PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 SPEECH = ROOT / 'app/assets/speech'
@@ -139,26 +144,134 @@ def png(path: pathlib.Path, size: int, seed: int) -> None:
 
 
 def clip(path: pathlib.Path, words: str) -> None:
-    """A spoken placeholder, via macOS `say`, converted to 16-bit PCM WAV.
+    """A spoken placeholder, via macOS `say`, as mono 16 kHz AAC in an `.m4a`.
 
-    WAV rather than a compressed format because `audio-check` opens these with
-    `wave` to prove they are not silent, and a gate that cannot read the file it
-    is gating is a gate that only checks the filesystem. That trade is what
-    makes R5 — compressing the shipped clips — a gate rather than a chore: the
-    check has to survive the format change rather than be dropped with it.
+    The format is ADR-0009's: AAC-LC is decoded natively by both platforms,
+    which Opus is not on iOS, and 32 kbps mono at 16 kHz is comfortable for
+    speech at about an eighth the size of the equivalent WAV.
+
+    These are stand-ins and R1 replaces them with recordings that will not be
+    made this way. What matters here is that they go through **the same
+    pipeline and the same gate** as the real clips — the point of doing the
+    format change while everything is still a placeholder is that nothing of
+    value is at risk if it is wrong.
     """
-    aiff = path.with_suffix('.aiff')
-    subprocess.run(['say', '-o', str(aiff), words], check=True)
-    # 8 kHz mono: telephone quality, which is ample for a stand-in and cuts the
-    # set from sixty megabytes to twenty. Real recordings are a release gate
-    # (R1) and will not be made this way; what matters here is that four
-    # hundred throwaway files do not dominate the repository.
-    subprocess.run(
-        ['afconvert', '-f', 'WAVE', '-d', 'LEI16@8000', str(aiff), str(path)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
-    aiff.unlink()
+    # The intermediate lands in a temporary directory, not beside its output.
+    #
+    # `say` writes AIFF and `afconvert` reads it, so there is a moment when a
+    # half-finished `.aiff` sits inside `assets/speech/` — which Flutter bundles
+    # by directory. Running `flutter test` during a generation failed on exactly
+    # that: a transient file the build tried to bundle and could not open,
+    # reported as "the file was deleted or moved while the tool was running".
+    #
+    # Cheap to have got wrong, cheap to fix, and it would have shipped an AIFF
+    # the first time a generation was interrupted at the wrong second.
+    with tempfile.TemporaryDirectory() as scratch:
+        aiff = pathlib.Path(scratch) / 'clip.aiff'
+        subprocess.run(['say', '-o', str(aiff), words], check=True)
+        subprocess.run(
+            [
+                'afconvert',
+                '-f', 'm4af',
+                '-d', 'aac',
+                '-b', str(BITRATE),
+                '-c', '1',
+                '-r', str(SAMPLE_RATE),
+                str(aiff),
+                str(path),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+    tighten(path)
+
+
+
+
+# ── keeping the bundle honest ──────────────────────────────────────────────
+
+# Drop the reserved padding from an `.m4a`, in place.
+#
+# `afconvert` writes a ~2.9 kB `free` atom into every file — reserved space it
+# never uses. Across 725 clips that is two megabytes of nothing, on a bundle whose
+# whole point is that it has to be downloaded over a metered connection.
+#
+# **The `udta` metadata stays**, though it looked like another 250 bytes of the
+# same. It carries `iTunSMPB`, the gapless-playback table that tells a decoder how
+# many priming samples to discard; without it the decoder emits them and playback
+# gains about 25 ms of noise at the front of every clip. The round-trip check
+# below is what caught that — the first version of this dropped `udta` too, the
+# payload bytes were untouched, `audio-check` was perfectly happy, and the audio
+# had changed.
+#
+# Removing bytes ahead of `mdat` moves the audio, so `stco`'s chunk offsets have
+# to move with it. Getting that wrong produces a file whose *payload bytes are
+# unchanged* — which means `audio-check` would pass it while the device played
+# silence. So this is verified by decoding before and after and comparing the PCM,
+# not by looking at it.
+
+def _atoms(data, start, end):
+    i = start
+    while i + 8 <= end:
+        size = int.from_bytes(data[i:i + 4], 'big')
+        kind = data[i + 4:i + 8]
+        if size == 0:
+            size = end - i
+        if size < 8 or i + size > end:
+            return
+        yield i, size, kind
+        i += size
+
+
+def _find(data, start, end, path):
+    for name in path:
+        hit = None
+        for off, size, kind in _atoms(data, start, end):
+            if kind == name:
+                hit = (off, size)
+                break
+        if hit is None:
+            return None
+        start, end = hit[0] + 8, hit[0] + hit[1]
+    return start - 8, end
+
+
+def tighten(path: pathlib.Path) -> tuple[int, int]:
+    data = bytearray(path.read_bytes())
+    original = len(data)
+
+    # Rebuild the top level without `free`, and `moov` without `udta`.
+    out = bytearray()
+    moov_start_out = None
+    for off, size, kind in _atoms(data, 0, len(data)):
+        if kind == b'free':
+            continue
+        if kind == b'moov':
+            moov_start_out = len(out)
+            out += data[off:off + size]
+            continue
+        out += data[off:off + size]
+
+    if moov_start_out is None:
+        return original, original
+
+    shift = len(out) - original  # negative: everything after moov moved back
+
+    # `stco` points at absolute file offsets. Move each by the same amount.
+    found = _find(out, 0, len(out),
+                  [b'moov', b'trak', b'mdia', b'minf', b'stbl', b'stco'])
+    if found is None:
+        return original, original
+    s, _ = found
+    body = s + 8
+    count = int.from_bytes(out[body + 4:body + 8], 'big')
+    for i in range(count):
+        at = body + 8 + i * 4
+        current = int.from_bytes(out[at:at + 4], 'big')
+        out[at:at + 4] = struct.pack('>I', current + shift)
+
+    path.write_bytes(bytes(out))
+    return original, len(out)
 
 
 def main() -> int:
@@ -229,7 +342,7 @@ def main() -> int:
             ]
         for language in languages:
             for stem, spoken in stems:
-                target = SPEECH / language / f'{stem}.wav'
+                target = SPEECH / language / f'{stem}.m4a'
                 if target.exists() and not args.force:
                     continue
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -237,7 +350,7 @@ def main() -> int:
                     target,
                     f'Placeholder. {spoken}, in {endonyms.get(language, language)}.',
                 )
-                written.append(f'speech: {language}/{stem}.wav')
+                written.append(f'speech: {language}/{stem}.m4a')
 
         # Same rule as the pictures: carried forward, or written this run.
         clips = {

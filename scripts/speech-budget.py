@@ -31,25 +31,26 @@ and printed here so that the figure exists to compare against.
 
 import pathlib
 import sys
-import wave
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from dartenum import GREEN, OFF, RED, ROOT, YELLOW  # noqa: E402
+from dartenum import (  # noqa: E402
+    GREEN, OFF, RED, ROOT, YELLOW, m4a_signal,
+)
 
 SPEECH = ROOT / 'app/assets/speech'
 
 # The shortest path to a saved lot: four baskets of tomato, kept in the shade,
 # picked today. Every prompt the app volunteers, and every name it says back.
 PATH = [
-    ('choose-language.wav', 'the picker announces itself'),
-    ('what-did-you-harvest.wav', 'the crop grid asks'),
-    ('crop/tomato.wav', 'the crop, on tap'),
-    ('how-much.wav', 'the quantity screen asks'),
-    ('unit/big-basket.wav', 'the measure, on tap'),
-    ('weight/kg-200.wav', 'what it comes to'),
-    ('is-that-right.wav', 'the correction, offered'),
-    ('where-is-it-kept.wav', 'the storage screen asks'),
-    ('storage/shade.wav', 'the condition, on tap'),
+    ('choose-language.m4a', 'the picker announces itself'),
+    ('what-did-you-harvest.m4a', 'the crop grid asks'),
+    ('crop/tomato.m4a', 'the crop, on tap'),
+    ('how-much.m4a', 'the quantity screen asks'),
+    ('unit/big-basket.m4a', 'the measure, on tap'),
+    ('weight/kg-200.m4a', 'what it comes to'),
+    ('is-that-right.m4a', 'the correction, offered'),
+    ('where-is-it-kept.m4a', 'the storage screen asks'),
+    ('storage/shade.m4a', 'the condition, on tap'),
 ]
 
 GATE_SECONDS = 60
@@ -69,8 +70,10 @@ def main() -> int:
         if not clip.exists():
             print(f'{RED}✗{OFF} missing: {code}/{rel}')
             return 1
-        with wave.open(str(clip)) as handle:
-            seconds = handle.getnframes() / handle.getframerate()
+        signal = m4a_signal(clip)
+        if signal is None:
+            continue
+        seconds, _ = signal
         total += seconds
         print(f'  {rel:28s}{seconds:9.1f}  {what}')
 

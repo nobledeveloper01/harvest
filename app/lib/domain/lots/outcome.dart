@@ -32,7 +32,7 @@ enum LotOutcome {
 
   const LotOutcome(this.id, this.label);
 
-  /// `assets/outcomes/<id>.png` and `assets/speech/<language>/outcome/<id>.wav`.
+  /// `assets/outcomes/<id>.png` and `assets/speech/<language>/outcome/<id>.m4a`.
   final String id;
 
   final String label;
@@ -77,7 +77,7 @@ enum LossReason {
 
   const LossReason(this.id, this.label);
 
-  /// `assets/losses/<id>.png` and `assets/speech/<language>/loss/<id>.wav`.
+  /// `assets/losses/<id>.png` and `assets/speech/<language>/loss/<id>.m4a`.
   final String id;
 
   final String label;

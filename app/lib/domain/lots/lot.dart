@@ -39,7 +39,7 @@ enum StorageCondition {
   const StorageCondition(this.id, this.label);
 
   /// The filename stem for `assets/storage/<id>.png` and
-  /// `assets/speech/<language>/storage/<id>.wav`. Same contract as [Crop.id]
+  /// `assets/speech/<language>/storage/<id>.m4a`. Same contract as [Crop.id]
   /// and [Unit.id]; see ADR-0003.
   final String id;
 

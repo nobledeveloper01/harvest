@@ -50,7 +50,7 @@ void main() {
 
     test('every id is a usable filename stem', () {
       // Lowercase kebab, because it becomes `assets/crops/<id>.webp` and
-      // `assets/speech/<language>/crop/<id>.wav` on case-sensitive filesystems
+      // `assets/speech/<language>/crop/<id>.m4a` on case-sensitive filesystems
       // that CI runs on and this laptop does not.
       final stem = RegExp(r'^[a-z]+(-[a-z]+)*$');
       for (final crop in Crop.values) {

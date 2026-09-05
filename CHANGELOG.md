@@ -379,6 +379,35 @@ Entries say *why*, not just what.
   illustrations as hatched placeholders, and the gate went back to reporting
   85 of 85. Nothing failed; the count just went up again. The manifest is a
   record of what is **not real**, not an inventory of what exists.
+- **The clips ship as AAC, and R5 is cleared.** 42 MB of 8 kHz WAV was the
+  speech bundle, on a product whose design floor is a ₦40,000 handset and a
+  metered connection — and those are placeholders; real recordings at a usable
+  sample rate would be several times that. AAC-LC, mono, 16 kHz, 32 kbps, in
+  `.m4a` ([ADR-0009](docs/adr/0009-the-clips-ship-as-aac.md)). **Opus would be
+  the better codec and is not available**: Android decodes it natively, iOS does
+  not, and a format that works on one of two platforms is not a format.
+
+  The point of R5 was never the compression. It was that `audio-check` proves a
+  clip is not silent by opening it, and compression breaks that — *a gate that
+  cannot read the file it is gating only checks the filesystem.* So the gate
+  learned to read MP4: it walks the atoms for duration and encoded payload, with
+  **no decoder**, because a gate that needs a codec stops running on the machine
+  without one. The floor was measured rather than chosen — digital silence
+  encodes to 62 bytes per second and speech to 3,694, and the threshold sits at
+  800, with sixty times the margin below and four above.
+
+  Done now, while every clip is still a placeholder: if the decision is wrong,
+  nothing of value has been re-encoded.
+- **Two more megabytes of nothing.** `afconvert` writes a ~2.9 kB `free` atom —
+  reserved space nothing ever reads — into every file, 22% of each clip. The
+  generator strips it and `audio-check` fails when a regeneration puts it back.
+  Removing bytes ahead of `mdat` moves the audio, so `stco`'s chunk offsets move
+  with it; get that wrong and the payload bytes are **unchanged**, so the gate
+  passes a file the device plays as silence. Verified by decoding before and
+  after and comparing PCM, which caught the first attempt: it also dropped the
+  `udta` metadata, and that carries `iTunSMPB`, the table telling a decoder how
+  many priming samples to discard. Without it every clip gains 25 ms of noise at
+  the front. Payload identical, gate happy, audio changed.
 - **No weight in the app was reaching the font.** Inter ships as one
   `InterVariable.ttf` with a `wght` axis and no per-weight assets, so
   `fontWeight` alone gave Skia nothing to instance and it **synthesised** bold

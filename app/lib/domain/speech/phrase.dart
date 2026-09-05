@@ -173,6 +173,6 @@ enum Phrase {
 
   const Phrase(this.id);
 
-  /// The clip's filename stem. `assets/speech/<language>/<id>.wav`.
+  /// The clip's filename stem. `assets/speech/<language>/<id>.m4a`.
   final String id;
 }

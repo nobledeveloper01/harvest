@@ -146,7 +146,7 @@ enum Step {
 
   const Step(this.id, this.text);
 
-  /// `assets/steps/<id>.png` and `assets/speech/<language>/step/<id>.wav`, the
+  /// `assets/steps/<id>.png` and `assets/speech/<language>/step/<id>.m4a`, the
   /// same contract as [Crop.id] — see ADR-0003. Joins the asset gates with the
   /// diagnosis screens; `docs/FEATURE-BACKLOG.md` carries the reminder.
   final String id;
