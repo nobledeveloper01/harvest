@@ -95,11 +95,18 @@ void main() {
     expect(row.outcome, 'sold');
   });
 
-  test('a fresh database is already at version 2 and needs no migration',
-      () async {
+  test('a fresh database is already current and needs no migration', () async {
     final database = LotsDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    expect(database.schemaVersion, 2);
     expect((await LotStore(database).all()).lots, isEmpty);
+  });
+
+  test('version 1 gets the prices table too', () async {
+    // Added in version 3. A new table takes nothing away from anybody, which
+    // is the only kind of migration that is safe by construction — but it
+    // still has to actually arrive.
+    final database = LotsDatabase(asVersionOne());
+    addTearDown(database.close);
+    expect(await database.select(database.prices).get(), isEmpty);
   });
 }

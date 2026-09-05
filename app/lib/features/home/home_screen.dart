@@ -31,6 +31,7 @@ class HomeScreen extends StatelessWidget {
     required this.onLogAnother,
     required this.onToggleBrightness,
     required this.onClosed,
+    required this.onDecide,
     super.key,
   });
 
@@ -63,6 +64,9 @@ class HomeScreen extends StatelessWidget {
 
   /// Record what happened to the lot at this index.
   final void Function(int index, Outcome outcome) onClosed;
+
+  /// Open the money question — what this lot is worth, and what waiting costs.
+  final Future<void> Function(BuildContext context, Lot lot) onDecide;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +178,9 @@ class HomeScreen extends StatelessWidget {
                             spent: spent,
                             state: state,
                             onSay: () => _sayLot(speaker, language, lot, state),
-                            onTap: () => _askWhatHappened(context, lot, index),
+                            onTap: () => onDecide(context, lot),
+                            onClose: () =>
+                                _askWhatHappened(context, lot, index),
                           );
                         },
                       ),
@@ -298,6 +304,7 @@ class _LotCard extends StatelessWidget {
     required this.state,
     required this.onSay,
     required this.onTap,
+    required this.onClose,
   });
 
   final Lot lot;
@@ -311,11 +318,13 @@ class _LotCard extends StatelessWidget {
 
   final VoidCallback onSay;
 
-  /// The card opens the lot. The speaker badge, and only the badge, speaks —
-  /// they were the same gesture until there was something else to do with a
-  /// lot, and "tap to hear" quietly became "tap to close it" for anybody who
-  /// had learnt the first.
+  /// The card opens the money question: what this lot is worth and what
+  /// waiting costs. That is the thing a farmer opens the app for.
   final VoidCallback onTap;
+
+  /// Saying what happened to it — a smaller, rarer action, and a destructive
+  /// one, so it gets its own control rather than sharing the card's.
+  final VoidCallback onClose;
 
   /// How long since it left the ground, in the words somebody would use.
   ///
@@ -445,7 +454,53 @@ class _LotCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: Gap.s),
-          Semantics(
+          Column(
+            children: [
+              Semantics(
+                button: true,
+                container: true,
+                label: 'say what happened to this lot',
+                child: ExcludeSemantics(
+                  child: Pressable(
+                    borderRadius: Radii.pill,
+                    onTap: onClose,
+                    child: Container(
+                      width: Target.standard - 8,
+                      height: Target.standard - 8,
+                      decoration: BoxDecoration(
+                        color: freshness.high,
+                        borderRadius: Radii.pill,
+                        border: Border.all(color: freshness.outline),
+                      ),
+                      child: Icon(
+                        Icons.fact_check_outlined,
+                        size: 22,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Gap.s),
+              _Speaker(onSay: onSay),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The badge that speaks a lot aloud.
+class _Speaker extends StatelessWidget {
+  const _Speaker({required this.onSay});
+
+  final VoidCallback onSay;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    return Semantics(
             button: true,
             container: true,
             label: 'hear this lot',
@@ -468,10 +523,7 @@ class _LotCard extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 }
 

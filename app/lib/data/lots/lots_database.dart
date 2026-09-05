@@ -71,13 +71,47 @@ class Lots extends Table {
   TextColumn get lossReason => text().nullable()();
 }
 
-@DriftDatabase(tables: [Lots])
+/// What somebody was offered for a crop.
+///
+/// FR-4: prices come from farmers reporting what they were offered, from market
+/// surveys, and — for most crops in most weeks — from nobody at all.
+///
+/// **Local, and useful with nobody else on the app.** A farmer who records the
+/// two offers they got this week can see next week whether the third is any
+/// good, and that works with one user and no network. Other farmers' reports
+/// need a server and arrive in Phase 5; the table is shaped for them now
+/// because a `Provenance` column added later would leave every existing row
+/// guessing.
+@DataClassName('PriceRow')
+class Prices extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  TextColumn get cropId => text()();
+
+  /// Naira per kilogram, always — however the farmer entered it.
+  ///
+  /// A price per basket is meaningless without knowing whose basket, and this
+  /// app already knows that a basket is not a fixed thing. Storing the
+  /// converted figure means a price reported in Kano baskets is comparable
+  /// with one reported in Lagos crates.
+  RealColumn get nairaPerKg => real()();
+
+  /// `farmer`, `anotherFarmer`, `survey` — see `Provenance`.
+  TextColumn get source => text()();
+
+  DateTimeColumn get at => dateTime()();
+
+  /// 0 to 1. Everything the farmer reports themselves is 1: they were there.
+  RealColumn get reporterWeight => real().withDefault(const Constant(1))();
+}
+
+@DriftDatabase(tables: [Lots, Prices])
 class LotsDatabase extends _$LotsDatabase {
   LotsDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'harvest'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -103,6 +137,11 @@ class LotsDatabase extends _$LotsDatabase {
             ]) {
               await m.addColumn(lots, column);
             }
+          }
+          if (from < 3) {
+            // A new table takes nothing away from anybody, which is the only
+            // kind of migration that is safe by construction.
+            await m.createTable(prices);
           }
         },
       );

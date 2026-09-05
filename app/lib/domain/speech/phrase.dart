@@ -101,6 +101,24 @@ enum Phrase {
   /// gets argued with rather than used.
   timeIsUp('time-is-up'),
 
+  /// *"If you wait, you could lose money on this."*
+  ///
+  /// The sentence, without the sum. The naira figure itself cannot be spoken
+  /// yet — that needs a scale of recorded sentences the way weights have one
+  /// (R9) — so the app says the shape of the news and the number is read.
+  youCouldLose('you-could-lose'),
+
+  /// *"Waiting is fine for now."*
+  waitingIsFine('waiting-is-fine'),
+
+  /// *"What did they offer you for the whole lot?"*
+  ///
+  /// For the whole lot, not per kilogram. Nobody is offered a price per
+  /// kilogram for a basket of tomatoes; they are offered a number for what is
+  /// in front of them, and asking for anything else is asking them to do the
+  /// division the app exists to do.
+  whatWereYouOffered('what-were-you-offered'),
+
   /// *"What happened to it?"*
   ///
   /// FR-2.4: terminal states are user-driven. The app can watch a window close

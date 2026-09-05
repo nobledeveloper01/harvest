@@ -5,6 +5,7 @@ import 'core/theme.dart';
 import 'data/alerts/alarms.dart';
 import 'data/lots/lot_store.dart';
 import 'data/lots/lots_database.dart';
+import 'data/money/price_store.dart';
 import 'data/settings/settings.dart';
 import 'data/weather/weather_store.dart';
 import 'data/speech/speaker.dart';
@@ -14,11 +15,16 @@ import 'domain/lots/outcome.dart';
 import 'domain/lots/quantity.dart';
 import 'domain/speech/phrase.dart';
 import 'domain/spoilage/alerts.dart';
+import 'domain/money/decision.dart';
+import 'domain/money/price.dart';
+import 'domain/money/sourced.dart';
 import 'domain/spoilage/shelf_life.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/money/decision_screen.dart';
+import 'features/money/price_screen.dart';
 import 'features/lots/storage_screen.dart';
 
 /// The app.
@@ -52,9 +58,11 @@ class HarvestApp extends StatefulWidget {
 class _HarvestAppState extends State<HarvestApp> {
   late final Speaker _speaker = widget.speaker ?? Speaker();
   late final Settings _languages = widget.languages ?? const Settings();
-  late final LotStore _lots = widget.lots ?? LotStore(LotsDatabase());
+  late final LotsDatabase _database = LotsDatabase();
+  late final LotStore _lots = widget.lots ?? LotStore(_database);
   late final Alarms _alarms = widget.alarms ?? LocalAlarms();
   late final WeatherStore _weatherStore = widget.weather ?? WeatherStore();
+  late final PriceStore _prices = PriceStore(_database);
 
   /// The last reading, or null when there is none worth using.
   ///
@@ -155,6 +163,59 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() => _stored = stored);
   }
 
+  /// Open the money question for a lot.
+  ///
+  /// Everything the screen needs is worked out here rather than inside it: the
+  /// window, the prices, and what the three courses come to. A screen that
+  /// reaches for a database is a screen that cannot be tested without one.
+  Future<void> _decideAbout(BuildContext context, Lot lot) async {
+    final language = _language;
+    if (language == null) return;
+
+    Future<Decision?> decide() async {
+      final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
+      if (life == null) return null;
+      final price = MarketPrice.from(await _prices.forCrop(lot.crop), DateTime.now());
+      return Decision.forLot(
+        lot: lot,
+        life: life,
+        now: DateTime.now(),
+        /*
+          Three days out, because that is the horizon a farmer is actually
+          choosing over. "Sell today or next month" is not a decision anybody
+          is weighing with a basket of tomatoes in front of them.
+        */
+        until: DateTime.now().add(const Duration(days: 3)),
+        pricePerKgNow: price.nairaPerKg,
+        // The same price later: this app does not forecast prices and will not
+        // pretend to. What changes between now and Friday, in its arithmetic,
+        // is how much of the lot still exists — which is the honest half and
+        // the one nobody else counts.
+        pricePerKgLater: price.nairaPerKg,
+      );
+    }
+
+    if (!context.mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => _DecisionHost(
+          speaker: _speaker,
+          language: language,
+          lot: lot,
+          weather: _weather,
+          decide: decide,
+          onReported: (perKg) => _prices.record(
+            crop: lot.crop,
+            nairaPerKg: perKg,
+            // The farmer was there. Nothing in this app is more trustworthy.
+            from: Provenance.farmer,
+            at: DateTime.now(),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _refreshWeather() async {
     final weather = await _weatherStore.forRegion(_region ?? Region.unknown);
     if (!mounted || weather == null) return;
@@ -249,6 +310,7 @@ class _HarvestAppState extends State<HarvestApp> {
         onLogAnother: () => setState(() => _logging = true),
         onToggleBrightness: _flipBrightness,
         onClosed: _close,
+        onDecide: _decideAbout,
       );
 
   void _flipBrightness() {
@@ -307,5 +369,84 @@ class _HarvestAppState extends State<HarvestApp> {
             onBack: () => setState(() => _quantity = null),
           ),
     };
+  }
+}
+
+/// Holds the decision screen while its numbers are worked out and re-worked.
+///
+/// A separate widget because a price reported on the price screen has to change
+/// the decision behind it — and the alternative, rebuilding the whole app to
+/// push a new route, would lose the route stack the farmer is standing in.
+class _DecisionHost extends StatefulWidget {
+  const _DecisionHost({
+    required this.speaker,
+    required this.language,
+    required this.lot,
+    required this.weather,
+    required this.decide,
+    required this.onReported,
+  });
+
+  final Speaker speaker;
+  final Speech language;
+  final Lot lot;
+  final Weather? weather;
+  final Future<Decision?> Function() decide;
+  final Future<void> Function(double perKg) onReported;
+
+  @override
+  State<_DecisionHost> createState() => _DecisionHostState();
+}
+
+class _DecisionHostState extends State<_DecisionHost> {
+  Decision? _decision;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  Future<void> _reload() async {
+    final decision = await widget.decide();
+    if (!mounted) return;
+    setState(() {
+      _decision = decision;
+      _ready = true;
+    });
+  }
+
+  Future<void> _reportPrice() async {
+    final perKg = await Navigator.of(context).push<double>(
+      MaterialPageRoute(
+        builder: (_) => PriceScreen(
+          speaker: widget.speaker,
+          language: widget.language,
+          lot: widget.lot,
+        ),
+      ),
+    );
+    if (perKg == null) return;
+    await widget.onReported(perKg);
+    await _reload();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Nothing until the numbers are in. A screen that renders "I do not know
+    // what this is worth" for a frame and then replaces it with a figure has
+    // told the farmer something untrue, briefly, in large type.
+    if (!_ready) return const Scaffold(body: SizedBox.shrink());
+
+    return DecisionScreen(
+      speaker: widget.speaker,
+      language: widget.language,
+      lot: widget.lot,
+      life: ShelfLifeEngine.predict(lot: widget.lot, weather: widget.weather),
+      decision: _decision,
+      now: DateTime.now(),
+      onReportPrice: _reportPrice,
+    );
   }
 }

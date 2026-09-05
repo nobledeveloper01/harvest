@@ -164,6 +164,30 @@ and 3:1 for the colours that carry state.
 That test found a real defect on its first run: the light-theme amber meaning
 *half the window is gone* was 2.69:1 against white.
 
+### Waiting is a choice with a price, and nobody quotes it
+
+<p align="center">
+  <img src="docs/screenshots/09-no-price.png" width="250" alt="No price: the app says it does not know, and asks" />
+  <img src="docs/screenshots/10-decision.png" width="250" alt="The decision: what waiting costs, and what each course is worth" />
+</p>
+
+A farmer weighing ₦400 a kilo today against ₦450 on Friday is comparing two
+prices, and on those numbers waiting is obviously right. The tonnage that will
+not survive until Friday never enters the comparison, because there is no market
+for the part of your harvest that rots.
+
+So waiting is valued on **what will still exist**. How much that is comes from
+the window's own range: nothing gone before the short end, all of it past the
+long one, and in between the share of the range elapsed is the share of the lot
+gone. No second spoilage model to drift from the first.
+
+**Every figure names its source and its age**, and that is a type rather than a
+habit — `Sourced<T>`, with `map` the only way to derive one figure from another,
+so a naira estimate computed from a nine-day-old price is nine days old and the
+arithmetic cannot quietly lose that. Where there is no price the app says *"I do
+not know what this is worth"* and asks, because a number with nothing behind it
+is the most alarming thing it could put on that screen.
+
 ### The engine has to be able to be wrong
 
 <p align="center">

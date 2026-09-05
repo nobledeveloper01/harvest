@@ -436,7 +436,11 @@ class PrimaryButton extends StatelessWidget {
             borderRadius: Radii.pill,
             onTap: onPressed ?? () {},
             child: Container(
-              height: Target.primary,
+              constraints: const BoxConstraints(minHeight: Target.primary),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Gap.l,
+                vertical: Gap.s,
+              ),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: enabled ? freshness.fresh : freshness.high,
@@ -458,13 +462,23 @@ class PrimaryButton extends StatelessWidget {
                     ),
                     const SizedBox(width: Gap.s),
                   ],
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: enabled
-                              ? freshness.onAccent
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                  // Flexible, because a label is a sentence and the button is
+                  // as wide as the page. Every label so far has been two words
+                  // and it has been fine by luck; "Somebody offered me a price"
+                  // overflows into a yellow-striped bar without this.
+                  Flexible(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: enabled
+                                ? freshness.onAccent
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                          ),
+                    ),
                   ),
                 ],
               ),

@@ -10,6 +10,17 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The decision screen, leading with the money.** *"If you wait, you could lose
+  ₦20,000"* — not "shelf life 72 hours", because the unit a farmer decides in is
+  naira and hours are a fact they have to convert first. Every figure on it
+  carries its source and its age, rendered from the figure itself rather than
+  remembered by whoever wrote the widget.
+- **Prices, from the farmer.** There is no server until Phase 5, so the first
+  source of a price is the person who was offered it — recorded for the whole
+  lot, because nobody is offered a price per kilogram for a basket of tomatoes,
+  and converted so that an offer in Kano baskets is comparable with one in Lagos
+  crates. It works with one user and nobody else on the app, which is the same
+  argument as the spoilage clock.
 - **The three things a farmer can do, priced.** Sell now, store, or wait — and
   the third is the one the whole product exists to make visible, because waiting
   is a choice with a price and it is the only one of the three nobody quotes you

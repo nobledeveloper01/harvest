@@ -18,6 +18,9 @@ en/still-fine.wav
 en/half-gone.wav
 en/nearly-finished.wav
 en/time-is-up.wav
+en/you-could-lose.wav
+en/waiting-is-fine.wav
+en/what-were-you-offered.wav
 en/what-happened.wav
 en/why-was-it-lost.wav
 en/where-do-you-farm.wav
@@ -123,6 +126,9 @@ pcm/still-fine.wav
 pcm/half-gone.wav
 pcm/nearly-finished.wav
 pcm/time-is-up.wav
+pcm/you-could-lose.wav
+pcm/waiting-is-fine.wav
+pcm/what-were-you-offered.wav
 pcm/what-happened.wav
 pcm/why-was-it-lost.wav
 pcm/where-do-you-farm.wav
@@ -228,6 +234,9 @@ ha/still-fine.wav
 ha/half-gone.wav
 ha/nearly-finished.wav
 ha/time-is-up.wav
+ha/you-could-lose.wav
+ha/waiting-is-fine.wav
+ha/what-were-you-offered.wav
 ha/what-happened.wav
 ha/why-was-it-lost.wav
 ha/where-do-you-farm.wav
@@ -333,6 +342,9 @@ yo/still-fine.wav
 yo/half-gone.wav
 yo/nearly-finished.wav
 yo/time-is-up.wav
+yo/you-could-lose.wav
+yo/waiting-is-fine.wav
+yo/what-were-you-offered.wav
 yo/what-happened.wav
 yo/why-was-it-lost.wav
 yo/where-do-you-farm.wav
@@ -438,6 +450,9 @@ ig/still-fine.wav
 ig/half-gone.wav
 ig/nearly-finished.wav
 ig/time-is-up.wav
+ig/you-could-lose.wav
+ig/waiting-is-fine.wav
+ig/what-were-you-offered.wav
 ig/what-happened.wav
 ig/why-was-it-lost.wav
 ig/where-do-you-farm.wav

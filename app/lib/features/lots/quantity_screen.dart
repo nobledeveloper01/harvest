@@ -9,6 +9,7 @@ import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_weight.dart';
 import '../settings/region_screen.dart';
+import 'keypad.dart';
 
 /// How much was harvested, in the measure the farmer actually used.
 ///
@@ -285,7 +286,7 @@ class _QuantityScreenState extends State<QuantityScreen> {
                         },
                 ),
                       const SizedBox(height: Gap.m),
-                      _Pad(onPress: _press),
+                      Keypad(onPress: _press),
                       const SizedBox(height: Gap.m),
                     ],
                   ),
@@ -746,83 +747,6 @@ class _Assumption extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// The keypad.
-class _Pad extends StatelessWidget {
-  const _Pad({required this.onPress});
-
-  final void Function(String) onPress;
-
-  static const _keys = [
-    '1', '2', '3', //
-    '4', '5', '6',
-    '7', '8', '9',
-    '.', '0', '⌫',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final freshness = Theme.of(context).extension<Freshness>()!;
-    final scheme = Theme.of(context).colorScheme;
-
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: Gap.m,
-      mainAxisSpacing: Gap.m,
-      // Wider than tall: the pad has to leave room for the assumption above it
-      // and the Save button below on a 5" screen, and a key 64 dp high is
-      // already past the outdoor target.
-      childAspectRatio: 1.65,
-      children: [
-        for (final key in _keys)
-          Semantics(
-            button: true,
-            container: true,
-            label: switch (key) {
-              '⌫' => 'delete',
-              '.' => 'point',
-              _ => key,
-            },
-            child: ExcludeSemantics(
-              child: Pressable(
-                borderRadius: Radii.chip,
-                onTap: () => onPress(key),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: key == '⌫' ? freshness.high : freshness.raised,
-                    borderRadius: Radii.chip,
-                    border: Border.all(color: freshness.outline),
-                  ),
-                  child: Center(
-                    child: key == '⌫'
-                        ? Icon(
-                            Icons.backspace_outlined,
-                            size: 24,
-                            color: scheme.onSurfaceVariant,
-                          )
-                        : Text(
-                            key,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontSize: 26,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures()
-                                  ],
-                                ),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

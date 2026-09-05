@@ -45,6 +45,7 @@ class _Recording implements Speaker {
 void main() {
   final noon = DateTime(2026, 9, 5, 12);
   late List<(int, Outcome)> closed;
+  late List<Lot> decided;
 
   Lot lot({
     Crop crop = Crop.tomato,
@@ -67,6 +68,7 @@ void main() {
 
   Future<_Recording> pump(WidgetTester tester, List<Lot> lots) async {
     closed = [];
+    decided = [];
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -83,6 +85,7 @@ void main() {
           onLogAnother: () {},
           onToggleBrightness: () {},
           onClosed: (index, outcome) => closed.add((index, outcome)),
+          onDecide: (context, lot) async => decided.add(lot),
         ),
       ),
     );
@@ -191,6 +194,7 @@ void main() {
           onLogAnother: () {},
           onToggleBrightness: () {},
           onClosed: (index, outcome) => closed.add((index, outcome)),
+          onDecide: (context, lot) async => decided.add(lot),
         ),
       ),
     );
@@ -210,14 +214,30 @@ void main() {
       */
       await pump(tester, [lot()]);
 
-      await tester.tap(find.text('Tomato'));
+      await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
       await tester.pumpAndSettle();
       expect(find.text('What happened to it?'), findsOneWidget);
     });
 
-    testWidgets('a sale is recorded without being asked why', (tester) async {
+    testWidgets('the card itself opens the money question', (tester) async {
+      /*
+        What a farmer opens the app for. Saying what happened to a lot is a
+        rarer, destructive action and gets its own control rather than sharing
+        the card's — the same reasoning that separated the speaker badge, one
+        step further along.
+      */
       await pump(tester, [lot()]);
       await tester.tap(find.text('Tomato'));
+      await tester.pumpAndSettle();
+
+      expect(decided, hasLength(1));
+      expect(decided.single.crop, Crop.tomato);
+      expect(find.text('What happened to it?'), findsNothing);
+    });
+
+    testWidgets('a sale is recorded without being asked why', (tester) async {
+      await pump(tester, [lot()]);
+      await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sold it'));
       await tester.pumpAndSettle();
@@ -234,7 +254,7 @@ void main() {
         wrong about tomatoes in the rain.
       */
       final speaker = await pump(tester, [lot()]);
-      await tester.tap(find.text('Tomato'));
+      await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lost it'));
       await tester.pumpAndSettle();
@@ -259,7 +279,7 @@ void main() {
       // Having to say "lost" twice because you hesitated over why is a screen
       // punishing somebody for thinking.
       await pump(tester, [lot()]);
-      await tester.tap(find.text('Tomato'));
+      await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Lost it'));
       await tester.pumpAndSettle();
@@ -273,7 +293,7 @@ void main() {
 
     testWidgets('and it can be left without answering at all', (tester) async {
       await pump(tester, [lot()]);
-      await tester.tap(find.text('Tomato'));
+      await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('back'));
       await tester.pumpAndSettle();

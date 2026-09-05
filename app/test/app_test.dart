@@ -633,7 +633,7 @@ void main() {
     await store(tester);
     await launch(tester);
 
-    await tester.tap(find.text('Yam'));
+    await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sold it'));
     await tester.pumpAndSettle();
