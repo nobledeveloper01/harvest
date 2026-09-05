@@ -108,7 +108,7 @@ wrong is worse than none, because the 80% teaches a farmer to trust it before
 the 20% costs them a harvest. See [ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md).
 What ships instead is the arithmetic on an offer the farmer already has.
 
-## Phase 4 — Diagnosis · **current**
+## Phase 4 — Diagnosis · **current**, and blocked
 
 Labelling, training, INT8 quantisation, pre-capture guidance, isolate
 inference, the confidence gate, illustrated guidance in five languages.
@@ -116,6 +116,24 @@ inference, the confidence gate, illustrated guidance in five languages.
 **Exit gate**. *Per-class precision and recall are published, inference is
 under two seconds on the 2 GB reference device, and an uncertain result routes
 to a person rather than guessing.*
+
+**One of the three clauses is met.** An uncertain result routes to a person, and
+both hedged answers do it — asserted on the screen, with the escalation *above*
+the steps. What that took was [ADR-0007](adr/0007-two-numbers-decide-how-sure-the-app-sounds.md),
+the thirteen ailments, nineteen treatment steps under
+[ADR-0008](adr/0008-the-app-never-states-a-dose.md), thirty-two illustrations,
+and the classifier port with a stand-in that recognises nothing.
+
+**The other two need a labelled dataset, and that is not an engineering
+problem.** Precision and recall cannot be published for a model that does not
+exist, and inference cannot be timed with nothing to run. No amount of work in
+this repository moves either. They are R10 in
+[`RELEASE-GATES.md`](RELEASE-GATES.md), and the phase stays open rather than
+being declared cleared around the part that is missing — which is the failure
+mode a one-sentence gate exists to prevent.
+
+**The feature is not reachable from the app** while that stands. A screen a
+farmer can open and get a guess from is worse than one they cannot open.
 
 ## Phase 5 — Marketplace, and v1.0
 
