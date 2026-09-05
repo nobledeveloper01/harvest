@@ -4,6 +4,7 @@ import '../../domain/crops/crop.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
+import '../../domain/speech/spoken_weight.dart';
 
 /// Plays a bundled clip. Tier 1 of the three-tier speech strategy.
 ///
@@ -50,6 +51,13 @@ class Speaker {
   /// Say a storage condition, in one language.
   Future<void> sayStorage(StorageCondition storage, Speech language) =>
       _play('${language.code}/storage/${storage.id}');
+
+  /// Say a weight, as a whole sentence.
+  ///
+  /// Never assembled from number words. See [SpokenWeight] for why that is not
+  /// a shortcut this app can take in these five languages.
+  Future<void> sayWeight(SpokenWeight weight, Speech language) =>
+      _play('${language.code}/weight/${weight.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

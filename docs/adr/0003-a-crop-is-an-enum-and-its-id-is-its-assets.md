@@ -65,6 +65,16 @@ clips were written — 125 files on disk, none of them in the binary, both gates
 green. A gate that passes for a reason unrelated to what it checks is worse than
 one that cannot fail, so both gates now read the pubspec.
 
+**Numbers are the one thing that could not follow it**, and they were the
+reason to be sure it was right. A weight cannot be an enum of every value, and
+it cannot be assembled from recorded number words either: Yoruba counts
+subtractively — forty-five is *five taken from fifty*, with nothing in it
+corresponding to "forty" — and a sentence stitched from words recorded in
+isolation has the wrong intonation on every one of them. `SpokenWeight` is
+therefore a closed scale of about forty **whole sentences**, fine where lots are
+small and coarse where they are large, chosen by nearest ratio. The app says
+fewer numbers and says them properly. See that file for the trade it makes.
+
 **`Unit` follows the same contract**, added when the quantity screen needed it.
 A basket is picked from a grid by the same person who cannot read the crop
 names, so a unit carries an `id`, a picture and five clips exactly as a crop

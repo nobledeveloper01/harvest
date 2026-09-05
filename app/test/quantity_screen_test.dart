@@ -5,17 +5,47 @@ import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
+import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:harvest/features/lots/quantity_screen.dart';
 
 class _Recording implements Speaker {
-  final List<Phrase> phrases = [];
-  final List<Unit> units = [];
+  /// Everything asked for, in the order it was asked for.
+  ///
+  /// One log rather than three lists, because the order matters as much as the
+  /// contents: the speaker stops whatever is playing before starting the next
+  /// clip, so a measure and a weight fired together means hearing the tail of
+  /// one and none of the other.
+  final List<String> said = [];
+
+  List<Phrase> get phrases => [
+        for (final entry in said)
+          if (entry.startsWith('phrase:'))
+            Phrase.values.firstWhere((p) => p.id == entry.substring(7)),
+      ];
+
+  List<Unit> get units => [
+        for (final entry in said)
+          if (entry.startsWith('unit:'))
+            Unit.values.firstWhere((u) => u.id == entry.substring(5)),
+      ];
+
+  List<SpokenWeight> get weights => [
+        for (final entry in said)
+          if (entry.startsWith('weight:'))
+            SpokenWeight.values.firstWhere((w) => w.id == entry.substring(7)),
+      ];
 
   @override
-  Future<void> say(Phrase phrase, Speech language) async => phrases.add(phrase);
+  Future<void> sayWeight(SpokenWeight weight, Speech language) async =>
+      said.add('weight:${weight.id}');
 
   @override
-  Future<void> sayUnit(Unit unit, Speech language) async => units.add(unit);
+  Future<void> say(Phrase phrase, Speech language) async =>
+      said.add('phrase:${phrase.id}');
+
+  @override
+  Future<void> sayUnit(Unit unit, Speech language) async =>
+      said.add('unit:${unit.id}');
 
   @override
   Future<void> sayCrop(Crop crop, Speech language) async {}
@@ -231,5 +261,59 @@ void main() {
     await tester.tap(find.bySemanticsLabel('delete'));
     await tester.pump();
     expect(display(tester), '12');
+  });
+
+  testWidgets('says what it comes to, not just the measure', (tester) async {
+    /*
+      The half of FR-2.2 that a farmer who cannot read depends on entirely. The
+      screen prints "About 180 kg"; without this the app has said the word
+      "basket" and then gone quiet on the number, which is the figure every
+      later decision is made from.
+    */
+    final speaker = await pump(tester, region: Region.southWest);
+    await type(tester, '4');
+    await choose(tester, Unit.bigBasket);
+
+    expect(speaker.units, [Unit.bigBasket]);
+    expect(speaker.weights, [SpokenWeight.kg200],
+        reason: '180 kg is said as about two hundred');
+  });
+
+  testWidgets('the measure is said before the weight, not over it', (tester) async {
+    /*
+      The speaker stops whatever is playing before starting the next clip, so
+      firing both without waiting means hearing the tail of "big basket" and
+      nothing else. Order is asserted rather than assumed because the bug is
+      inaudible in a test and obvious on a phone.
+    */
+    final speaker = await pump(tester);
+    speaker.said.clear();
+    await type(tester, '1');
+    await choose(tester, Unit.crate);
+
+    expect(speaker.said, ['unit:crate', 'weight:kg-25']);
+  });
+
+  testWidgets('the figure can be heard again without changing anything',
+      (tester) async {
+    final speaker = await pump(tester, region: Region.southWest);
+    await type(tester, '1');
+    await choose(tester, Unit.bigBasket);
+    speaker.said.clear();
+
+    await tester.tap(find.bySemanticsLabel('about 45 kilograms, tap to hear it again'));
+    await tester.pump();
+
+    expect(speaker.weights, [SpokenWeight.kg45]);
+    expect(entered, isNull, reason: 'hearing it is not saving it');
+  });
+
+  testWidgets('nothing is said before there is anything to say', (tester) async {
+    // A measure chosen before any digit has been typed converts to nothing,
+    // and an app that announces "about one kilogram" for an empty field is
+    // telling the farmer something that is not true.
+    final speaker = await pump(tester);
+    await choose(tester, Unit.bag);
+    expect(speaker.weights, isEmpty);
   });
 }

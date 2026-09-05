@@ -50,6 +50,9 @@ NAMES = {
     'crop': ('crops', ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
     'unit': ('units', ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
     'storage': ('storage', ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
+    # Spoken only. There is nothing to draw for "about forty-five kilograms",
+    # so this one has no picture directory and `picture-check` never sees it.
+    'weight': (None, ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
 }
 
 # Beside the directories rather than inside them: `assets/crops/` is a pubspec
@@ -129,12 +132,18 @@ def clip(path: pathlib.Path, words: str) -> None:
 
     WAV rather than a compressed format because `audio-check` opens these with
     `wave` to prove they are not silent, and a gate that cannot read the file it
-    is gating is a gate that only checks the filesystem.
+    is gating is a gate that only checks the filesystem. That trade is what
+    makes R5 — compressing the shipped clips — a gate rather than a chore: the
+    check has to survive the format change rather than be dropped with it.
     """
     aiff = path.with_suffix('.aiff')
     subprocess.run(['say', '-o', str(aiff), words], check=True)
+    # 8 kHz mono: telephone quality, which is ample for a stand-in and cuts the
+    # set from sixty megabytes to twenty. Real recordings are a release gate
+    # (R1) and will not be made this way; what matters here is that four
+    # hundred throwaway files do not dominate the repository.
     subprocess.run(
-        ['afconvert', '-f', 'WAVE', '-d', 'LEI16@22050', str(aiff), str(path)],
+        ['afconvert', '-f', 'WAVE', '-d', 'LEI16@8000', str(aiff), str(path)],
         check=True,
         stdout=subprocess.DEVNULL,
     )
@@ -168,6 +177,8 @@ def main() -> int:
     pictures: list[str] = []
     seed = 0
     for directory, values in names.values():
+        if directory is None:
+            continue
         folder = ASSETS / directory
         folder.mkdir(parents=True, exist_ok=True)
         for value in values:

@@ -55,6 +55,7 @@ NAMES = {
     'crop': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
     'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
     'storage': (ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
+    'weight': (ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
 }
 
 SPEECH = ROOT / 'app/assets/speech'

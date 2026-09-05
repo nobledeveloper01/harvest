@@ -164,6 +164,43 @@ zero, and the counter is how anybody would ever find out that it was not — the
 alternative is a farmer opening the app to a missing harvest with nothing
 admitting it existed.
 
+### The rule that nearly broke, and the design that came out of it
+
+`Phrase`'s own docstring says nothing is assembled from fragments, because word
+order is not the same in five languages and a stitched sentence sounds like a
+ransom note. Then FR-2.2 needed the app to say a weight, and a weight is a
+number, and numbers are the thing every app assembles from fragments.
+
+Yoruba settles it. Forty-five is *marùndínláàádọ́ta* — five taken from fifty —
+one word with nothing in it corresponding to "forty". A template of
+`<tens> <units> kilograms` does not merely sound wrong there; it has no correct
+filling.
+
+So the app says fewer numbers. `SpokenWeight` is a closed scale of thirty-nine
+**whole sentences**, one kilogram to five tonnes, fine at the bottom and coarse
+at the top, chosen by nearest ratio rather than nearest difference — two
+kilograms away from three is a different mistake from two away from three
+hundred. The screen shows 48 kg and the app says *"about fifty"*, which is the
+honest way round given the weight is usually inferred from a table of averages.
+
+The limitation is real and written down: where the farmer stated the weight
+themselves the written figure is exact and the spoken one is still rounded. That
+is worth fixing one day and is not worth a hundred more recordings today.
+
+### Sixty-two megabytes of noise
+
+Adding the weight scale took the placeholder set to 415 clips and the repository
+to 62 MB of hatched grey and synthetic English. Re-encoding the stand-ins at
+8 kHz took it to 24 MB and changed nothing about what any gate checks — the real
+recordings are R1 and will not be made this way.
+
+Worth noticing anyway: the format that made the *gate* easy is the format that
+makes the *bundle* impossible. `audio-check` opens each clip with Python's
+`wave` to prove it is not silent, which is why these are WAV at all. R5 now says
+explicitly that the check has to survive the compression rather than be dropped
+with it — a gate quietly deleted during a format migration is how a whole
+category of these comes back.
+
 ### What surprised us
 
 That 130 placeholder WAVs are 18 MB. The P0 vocabulary is a fraction of v1.0's

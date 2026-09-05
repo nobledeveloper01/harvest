@@ -16,6 +16,14 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **The app says what the harvest comes to, out loud.** Choosing a measure now
+  speaks the measure and then the weight — *"about two hundred kilograms"* — and
+  the figure can be tapped to hear again. Nothing is stitched together from
+  recorded number words: Yoruba counts subtractively and a sentence assembled
+  from words recorded in isolation sounds wrong in every one of these languages.
+  Instead there is a closed scale of about forty whole sentences, fine where
+  lots are small and coarse where they are large. The app says fewer numbers and
+  says them properly.
 - **Lots that are still there tomorrow.** A harvest is written to SQLite and
   the app opens on the list of them, newest harvest first — by when the crop
   left the ground, not by when the farmer got round to telling the app. With

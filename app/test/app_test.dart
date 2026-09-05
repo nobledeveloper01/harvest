@@ -10,6 +10,7 @@ import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
+import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Silent implements Speaker {
@@ -26,6 +27,9 @@ class _Silent implements Speaker {
 
   @override
   Future<void> sayStorage(StorageCondition storage, Speech language) async {}
+
+  @override
+  Future<void> sayWeight(SpokenWeight weight, Speech language) async {}
 
   @override
   Future<void> dispose() async {}

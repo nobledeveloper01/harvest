@@ -77,22 +77,27 @@ flutter:
     - assets/speech/en/crop/
     - assets/speech/en/unit/
     - assets/speech/en/storage/
+    - assets/speech/en/weight/
     - assets/speech/pcm/
     - assets/speech/pcm/crop/
     - assets/speech/pcm/unit/
     - assets/speech/pcm/storage/
+    - assets/speech/pcm/weight/
     - assets/speech/ha/
     - assets/speech/ha/crop/
     - assets/speech/ha/unit/
     - assets/speech/ha/storage/
+    - assets/speech/ha/weight/
     - assets/speech/yo/
     - assets/speech/yo/crop/
     - assets/speech/yo/unit/
     - assets/speech/yo/storage/
+    - assets/speech/yo/weight/
     - assets/speech/ig/
     - assets/speech/ig/crop/
     - assets/speech/ig/unit/
     - assets/speech/ig/storage/
+    - assets/speech/ig/weight/
     - assets/crops/
     - assets/units/
     - assets/storage/

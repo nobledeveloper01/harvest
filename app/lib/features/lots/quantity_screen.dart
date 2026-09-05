@@ -5,6 +5,7 @@ import '../../data/speech/speaker.dart';
 import '../../domain/crops/crop.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
+import '../../domain/speech/spoken_weight.dart';
 
 /// How much was harvested, in the measure the farmer actually used.
 ///
@@ -111,9 +112,27 @@ class _QuantityScreenState extends State<QuantityScreen> {
     });
   }
 
-  void _choose(Unit unit) {
+  Future<void> _choose(Unit unit) async {
     setState(() => _unit = unit);
-    widget.speaker.sayUnit(unit, widget.language);
+    /*
+      The measure, then what it comes to — awaited, because the speaker stops
+      whatever is playing before it starts the next clip, and two clips fired
+      together means hearing the second half of the first one and nothing else.
+
+      Said on choosing a measure rather than on every keystroke. A screen that
+      recites a new weight after each digit is a screen nobody can think over.
+    */
+    await widget.speaker.sayUnit(unit, widget.language);
+    await _sayWeight();
+  }
+
+  Future<void> _sayWeight() async {
+    final quantity = _quantity;
+    if (quantity == null) return;
+    await widget.speaker.sayWeight(
+      SpokenWeight.nearest(quantity.kilograms),
+      widget.language,
+    );
   }
 
   void _confirm() {
@@ -160,6 +179,10 @@ class _QuantityScreenState extends State<QuantityScreen> {
                 unit: _unit,
                 region: widget.region,
                 correcting: _correcting,
+                // Tap the figure to hear it again. Somebody in a market with
+                // the volume down needs a second chance at the one sentence
+                // that says what they have.
+                onSayAgain: _sayWeight,
                 onCorrect: quantity == null
                     ? null
                     : () {
@@ -313,6 +336,7 @@ class _Assumption extends StatelessWidget {
     required this.region,
     required this.correcting,
     required this.onCorrect,
+    required this.onSayAgain,
   });
 
   final Quantity? quantity;
@@ -320,6 +344,7 @@ class _Assumption extends StatelessWidget {
   final Region region;
   final bool correcting;
   final VoidCallback? onCorrect;
+  final VoidCallback onSayAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +379,23 @@ class _Assumption extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('About $rounded kg', style: text.bodyLarge),
+        Semantics(
+          button: true,
+          container: true,
+          label: 'about $rounded kilograms, tap to hear it again',
+          child: InkWell(
+            onTap: onSayAgain,
+            child: ExcludeSemantics(
+              child: Row(
+                children: [
+                  Text('About $rounded kg', style: text.bodyLarge),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.volume_up_outlined, size: 22),
+                ],
+              ),
+            ),
+          ),
+        ),
         Text(
           unit!.isWeight
               ? 'You gave me a weight, so this is not an estimate.'
