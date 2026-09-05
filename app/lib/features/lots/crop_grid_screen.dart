@@ -51,6 +51,21 @@ class CropGridScreen extends StatefulWidget {
 class _CropGridScreenState extends State<CropGridScreen> {
   Crop? _speaking;
 
+  @override
+  void initState() {
+    super.initState();
+    /*
+      The screen asks its question out loud on arrival.
+
+      Same reasoning as the language picker: a screen that waits to be asked
+      looks exactly like every other screen this farmer cannot use, and the one
+      way to teach that this app talks is for it to talk without being asked.
+    */
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => widget.speaker.say(Phrase.whatDidYouHarvest, widget.language),
+    );
+  }
+
   Future<void> _say(Crop crop) async {
     setState(() => _speaking = crop);
     await widget.speaker.sayCrop(crop, widget.language);

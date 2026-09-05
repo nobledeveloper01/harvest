@@ -16,6 +16,12 @@ Entries say *why*, not just what.
   if the farmer corrects it their number is stored detached from the table, so
   no future revision of the factors can quietly overrule somebody who weighed
   their own basket.
+- **The quantity screen, and the correction that is the point of it.** A number
+  pad, the nine measures as pictures, and the kilogram equivalent always on
+  screen — saying whether it came from this farmer's own belt or from a national
+  median. If the assumption is wrong they say so and type the real weight, and
+  what is stored keeps their four baskets and takes their ninety-six kilograms,
+  detached from the table for ever.
 - **The language is asked once.** Somebody who cannot read the app has already
   done the hardest thing it asks of them by finding their language in a list;
   the choice now survives a relaunch. The grid carries that language's own name
@@ -61,6 +67,10 @@ Entries say *why*, not just what.
   direction. Both asset gates now read `pubspec.yaml` as well as the
   filesystem; the old ones would have stayed green while every crop name was
   silent on a real phone.
+- **A correction that would have recorded ninety-six baskets.** Once the pad
+  is entering kilograms the typed number is no longer a count, and the
+  assumption was being recomputed from it. The screen now holds the quantity
+  from the moment the farmer says it is wrong.
 - **An app that spoke in the wrong language on every launch.** Reading the
   stored language is a disk round trip, and the picker was being built while it
   was still in flight — the picker announces itself on arrival, so it started

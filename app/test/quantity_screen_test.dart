@@ -1,0 +1,234 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harvest/core/theme.dart';
+import 'package:harvest/data/speech/speaker.dart';
+import 'package:harvest/domain/crops/crop.dart';
+import 'package:harvest/domain/lots/quantity.dart';
+import 'package:harvest/domain/speech/phrase.dart';
+import 'package:harvest/features/lots/quantity_screen.dart';
+
+class _Recording implements Speaker {
+  final List<Phrase> phrases = [];
+  final List<Unit> units = [];
+
+  @override
+  Future<void> say(Phrase phrase, Speech language) async => phrases.add(phrase);
+
+  @override
+  Future<void> sayUnit(Unit unit, Speech language) async => units.add(unit);
+
+  @override
+  Future<void> sayCrop(Crop crop, Speech language) async {}
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void main() {
+  late Quantity? entered;
+
+  Future<_Recording> pump(
+    WidgetTester tester, {
+    Region region = Region.unknown,
+  }) async {
+    entered = null;
+    final speaker = _Recording();
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: QuantityScreen(
+          speaker: speaker,
+          language: Speech.hausa,
+          crop: Crop.tomato,
+          region: region,
+          onEntered: (quantity) => entered = quantity,
+        ),
+      ),
+    );
+    await tester.pump();
+    return speaker;
+  }
+
+  Future<void> type(WidgetTester tester, String digits) async {
+    for (final digit in digits.split('')) {
+      await tester.tap(find.bySemanticsLabel(digit == '.' ? 'point' : digit));
+      await tester.pump();
+    }
+  }
+
+  Future<void> choose(WidgetTester tester, Unit unit) async {
+    // Nine measures do not fit across 360 dp, so the row scrolls — and a test
+    // that only ever tapped the first three would be testing the first three.
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(unit.label),
+      120,
+      scrollable: find.byType(Scrollable).at(1),
+    );
+    await tester.tap(find.bySemanticsLabel(unit.label));
+    await tester.pump();
+  }
+
+  /// What the big number at the top reads.
+  ///
+  /// By key, because the pad has a `0` key and an empty display reads `0` —
+  /// `find.text('0')` matches both, and the first version of these tests found
+  /// two widgets and could not say which was which.
+  String display(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const ValueKey('typed'))).data!;
+
+  testWidgets('asks out loud on arrival', (tester) async {
+    final speaker = await pump(tester);
+    expect(speaker.phrases, [Phrase.howMuch]);
+  });
+
+  testWidgets('choosing a measure says its name', (tester) async {
+    final speaker = await pump(tester);
+    await choose(tester, Unit.bigBasket);
+    expect(speaker.units, [Unit.bigBasket]);
+  });
+
+  testWidgets('four big baskets in the South-West is 180 kg', (tester) async {
+    await pump(tester, region: Region.southWest);
+    await type(tester, '4');
+    await choose(tester, Unit.bigBasket);
+
+    expect(find.text('About 180 kg'), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(entered!.amount, 4);
+    expect(entered!.unit, Unit.bigBasket);
+    expect(entered!.kilograms, 180);
+    expect(entered!.how, HowWeighed.converted);
+  });
+
+  testWidgets('half a basket is a thing people say', (tester) async {
+    await pump(tester, region: Region.southWest);
+    await type(tester, '2.5');
+    await choose(tester, Unit.smallBasket);
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(entered!.amount, 2.5);
+    expect(entered!.kilograms, 50);
+  });
+
+  testWidgets('the assumption says where the figure came from', (tester) async {
+    /*
+      A national median and a figure gathered in this farmer's own market are
+      different claims, and the screen has to say which it is showing. It is
+      the difference between an assumption somebody can accept and one they
+      should probably correct.
+    */
+    await pump(tester, region: Region.southWest);
+    await type(tester, '1');
+    await choose(tester, Unit.bigBasket);
+    expect(find.textContaining('in South-West'), findsOneWidget);
+
+    await pump(tester, region: Region.northWest);
+    await type(tester, '1');
+    await choose(tester, Unit.crate);
+    expect(find.textContaining('national average'), findsOneWidget);
+  });
+
+  testWidgets('a weight given directly is not called an estimate', (tester) async {
+    await pump(tester);
+    await type(tester, '12');
+    await choose(tester, Unit.kilogram);
+
+    expect(find.textContaining('not an estimate'), findsOneWidget);
+    // And there is nothing to correct, because nothing was assumed.
+    expect(find.text('That is not right — I weighed it'), findsNothing);
+  });
+
+  testWidgets('the correction keeps the baskets and takes the weight', (tester) async {
+    /*
+      The promise the domain was written for, asserted where a farmer actually
+      makes it. They still harvested four baskets; what changed is what a
+      basket weighs, which they know better than the table does.
+
+      The specific bug this guards: once the pad is entering kilograms, the
+      typed number is no longer a count of baskets. Recomputing the assumption
+      from it produces "forty-five baskets weighing forty-five kilograms".
+    */
+    await pump(tester, region: Region.southWest);
+    await type(tester, '4');
+    await choose(tester, Unit.smallBasket);
+    expect(find.text('About 80 kg'), findsOneWidget);
+
+    await tester.tap(find.text('That is not right — I weighed it'));
+    await tester.pump();
+
+    await type(tester, '96');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(entered!.amount, 4, reason: 'they still harvested four baskets');
+    expect(entered!.unit, Unit.smallBasket);
+    expect(entered!.kilograms, 96);
+    expect(entered!.how, HowWeighed.corrected);
+    expect(entered!.tableVersion, isNull, reason: 'detached from the table');
+  });
+
+  testWidgets('the correction is announced, not just offered', (tester) async {
+    final speaker = await pump(tester, region: Region.southWest);
+    await type(tester, '1');
+    await choose(tester, Unit.bigBasket);
+    await tester.tap(find.text('That is not right — I weighed it'));
+    await tester.pump();
+
+    expect(speaker.phrases, contains(Phrase.isThatRight));
+  });
+
+  testWidgets('Save does nothing until there is something to save', (tester) async {
+    await pump(tester);
+
+    final save = () => tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(save().onPressed, isNull, reason: 'no amount, no measure');
+
+    await type(tester, '3');
+    await tester.pump();
+    expect(save().onPressed, isNull, reason: 'an amount, but of what?');
+
+    await choose(tester, Unit.bag);
+    expect(save().onPressed, isNotNull);
+  });
+
+  testWidgets('a mis-typed number cannot run to millions', (tester) async {
+    /*
+      Four digits is four thousand baskets. Past that somebody has leant on the
+      pad, and a field that accepts it will show them a loss figure with six
+      noughts on it and no reason to disbelieve it.
+    */
+    await pump(tester);
+    await type(tester, '9999999');
+    await choose(tester, Unit.bag);
+
+    expect(entered, isNull);
+    expect(display(tester), '9999');
+  });
+
+  testWidgets('one decimal point, and not before a digit', (tester) async {
+    await pump(tester);
+    await type(tester, '.');
+    expect(display(tester), '0', reason: 'a leading point is nothing');
+
+    await type(tester, '1..5');
+    await choose(tester, Unit.crate);
+    expect(display(tester), '1.5');
+  });
+
+  testWidgets('backspace takes the last key back', (tester) async {
+    await pump(tester);
+    await type(tester, '123');
+    await tester.tap(find.bySemanticsLabel('delete'));
+    await tester.pump();
+    expect(display(tester), '12');
+  });
+}

@@ -4,9 +4,11 @@ import 'core/theme.dart';
 import 'data/settings/language_store.dart';
 import 'data/speech/speaker.dart';
 import 'domain/crops/crop.dart';
+import 'domain/lots/quantity.dart';
 import 'domain/speech/phrase.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
+import 'features/lots/quantity_screen.dart';
 
 /// The app.
 ///
@@ -32,6 +34,7 @@ class _HarvestAppState extends State<HarvestApp> {
 
   Speech? _language;
   Crop? _crop;
+  Quantity? _quantity;
 
   /*
     Three states, not two: unknown, none, and chosen.
@@ -75,6 +78,7 @@ class _HarvestAppState extends State<HarvestApp> {
     setState(() {
       _language = null;
       _crop = null;
+      _quantity = null;
     });
   }
 
@@ -96,8 +100,20 @@ class _HarvestAppState extends State<HarvestApp> {
                   onChosen: (crop) => setState(() => _crop = crop),
                   onChangeLanguage: _forgetLanguage,
                 ),
-              (final language?, final crop?) =>
-                _NextStep(language: language, crop: crop),
+              (final language?, final crop?) => switch (_quantity) {
+                  null => QuantityScreen(
+                      speaker: _speaker,
+                      language: language,
+                      crop: crop,
+                      onEntered: (quantity) =>
+                          setState(() => _quantity = quantity),
+                    ),
+                  final quantity => _NextStep(
+                      language: language,
+                      crop: crop,
+                      quantity: quantity,
+                    ),
+                },
             },
     );
   }
@@ -110,10 +126,15 @@ class _HarvestAppState extends State<HarvestApp> {
 /// missing feature ships, and the same rule that governs the hatched crop tiles
 /// governs this.
 class _NextStep extends StatelessWidget {
-  const _NextStep({required this.language, required this.crop});
+  const _NextStep({
+    required this.language,
+    required this.crop,
+    required this.quantity,
+  });
 
   final Speech language;
   final Crop crop;
+  final Quantity quantity;
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +143,11 @@ class _NextStep extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '${crop.label} · ${language.endonym}\n\n'
-            'How much, in baskets or bags, goes here next.\n'
-            'The conversion behind it is built; the screen is not.',
+            '${crop.label} · ${quantity.amount} ${quantity.unit.label}'
+            ' · ${quantity.kilograms} kg\n\n'
+            'Where it is being kept goes here next, and then the lot is saved '
+            'and the clock starts.\n'
+            'Nothing is stored yet — this lot disappears when the app does.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),

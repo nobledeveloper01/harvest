@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 
 import '../../domain/crops/crop.dart';
+import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
 
 /// Plays a bundled clip. Tier 1 of the three-tier speech strategy.
@@ -37,6 +38,13 @@ class Speaker {
   /// gate over both, because a farmer has to hear either one. See ADR-0003.
   Future<void> sayCrop(Crop crop, Speech language) =>
       _play('${language.code}/crop/${crop.id}');
+
+  /// Say the name of a unit, in one language.
+  ///
+  /// Its own namespace for the same reason as [sayCrop]: a basket is how the
+  /// farmer measured, not something the app has to say. See ADR-0003.
+  Future<void> sayUnit(Unit unit, Speech language) =>
+      _play('${language.code}/unit/${unit.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

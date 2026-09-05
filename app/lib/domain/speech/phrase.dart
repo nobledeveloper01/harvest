@@ -48,16 +48,43 @@ enum Speech {
 
 /// One thing the app can say.
 ///
-/// Phase 0 carries exactly one: the sentence the exit gate names. Growing this
-/// enum is how phases 1 and 2 add speech, and every addition is a build failure
-/// until the five clips exist.
+/// Growing this enum is how each phase adds speech, and every addition is a
+/// build failure until the five clips exist.
+///
+/// Everything here is a **whole sentence**. Nothing is assembled from
+/// fragments, because word order is not the same in five languages and a
+/// sentence stitched from clips recorded in isolation sounds, to a native
+/// speaker, like a ransom note. Numbers are the exception the phase still owes:
+/// "about forty-five kilograms" cannot be a fixed clip, and composed audio is
+/// its own item on the roadmap.
 enum Phrase {
   /// *"Harvest can talk. Choose the language you want to hear."*
   ///
   /// The first thing the app says, on the first screen, before any choice has
   /// been made — so it is spoken in each language as that option is focused
   /// rather than once in a language the user may not have.
-  chooseLanguage('choose-language');
+  chooseLanguage('choose-language'),
+
+  /// *"What did you harvest?"*
+  ///
+  /// Spoken on arrival at the crop grid, for the same reason the language
+  /// screen speaks on arrival: a screen that waits to be asked looks exactly
+  /// like every other screen the farmer cannot use.
+  whatDidYouHarvest('what-did-you-harvest'),
+
+  /// *"How much did you harvest? Choose the measure you used."*
+  ///
+  /// The quantity screen asks two things at once — a number and a measure —
+  /// and saying so is cheaper than a second screen. The measure is the half
+  /// that cannot be guessed.
+  howMuch('how-much'),
+
+  /// *"Is that right? You can tell me the real weight."*
+  ///
+  /// The correction. FR-2.2 requires the farmer be able to override the kg
+  /// equivalent, and an override nobody is told about is an override nobody
+  /// uses — least of all the person who cannot read the button.
+  isThatRight('is-that-right');
 
   const Phrase(this.id);
 

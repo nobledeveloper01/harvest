@@ -118,6 +118,24 @@ design, better engineering — identical in a test and on a device. And the
 test no longer asserts that a label *fits*, because in Ahem that assertion is
 about Ahem. Fitting is checked on hardware, where it is a real question.
 
+### The correction that would have recorded ninety-six baskets
+
+Found by reading, not by a gate, which is worth noting because the gates had
+nothing to say about it.
+
+`Quantity.correctedTo` keeps the amount and the unit and replaces only the
+weight — four baskets, ninety-six kilograms. The screen switches the same
+number pad from counting baskets to entering kilograms, and `_confirm` was
+recomputing the assumption from whatever `_typed` held. By then `_typed` was
+`96`, so the assumption being corrected was *ninety-six baskets*, and the lot
+would have been stored as ninety-six baskets weighing ninety-six kilograms.
+
+Every existing test passed. The domain test proved `correctedTo` keeps the
+amount; it had no opinion about which amount the screen handed it. The screen
+now holds the quantity from the moment the farmer says it is wrong, and a
+widget test asserts the four baskets survive — it fails on the old code with
+`Expected: <4> / Actual: <96.0>`.
+
 ### What surprised us
 
 That 130 placeholder WAVs are 18 MB. The P0 vocabulary is a fraction of v1.0's

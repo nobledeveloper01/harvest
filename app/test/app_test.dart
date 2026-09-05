@@ -110,9 +110,11 @@ void main() {
     final speaker = await launch(tester);
 
     expect(find.text('What did you harvest?'), findsOneWidget);
+    // Narrowly: the *picker's* sentence. The grid speaks on arrival too, and
+    // it is supposed to.
     expect(
       speaker.said,
-      isEmpty,
+      isNot(contains(Phrase.chooseLanguage)),
       reason: 'the picker was built and spoke before the stored answer arrived',
     );
   });

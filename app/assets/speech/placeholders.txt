@@ -12,6 +12,9 @@
 # recording lands.
 
 en/choose-language.wav
+en/what-did-you-harvest.wav
+en/how-much.wav
+en/is-that-right.wav
 en/crop/tomato.wav
 en/crop/ugu.wav
 en/crop/spinach.wav
@@ -47,6 +50,9 @@ en/unit/mudu.wav
 en/unit/congo.wav
 en/unit/paint-rubber.wav
 pcm/choose-language.wav
+pcm/what-did-you-harvest.wav
+pcm/how-much.wav
+pcm/is-that-right.wav
 pcm/crop/tomato.wav
 pcm/crop/ugu.wav
 pcm/crop/spinach.wav
@@ -82,6 +88,9 @@ pcm/unit/mudu.wav
 pcm/unit/congo.wav
 pcm/unit/paint-rubber.wav
 ha/choose-language.wav
+ha/what-did-you-harvest.wav
+ha/how-much.wav
+ha/is-that-right.wav
 ha/crop/tomato.wav
 ha/crop/ugu.wav
 ha/crop/spinach.wav
@@ -117,6 +126,9 @@ ha/unit/mudu.wav
 ha/unit/congo.wav
 ha/unit/paint-rubber.wav
 yo/choose-language.wav
+yo/what-did-you-harvest.wav
+yo/how-much.wav
+yo/is-that-right.wav
 yo/crop/tomato.wav
 yo/crop/ugu.wav
 yo/crop/spinach.wav
@@ -152,6 +164,9 @@ yo/unit/mudu.wav
 yo/unit/congo.wav
 yo/unit/paint-rubber.wav
 ig/choose-language.wav
+ig/what-did-you-harvest.wav
+ig/how-much.wav
+ig/is-that-right.wav
 ig/crop/tomato.wav
 ig/crop/ugu.wav
 ig/crop/spinach.wav
