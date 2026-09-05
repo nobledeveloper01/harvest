@@ -19,6 +19,19 @@ Entries say *why*, not just what.
   the three sentences `docs/04-UX-DESIGN.md` already writes, and **both
   non-confident outcomes route to a person** — a farmer about to spray a field
   on a maybe is exactly who the escalation is for. ADR-0007.
+- **Treatment guidance, and ADR-0008: the app never states a dose.** *"Mix 20 ml
+  in 15 litres"* is the single most dangerous sentence this product could say,
+  and it looks like helpfulness. The app cannot read the label on what the local
+  dealer stocks, does not know the sprayer's volume or the pre-harvest interval
+  — on an app whose whole purpose is telling somebody to sell within days — and
+  the spraying is done by a person usually without protective equipment, on food
+  that will be in a market that week. Naming an active ingredient is worse: it
+  reads as expertise while still leaving the dilution to a guess. So the steps
+  are cultural and practical, none of them can hurt anybody if the diagnosis was
+  wrong, and where a chemical is genuinely the answer the step names the *need*
+  and sends the farmer to somebody who can see the field. **Enforced by two
+  tests that scan every step**, not by convention — a prose rule is a rule
+  somebody adds one helpful sentence against six months from now.
 - **`Ailment`: thirteen things the app is allowed to name**, chosen for what is
   common on the crops Harvest tracks *and* what a farmer can act on. What is
   absent is deliberate and written down: anything needing a laboratory,

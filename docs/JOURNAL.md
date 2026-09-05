@@ -55,12 +55,69 @@ Naming either would be guessing between two things a farmer would treat
 differently — which is the whole failure the confidence gate exists to prevent,
 arriving through the class list instead.
 
+### The sentence the app must never say
+
+Then the guidance, and the decision that took the longest to be sure of. A
+diagnosis screen that names a disease and stops has told somebody their crop is
+sick and left them there, so the steps have to be specific. The obvious next
+step is the one a farmer would actually ask for:
+
+> Mix 20 ml in 15 litres of water and spray in the evening.
+
+That is the most dangerous sentence in this product, and it is dangerous in a
+way that looks exactly like helpfulness. The app cannot read the label on what
+the dealer stocks; the same active ingredient differs in concentration by
+multiples between brands. It does not know the sprayer's volume, or the
+pre-harvest interval — on an app whose whole purpose is telling somebody to sell
+within days. And the spraying is done by a person usually without protective
+equipment, on food that will be in a market that week.
+
+Naming an active ingredient instead of a dose is worse than either. It reads as
+expertise while still leaving the dilution to a guess, with enough authority
+that the guess feels endorsed.
+
+So: no quantities, no product names, and where a chemical genuinely is the
+answer the step names the *need* and sends them to somebody who can see the
+field. That is not the app giving up. Working out that the plant is short of
+nitrogen rather than thirsty is the part a farmer standing in the field cannot
+do; **the dose was never the scarce information.**
+
+It is enforced by two tests that scan every step — a number beside any unit of
+measure or land, and a list of trade names and active ingredients — because a
+prose rule in an ADR is a rule somebody adds one helpful sentence against, six
+months from now, with good intentions and a farmer asking them a reasonable
+question.
+
+### What surprised us, twice over
+
+**The orphan test found dead advice on its first run, and again on its second.**
+`cleanTools` and `drainWater` were both written and reachable from no ailment —
+each one an illustration and five recordings for guidance nobody would ever be
+given. Placing them properly improved the content: knife hygiene belongs on
+cassava mosaic, which travels in the planting material and on the blade that
+cuts it; drainage belongs on late blight and leaf spot, where the puddle is
+literally the vector. The gate did not just catch waste, it asked a question I
+had not.
+
+**Choosing what not to diagnose was the harder half.** Bacterial and Fusarium
+wilt look identical on a phone camera and are told apart by cutting the stem and
+watching for ooze in water. The app can describe that test; it cannot run it.
+Naming either would be guessing between two things a farmer treats differently
+— the failure the confidence gate exists to prevent, arriving through the class
+list instead of through the model.
+
 ### Proved the gates fire
 
-Three breaks, each failing on exactly the assertion meant to catch it: collapse
-the rule to one number and the two-horse race passes as confident; name the
-thing the app does not recognise and the "would not stand behind" assertion
-catches it; make a *maybe* stop needing a person and both hedged cases fail.
+Three breaks on the confidence gate, each failing on exactly the assertion meant
+to catch it: collapse the rule to one number and the two-horse race passes as
+confident; name the thing the app does not recognise and the "would not stand
+behind" assertion catches it; make a *maybe* stop needing a person and both
+hedged cases fail.
+
+Three more on the guidance: add a dose to the spray step and the quantity scan
+fails; say *"use urea, or an NPK blend"* and the product scan names it; empty
+one ailment's steps and both the "named but not acted on" and the orphan
+assertions fire together.
 
 ---
 
