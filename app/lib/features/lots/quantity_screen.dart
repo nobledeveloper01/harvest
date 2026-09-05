@@ -130,16 +130,30 @@ class _QuantityScreenState extends State<QuantityScreen> {
       recites a new weight after each digit is a screen nobody can think over.
     */
     await widget.speaker.sayUnit(unit, widget.language);
-    await _sayWeight();
+    await _sayWeight(offerCorrection: true);
   }
 
-  Future<void> _sayWeight() async {
+  /// Say what it comes to.
+  ///
+  /// [offerCorrection] adds *"Is that right? You can tell me the real
+  /// weight."* — which is how a farmer who reads nothing learns the correction
+  /// exists at all. Until this, the only way to discover the one control that
+  /// FR-2.2 exists for was to **read the button**, on a screen whose whole
+  /// premise is that reading is optional.
+  ///
+  /// Not said when the farmer gave a weight directly: there is nothing to
+  /// correct, and an app that asks "is that right?" about a number somebody
+  /// just typed is an app that does not trust them.
+  Future<void> _sayWeight({bool offerCorrection = false}) async {
     final quantity = _quantity;
     if (quantity == null) return;
     await widget.speaker.sayWeight(
       SpokenWeight.nearest(quantity.kilograms),
       widget.language,
     );
+    if (offerCorrection && !(_unit?.isWeight ?? true)) {
+      await widget.speaker.say(Phrase.isThatRight, widget.language);
+    }
   }
 
   void _confirm() {

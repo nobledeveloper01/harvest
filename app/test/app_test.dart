@@ -14,22 +14,28 @@ import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Silent implements Speaker {
-  final List<Phrase> said = [];
+  /// Everything asked for, in order, so both *what* and *when* can be checked.
+  final List<String> said = [];
 
   @override
-  Future<void> say(Phrase phrase, Speech language) async => said.add(phrase);
+  Future<void> say(Phrase phrase, Speech language) async =>
+      said.add('phrase:${phrase.id}');
 
   @override
-  Future<void> sayCrop(Crop crop, Speech language) async {}
+  Future<void> sayCrop(Crop crop, Speech language) async =>
+      said.add('crop:${crop.id}');
 
   @override
-  Future<void> sayUnit(Unit unit, Speech language) async {}
+  Future<void> sayUnit(Unit unit, Speech language) async =>
+      said.add('unit:${unit.id}');
 
   @override
-  Future<void> sayStorage(StorageCondition storage, Speech language) async {}
+  Future<void> sayStorage(StorageCondition storage, Speech language) async =>
+      said.add('storage:${storage.id}');
 
   @override
-  Future<void> sayWeight(SpokenWeight weight, Speech language) async {}
+  Future<void> sayWeight(SpokenWeight weight, Speech language) async =>
+      said.add('weight:${weight.id}');
 
   @override
   Future<void> dispose() async {}
@@ -167,7 +173,7 @@ void main() {
     // it is supposed to.
     expect(
       speaker.said,
-      isNot(contains(Phrase.chooseLanguage)),
+      isNot(contains('phrase:choose-language')),
       reason: 'the picker was built and spoke before the stored answer arrived',
     );
   });
@@ -323,5 +329,25 @@ void main() {
       );
       expect(find.bySemanticsLabel('switch to the dark screen'), findsOneWidget);
     });
+  });
+
+  testWidgets('the harvest list says a lot out loud', (tester) async {
+    /*
+      The one screen that had no audio at all. Every other screen speaks its
+      question and names what you tap; this was crop name, weight, storage and
+      date, all text, with a picture the only thing a farmer who does not read
+      could use. They could see that they had *a tomato lot* and nothing else
+      about it — on the screen the product hands them at the start of each day.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await store(tester);
+    final speaker = await launch(tester);
+    speaker.said.clear();
+
+    await tester.tap(find.text('Okra'));
+    await tester.pumpAndSettle();
+
+    // What it is, then how much of it — in the language they chose.
+    expect(speaker.said, ['crop:okra', 'weight:kg-100']);
   });
 }

@@ -25,6 +25,8 @@ built past the point anybody can honestly ship it.
 
 | R6 | The spoken weight scale is **checked against how it sounds**. `SpokenWeight` says "about fifty kilograms" for forty-eight, and never rounds by more than a third — asserted. What is not asserted is whether a Yoruba speaker finds the chosen sentence natural for the weight in front of them, which is a question for a person, not a test | A native speaker of each of the four Nigerian languages, listening | Phase 2 |
 
+| R7 | **On-device speech recognition coverage** for Hausa, Yoruba, Igbo and Nigerian Pidgin, measured on the ₦40,000 reference handset and on iOS — not from documentation. ADR-0001 checked this for speech *output* and found none; the same question for input is open, and a microphone that is prominent and permanently broken for the primary user is worse than no microphone | A physical handset for each platform | Phase 2 |
+
 ## How a gate leaves this list
 
 By being true, and by somebody having watched it be true. Not by being

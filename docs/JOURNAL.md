@@ -239,6 +239,34 @@ The lesson is not "write more tests". It is that **"acceptance criteria met and
 demonstrated on a device" is on the definition of done for a reason**, and it
 had been quietly deferred for two phases because the tests were green.
 
+### Reading was optional everywhere except where it mattered
+
+Walking the phase gate's hardest clause — *without reading a word* — step by
+step, rather than assuming the screens that speak are the screens that are
+finished:
+
+* **Language picker** — every row speaks itself, in its own language. ✓
+* **Crop grid** — question spoken on arrival, name spoken on tap. ✓
+* **Quantity** — measures are pictures and speak; the weight is spoken. The
+  number pad is numerals, which is the one thing with no pictorial
+  alternative and the most universally legible symbols there are.
+* **Storage** — question spoken, conditions are pictures and speak. The day
+  row is numerals with today as the default, so the path most lots take never
+  touches it.
+* **Home** — **nothing.** Crop name, weight, storage, date, all text, with the
+  picture the only channel that survived. A farmer who does not read could see
+  they had *a tomato lot* and nothing else about it, on the screen the product
+  is supposed to hand them at the start of each day.
+
+And a second hole in the quantity screen that the walk found: the correction —
+the control FR-2.2 exists for, the promise the whole `Quantity` file was written
+around — was discoverable **only by reading the button**.
+
+Both are fixed and both were cheap, because the clips already existed. The
+lesson is that "the screen speaks" and "the screen can be used without reading"
+are different claims, and the second one is only established by walking the
+flow with the question in mind.
+
 ### Two things the redesign broke, and one it exposed
 
 The redesign put a picture of the crop in the app bar's leading slot, which is

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/numbers.dart';
 import '../../core/theme.dart';
 import '../../data/lots/lot_store.dart';
+import '../../data/speech/speaker.dart';
 import '../../domain/lots/lot.dart';
+import '../../domain/speech/phrase.dart';
+import '../../domain/speech/spoken_weight.dart';
 
 /// What the farmer has logged.
 ///
@@ -17,6 +20,8 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     required this.stored,
     required this.now,
+    required this.speaker,
+    required this.language,
     required this.onLogAnother,
     required this.onToggleBrightness,
     super.key,
@@ -27,6 +32,9 @@ class HomeScreen extends StatelessWidget {
   /// Passed in, not read here. The same discipline as everywhere else: a screen
   /// that reads the clock cannot be tested at a date boundary.
   final DateTime now;
+
+  final Speaker speaker;
+  final Speech language;
 
   final VoidCallback onLogAnother;
 
@@ -137,8 +145,14 @@ class HomeScreen extends StatelessWidget {
                         itemCount: stored.lots.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: Gap.m),
-                        itemBuilder: (context, index) =>
-                            _LotCard(lot: stored.lots[index], now: now),
+                        itemBuilder: (context, index) {
+                          final lot = stored.lots[index];
+                          return _LotCard(
+                            lot: lot,
+                            now: now,
+                            onSay: () => _sayLot(speaker, language, lot),
+                          );
+                        },
                       ),
               ),
               Padding(
@@ -155,6 +169,21 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Say a lot out loud: what it is, then how much of it.
+///
+/// **The one screen that had no audio at all.** Every other screen speaks its
+/// question and names what you tap; the harvest list was crop name, weight,
+/// storage and date, all of it text, with a picture the only thing a farmer who
+/// does not read could use. They could see that they had *a tomato lot* and
+/// nothing else about it — on the screen the whole product is supposed to hand
+/// them at the start of each day.
+Future<void> _sayLot(Speaker speaker, Speech language, Lot lot) async {
+  // Crop first, then weight, awaited in turn — the speaker stops whatever is
+  // playing before starting the next clip.
+  await speaker.sayCrop(lot.crop, language);
+  await speaker.sayWeight(SpokenWeight.nearest(lot.quantity.kilograms), language);
 }
 
 class _Empty extends StatelessWidget {
@@ -194,10 +223,11 @@ class _Empty extends StatelessWidget {
 }
 
 class _LotCard extends StatelessWidget {
-  const _LotCard({required this.lot, required this.now});
+  const _LotCard({required this.lot, required this.now, required this.onSay});
 
   final Lot lot;
   final DateTime now;
+  final VoidCallback onSay;
 
   /// How long since it left the ground, in the words somebody would use.
   ///
@@ -223,16 +253,19 @@ class _LotCard extends StatelessWidget {
     return Semantics(
       container: true,
       label: '${lot.crop.label}, ${tidy(lot.quantity.kilograms)} kilograms, '
-          '${lot.storage.label}, $_since',
+          '${lot.storage.label}, $_since. Tap to hear it.',
+      button: true,
       child: ExcludeSemantics(
-        child: Container(
-          decoration: BoxDecoration(
-            color: freshness.raised,
-            borderRadius: Radii.card,
-            border: Border.all(color: freshness.outline),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
+        child: Pressable(
+          borderRadius: Radii.card,
+          onTap: onSay,
+          child: Container(
+            decoration: BoxDecoration(
+              color: freshness.raised,
+              borderRadius: Radii.card,
+              border: Border.all(color: freshness.outline),
+            ),
+            child: Padding(
             padding: const EdgeInsets.all(Gap.m),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +309,26 @@ class _LotCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
+                // The affordance. Without it the card is a card, and nobody
+                // discovers that it talks by guessing.
+                Padding(
+                  padding: const EdgeInsets.only(left: Gap.s),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: freshness.fresh.withValues(alpha: 0.16),
+                      borderRadius: Radii.pill,
+                    ),
+                    child: Icon(
+                      Icons.volume_up_rounded,
+                      size: 20,
+                      color: freshness.fresh,
+                    ),
+                  ),
+                ),
+                ],
+              ),
             ),
           ),
         ),
@@ -311,12 +363,25 @@ class _Tag extends StatelessWidget {
         children: [
           Icon(icon, size: 15, color: scheme.onSurfaceVariant),
           const SizedBox(width: Gap.xs + 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 14,
-                  color: scheme.onSurfaceVariant,
-                ),
+          /*
+            Flexible, with an ellipsis.
+
+            A tag is a compact summary and the card is only so wide — "Picked
+            12 days ago" beside a speaker badge runs past the edge, and an
+            unflexed row overflows into a yellow-striped bar rather than
+            shortening. The full sentence is in the card's semantics label and
+            in what it says out loud, which are the two channels that matter.
+          */
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    color: scheme.onSurfaceVariant,
+                  ),
+            ),
           ),
         ],
       ),

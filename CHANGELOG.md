@@ -10,6 +10,16 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The harvest list speaks.** Tapping a lot says what it is and how much of it,
+  in the chosen language. It was the one screen in the app with no audio at all
+  — crop name, weight, storage and date, all of it text, with the picture the
+  only thing a farmer who does not read could use. They could see they had *a
+  tomato lot* and nothing else about it, on the screen the product hands them at
+  the start of each day.
+- **The correction offers itself out loud.** After the app says what a lot comes
+  to, it adds *"is that right? you can tell me the real weight"* — because until
+  now the only way to discover the one control FR-2.2 exists for was to **read
+  the button**, on a screen whose whole premise is that reading is optional.
 - **A way out of every screen.** The logging flow is four screens driven by
   state rather than by a `Navigator`, so nothing put a back arrow there on its
   own — and choosing the wrong crop from a grid of twenty-five pictures, the

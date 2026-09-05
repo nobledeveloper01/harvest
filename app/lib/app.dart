@@ -146,6 +146,10 @@ class _HarvestAppState extends State<HarvestApp> {
   Widget _home() => HomeScreen(
         stored: _stored,
         now: DateTime.now(),
+        speaker: _speaker,
+        // The list only speaks once a language has been chosen, and this
+        // screen is unreachable before that.
+        language: _language ?? Speech.values.first,
         onLogAnother: () => setState(() => _logging = true),
         onToggleBrightness: _flipBrightness,
       );

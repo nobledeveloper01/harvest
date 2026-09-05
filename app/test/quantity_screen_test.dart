@@ -307,7 +307,7 @@ void main() {
     await type(tester, '1');
     await choose(tester, Unit.crate);
 
-    expect(speaker.said, ['unit:crate', 'weight:kg-25']);
+    expect(speaker.said, ['unit:crate', 'weight:kg-25', 'phrase:is-that-right']);
   });
 
   testWidgets('the figure can be heard again without changing anything',
@@ -391,6 +391,56 @@ void main() {
       expect(backs, 0, reason: 'it left the mode, not the screen');
       expect(find.text('About 80 kg'), findsOneWidget,
           reason: 'and the four baskets are still there');
+    });
+  });
+
+  group('the correction is discoverable without reading', () {
+    testWidgets('choosing a measure offers it out loud', (tester) async {
+      /*
+        FR-2.2 exists so a farmer can overrule the table, and until this the
+        only way to find out that they could was to **read the button** — on a
+        screen whose whole premise is that reading is optional.
+
+        Order matters: the measure, then what it comes to, then the offer.
+      */
+      final speaker = await pump(tester, region: Region.southWest);
+      speaker.said.clear();
+      await type(tester, '4');
+      await choose(tester, Unit.bigBasket);
+
+      expect(speaker.said, [
+        'unit:big-basket',
+        'weight:kg-200',
+        'phrase:is-that-right',
+      ]);
+    });
+
+    testWidgets('and does not, when they gave a weight themselves',
+        (tester) async {
+      // There is nothing to correct. An app that asks "is that right?" about a
+      // number somebody just typed is an app that does not trust them.
+      final speaker = await pump(tester);
+      speaker.said.clear();
+      await type(tester, '12');
+      await choose(tester, Unit.kilogram);
+
+      expect(speaker.said, ['unit:kilogram', 'weight:kg-12']);
+    });
+
+    testWidgets('hearing the figure again does not re-offer it', (tester) async {
+      // Tapping the figure is a request for the number, not for the whole
+      // speech again. Repeating the offer every time would make the one
+      // control that repeats itself the most annoying thing on the screen.
+      final speaker = await pump(tester, region: Region.southWest);
+      await type(tester, '1');
+      await choose(tester, Unit.bigBasket);
+      speaker.said.clear();
+
+      await tester.tap(
+          find.bySemanticsLabel('about 45 kilograms, tap to hear it again'));
+      await tester.pump();
+
+      expect(speaker.said, ['weight:kg-45']);
     });
   });
 }
