@@ -27,6 +27,8 @@ built past the point anybody can honestly ship it.
 
 | R7 | **On-device speech recognition coverage** for Hausa, Yoruba, Igbo and Nigerian Pidgin, measured on the ₦40,000 reference handset and on iOS — not from documentation. ADR-0001 checked this for speech *output* and found none; the same question for input is open, and a microphone that is prominent and permanently broken for the primary user is worse than no microphone | A physical handset for each platform | Phase 2 |
 
+| R8 | **`make speech-budget` becomes a gate.** The app talks for 29 seconds on the shortest path to a logged lot, against a 60-second phase gate — but every clip is a stand-in saying several times more than the recording that replaces it, so the figure is a report today and not a threshold. It becomes one the day R1 clears, against whatever the real recordings measure | R1 | Phase 2 |
+
 ## How a gate leaves this list
 
 By being true, and by somebody having watched it be true. Not by being

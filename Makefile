@@ -26,6 +26,10 @@ audio-check: ## Fail if anything the app says is missing a clip, or is not bundl
 picture-check: ## Fail if a crop or unit has no picture, or a picture has nothing using it
 	@python3 scripts/picture-check.py
 
+.PHONY: speech-budget
+speech-budget: ## Print how long the app talks for on the shortest path
+	@python3 scripts/speech-budget.py $(L)
+
 .PHONY: placeholders
 placeholders: ## Write stand-in clips and tiles for anything not yet made (macOS)
 	@python3 scripts/make-placeholders.py

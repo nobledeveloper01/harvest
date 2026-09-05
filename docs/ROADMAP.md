@@ -52,6 +52,24 @@ long it has been out of the ground, which is true today.
 **Exit gate**. *A lot is logged end to end in Hausa, without reading a word, in
 under sixty seconds, offline.*
 
+Where it stands, clause by clause. **End to end** — done, and walked on a
+simulator. **In Hausa** — the mechanism works and plays Hausa assets; the
+assets are placeholders, which is R1. **Without reading a word** — audited step
+by step, which found two holes and closed them: the harvest list had no audio
+at all, and the weight correction was discoverable only by reading its button.
+The number pad and the day row remain numerals, which have no pictorial
+alternative and are the most universally legible symbols there are. **Under
+sixty seconds** — `make speech-budget` measures the spoken path at 29 seconds
+with placeholder clips that say several times more than the recordings will;
+the stopwatch half needs a handset, which is R3. **Offline** — nothing in the
+app opens a socket.
+
+Push-to-talk left this phase deliberately: see
+[ADR-0004](adr/0004-speech-input-is-an-accelerator-not-a-path.md). Recognition
+coverage for these four languages has not been checked and cannot be checked
+here, and the gate above never named voice input — that wording turns out to
+have been careful.
+
 ## Phase 2 — The spoilage engine
 
 `ShelfLifeEngine` in pure Dart, weather integration and caching, alerts
