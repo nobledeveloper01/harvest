@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 
 void main() {
@@ -208,6 +209,36 @@ void main() {
 
     test('is not equal to something that is not a quantity', () {
       expect(Quantity.weighed(1) == Object(), isFalse);
+    });
+  });
+
+  group('units as things you can point at', () {
+    test('every unit has a filename stem for its picture and its clip', () {
+      // A unit is picked from a grid by the same person who cannot read the
+      // crop names. `scripts/picture-check.py` and `scripts/audio-check.py`
+      // read this enum, so an id that is not a usable stem is a build failure
+      // in a place nobody would look for it.
+      final stem = RegExp(r'^[a-z]+(-[a-z]+)*$');
+      for (final unit in Unit.values) {
+        expect(stem.hasMatch(unit.id), isTrue, reason: '${unit.name} → "${unit.id}"');
+      }
+    });
+
+    test('no two units share one', () {
+      final ids = Unit.values.map((unit) => unit.id).toList();
+      expect(ids.toSet(), hasLength(ids.length));
+    });
+
+    test('no unit id collides with a crop id', () {
+      /*
+        They live in separate directories, so a collision would not overwrite
+        anything — it would do something quieter. `scripts/audio-check.py`
+        walks both namespaces, and two identical stems make the two sets of
+        placeholder recordings indistinguishable to whoever has to record them.
+      */
+      final units = Unit.values.map((unit) => unit.id).toSet();
+      final crops = Crop.values.map((crop) => crop.id).toSet();
+      expect(units.intersection(crops), isEmpty);
     });
   });
 }

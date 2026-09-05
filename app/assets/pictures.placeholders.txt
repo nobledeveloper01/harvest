@@ -1,0 +1,45 @@
+# Tiles that are hatched placeholders, not illustrations.
+#
+# Diagonal hatching on grey, so that nobody mistakes one for a drawing and
+# nobody has to be told which crops are still unillustrated — the grid shows it.
+#
+# `scripts/picture-check.py` counts these and warns. They do not block a phase;
+# they block the release, as R4 in docs/RELEASE-GATES.md.
+#
+# Written by `scripts/make-placeholders.py`. Delete a line when the real
+# illustration lands.
+
+crops/tomato.png
+crops/ugu.png
+crops/spinach.png
+crops/bitterleaf.png
+crops/okra.png
+crops/cassava.png
+crops/maize.png
+crops/tatashe.png
+crops/rodo.png
+crops/shombo.png
+crops/cucumber.png
+crops/garden-egg.png
+crops/cabbage.png
+crops/carrot.png
+crops/banana.png
+crops/plantain.png
+crops/mango.png
+crops/pineapple.png
+crops/watermelon.png
+crops/orange.png
+crops/onion.png
+crops/sweet-potato.png
+crops/yam.png
+crops/ginger.png
+crops/garlic.png
+units/kilogram.png
+units/tonne.png
+units/small-basket.png
+units/big-basket.png
+units/bag.png
+units/crate.png
+units/mudu.png
+units/congo.png
+units/paint-rubber.png

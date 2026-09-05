@@ -8,16 +8,18 @@ TTS coverage for Hausa, Igbo and Nigerian Pidgin is patchy enough that a
 farmer's language would work on some devices and not others. Bundled audio is
 only a guarantee if something checks that the bundle is complete.
 
-## Two enums, two namespaces
+## Sentences, and names of things
 
-`Phrase` is sentences. `Crop` is names of things, and a crop name is spoken on
-the selection grid in FR-2.1 exactly as a sentence is spoken on the language
-screen. They are separate enums because they are separate kinds — a crop is a
-thing the farmer grew, not something the app has to say — but both must be
-recorded in all five languages, so both are gated here, under
+`Phrase` is sentences. `Crop` and `Unit` are names of things, spoken on their
+selection grids in FR-2.1 and FR-2.2 exactly as a sentence is spoken on the
+language screen. They are separate enums because they are separate kinds — a
+crop is what the farmer grew and a basket is how they measured it, neither is
+something the app has to *say* — but all three must be recorded in all five
+languages, so all three are gated here, under
 
     assets/speech/<language>/<phrase>.wav
     assets/speech/<language>/crop/<crop>.wav
+    assets/speech/<language>/unit/<unit>.wav
 
 Reading the enums out of the Dart source rather than a hand-written list is the
 whole point: a manifest kept beside an enum goes stale the first time somebody
@@ -46,7 +48,14 @@ from dartenum import (  # noqa: E402
 )
 
 PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
-CROPS = ROOT / 'app/lib/domain/crops/crop.dart'
+
+# `subdirectory: (source, enum)` — names of things, spoken. See the module
+# docstring for why they are not `Phrase` constants.
+NAMES = {
+    'crop': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
+    'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
+}
+
 SPEECH = ROOT / 'app/assets/speech'
 MANIFEST = SPEECH / 'placeholders.txt'
 
@@ -56,9 +65,9 @@ def main() -> int:
     # `<language>/<stem>.wav` — the crop names sit in their own subdirectory so
     # that a crop and a phrase can never collide on a filename, and so that a
     # glance at the tree tells you which is which.
-    stems = enum_values(PHRASES, 'Phrase') + [
-        f'crop/{crop}' for crop in enum_values(CROPS, 'Crop')
-    ]
+    stems = enum_values(PHRASES, 'Phrase')
+    for folder, (source, enum) in NAMES.items():
+        stems += [f'{folder}/{name}' for name in enum_values(source, enum)]
 
     placeholders = manifest(MANIFEST)
 

@@ -1,6 +1,6 @@
 """Reads enum constants out of Dart source.
 
-Shared by `audio-check.py` and `crop-check.py`, which both gate assets against
+Shared by `audio-check.py` and `picture-check.py`, which both gate assets against
 an enum. Parsed rather than imported because these run in CI without a Dart
 toolchain, and a gate that needs the thing it gates to build first cannot
 report on a broken build.

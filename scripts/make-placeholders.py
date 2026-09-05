@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Writes the stand-ins that let `audio-check` and `crop-check` pass while the real
+Writes the stand-ins that let `audio-check` and `picture-check` pass while the real
 recordings and illustrations are still being made.
 
 **Everything this writes announces itself.** A placeholder that looks like the
@@ -37,12 +37,19 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import GREEN, OFF, ROOT, YELLOW, enum_values  # noqa: E402
 
 PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
-CROPS = ROOT / 'app/lib/domain/crops/crop.dart'
 SPEECH = ROOT / 'app/assets/speech'
-PICTURES = ROOT / 'app/assets/crops'
-# Beside the directory rather than inside it: `assets/crops/` is a pubspec
+ASSETS = ROOT / 'app/assets'
+
+# `name: (source, enum)`. The name is both the picture directory
+# (`assets/<name>s/`) and the speech subdirectory (`speech/<lang>/<name>/`).
+NAMES = {
+    'crop': (ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
+    'unit': (ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
+}
+
+# Beside the directories rather than inside them: `assets/crops/` is a pubspec
 # entry, and everything in a declared directory ships in the binary.
-PICTURE_MANIFEST = ROOT / 'app/assets/crops.placeholders.txt'
+PICTURE_MANIFEST = ASSETS / 'pictures.placeholders.txt'
 
 TILE = 192
 
@@ -62,12 +69,12 @@ SPEECH_HEADER = """\
 """
 
 PICTURE_HEADER = """\
-# Crop tiles that are hatched placeholders, not illustrations.
+# Tiles that are hatched placeholders, not illustrations.
 #
 # Diagonal hatching on grey, so that nobody mistakes one for a drawing and
 # nobody has to be told which crops are still unillustrated — the grid shows it.
 #
-# `scripts/crop-check.py` counts these and warns. They do not block a phase;
+# `scripts/picture-check.py` counts these and warns. They do not block a phase;
 # they block the release, as R4 in docs/RELEASE-GATES.md.
 #
 # Written by `scripts/make-placeholders.py`. Delete a line when the real
@@ -138,8 +145,10 @@ def main() -> int:
     args = parser.parse_args()
 
     languages = enum_values(PHRASES, 'Speech')
-    crops = enum_values(CROPS, 'Crop')
     phrases = enum_values(PHRASES, 'Phrase')
+    names = {
+        name: enum_values(source, enum) for name, (source, enum) in NAMES.items()
+    }
 
     # `enum_values` returns only the first literal on each constant. The
     # placeholder has to name the language it stands in for — "in Hausa", not
@@ -150,22 +159,30 @@ def main() -> int:
 
     written: list[str] = []
 
-    PICTURES.mkdir(parents=True, exist_ok=True)
-    for seed, crop in enumerate(crops):
-        target = PICTURES / f'{crop}.png'
-        if target.exists() and not args.force:
-            continue
-        png(target, TILE, seed)
-        written.append(f'pictures: {crop}.png')
+    pictures: list[str] = []
+    seed = 0
+    for name, values in names.items():
+        folder = ASSETS / f'{name}s'
+        folder.mkdir(parents=True, exist_ok=True)
+        for value in values:
+            pictures.append(f'{name}s/{value}.png')
+            target = folder / f'{value}.png'
+            seed += 1
+            if target.exists() and not args.force:
+                continue
+            png(target, TILE, seed)
+            written.append(f'pictures: {name}s/{value}.png')
 
     PICTURE_MANIFEST.write_text(
-        PICTURE_HEADER + '\n' + '\n'.join(f'{crop}.png' for crop in crops) + '\n'
+        PICTURE_HEADER + '\n' + '\n'.join(pictures) + '\n'
     )
 
     if not args.pictures_only:
-        stems = [(phrase, phrase) for phrase in phrases] + [
-            (f'crop/{crop}', crop.replace('-', ' ')) for crop in crops
-        ]
+        stems = [(phrase, phrase.replace('-', ' ')) for phrase in phrases]
+        for name, values in names.items():
+            stems += [
+                (f'{name}/{value}', value.replace('-', ' ')) for value in values
+            ]
         for language in languages:
             for stem, spoken in stems:
                 target = SPEECH / language / f'{stem}.wav'

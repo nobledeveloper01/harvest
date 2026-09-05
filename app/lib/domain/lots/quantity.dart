@@ -15,29 +15,37 @@ library;
 /// arithmetic that follows — price per kg, loss in naira, spoilage rate — is
 /// money, and money in a float is wrong months later in a way nobody can trace.
 enum Unit {
-  kilogram('kg'),
-  tonne('tonne'),
+  kilogram('kilogram', 'kg'),
+  tonne('tonne', 'tonne'),
 
   /// The two basket sizes are genuinely different objects in a market, not a
   /// small and large of the same thing, so they are separate units rather than
   /// a size modifier nobody would set correctly.
-  smallBasket('small basket'),
-  bigBasket('big basket'),
+  smallBasket('small-basket', 'small basket'),
+  bigBasket('big-basket', 'big basket'),
 
-  bag('bag'),
-  crate('crate'),
+  bag('bag', 'bag'),
+  crate('crate', 'crate'),
 
   /// Grain measures. A mudu is a defined volume; what it weighs depends
   /// entirely on the grain, which is why conversion is per crop as well as per
   /// region.
-  mudu('mudu'),
-  congo('congo'),
+  mudu('mudu', 'mudu'),
+  congo('congo', 'congo'),
 
   /// A repurposed 4-litre paint tin — one of the most common measures in
   /// Nigerian markets, and absent from every unit library.
-  paintRubber('paint rubber');
+  paintRubber('paint-rubber', 'paint rubber');
 
-  const Unit(this.label);
+  const Unit(this.id, this.label);
+
+  /// The filename stem, in kebab-case, for `assets/units/<id>.png` and
+  /// `assets/speech/<language>/unit/<id>.wav`.
+  ///
+  /// Same contract as [Crop.id], for the same reason: a unit picker that a
+  /// farmer cannot read is a picker of pictures and spoken names, and the gates
+  /// read this enum so a unit cannot be added without both. See ADR-0003.
+  final String id;
 
   /// The English label. Screens speak the unit rather than reading it; this is
   /// for the accompanying text and for anything a buyer sees.

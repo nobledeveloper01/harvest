@@ -32,9 +32,10 @@ Entries say *why*, not just what.
   decision: the crops the spoilage clock helps most with are in the first rows.
   The peppers and the greens are separate crops rather than one entry each,
   because in a market they are separate goods with separate prices.
-- **A gate that counts the pictures.** `make crop-check` demands an
-  illustration for every crop and refuses a picture no crop uses — dead weight
-  in a bundle destined for a 2 GB phone that nothing will ever ask for.
+- **A gate that counts the pictures.** `make picture-check` demands an
+  illustration for every crop and every unit, and refuses a picture nothing
+  uses — dead weight in a bundle destined for a 2 GB phone that nothing will
+  ever ask for.
 - **An app that speaks before it is asked.** The language picker announces
   itself in each language as you move through it, from bundled recordings
   rather than system text-to-speech — which has no voice for Hausa, Igbo or

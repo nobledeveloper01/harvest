@@ -35,7 +35,7 @@ stem for every asset that crop needs.**
     assets/speech/<language>/crop/<id>.wav
 
 One id for both is not a saving. It is what makes a crop impossible to
-half-add: `scripts/crop-check.py` and `scripts/audio-check.py` read the enum out
+half-add: `scripts/picture-check.py` and `scripts/audio-check.py` read the enum out
 of the Dart source and demand each file, so a new constant fails the build until
 it has a picture and a name in all five languages.
 
@@ -65,6 +65,12 @@ clips were written — 125 files on disk, none of them in the binary, both gates
 green. A gate that passes for a reason unrelated to what it checks is worse than
 one that cannot fail, so both gates now read the pubspec.
 
+**`Unit` follows the same contract**, added when the quantity screen needed it.
+A basket is picked from a grid by the same person who cannot read the crop
+names, so a unit carries an `id`, a picture and five clips exactly as a crop
+does — and both gates enumerate both enums rather than growing a second copy of
+the same rule that would drift from the first.
+
 ## Consequences
 
 **Adding a crop is expensive**, and visibly so: an enum constant, a drawing, and
@@ -80,7 +86,7 @@ absent, and tiles that are blank until they download.
 **Placeholders announce themselves, in both media.** A stand-in tile is diagonal
 hatching on grey; a stand-in clip says in English that it is a placeholder and
 which language belongs there. Neither can be mistaken for the finished thing,
-and `make crop-check` and `make audio-check` count them on every run. They block
+and `make picture-check` and `make audio-check` count them on every run. They block
 the release (R1, R4), not the phase.
 
 **The peppers and the greens are separate crops**, though FR-2.1 writes them as
