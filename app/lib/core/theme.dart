@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// The design system, from `DESIGN.md`.
 ///
@@ -301,6 +302,18 @@ abstract final class Palette {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        /*
+          The clock and the battery, in a colour you can see.
+
+          A transparent app bar with no elevation leaves Flutter nothing to
+          infer the status-bar style from, so iOS keeps drawing light icons —
+          and on the daylight screen the time is white on near-white. Invisible
+          on a phone that is being held up to check the time, which the person
+          logging a harvest is doing constantly.
+        */
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         centerTitle: false,
         toolbarHeight: Target.primary,
         titleTextStyle: _type(textPrimary, textSecondary).titleLarge,
@@ -458,6 +471,100 @@ class PrimaryButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+/// Back, one step.
+///
+/// The logging flow is four screens driven by state rather than by a
+/// `Navigator`, so nothing puts a back arrow there on its own — and after the
+/// redesign the app bar's leading slot held a picture of the crop, which made
+/// choosing the wrong crop a dead end until the farmer finished or killed the
+/// app.
+///
+/// "Every error path has a forward path" is on the definition of done. A wrong
+/// tap on a grid of twenty-five pictures is the likeliest error in the product,
+/// and the way out of it must not be to complete a lot you did not harvest.
+class BackButtonRow extends StatelessWidget {
+  const BackButtonRow({required this.onBack, required this.child, super.key});
+
+  final VoidCallback onBack;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Semantics(
+          button: true,
+          container: true,
+          label: 'back',
+          child: ExcludeSemantics(
+            child: Pressable(
+              borderRadius: Radii.pill,
+              onTap: onBack,
+              child: Container(
+                width: Target.standard - 8,
+                height: Target.standard - 8,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: freshness.high,
+                  borderRadius: Radii.pill,
+                  border: Border.all(color: freshness.outline),
+                ),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  size: 22,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: Gap.m),
+        child,
+      ],
+    );
+  }
+}
+
+
+/// A question, with a mark beside it.
+///
+/// The icon is not ornament. A screen that asks two things needs a farmer who
+/// reads slowly to see, at a glance, that they are two — a bare line of text
+/// half-way down a scroll does not say "new question" to anybody.
+///
+/// Questions live in the body, not in the app bar. `What did you harvest?`
+/// between a back arrow and a language pill truncated to `What did you ha…` on
+/// a 6.1" phone, and the design floor is 5". The bar carries navigation; the
+/// screen carries the question.
+class SectionQuestion extends StatelessWidget {
+  const SectionQuestion({required this.icon, required this.text, super.key});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: Gap.m, bottom: Gap.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: freshness.fresh),
+          const SizedBox(width: Gap.s),
+          Flexible(
+            child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+          ),
+        ],
       ),
     );
   }

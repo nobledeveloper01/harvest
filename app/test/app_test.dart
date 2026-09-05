@@ -46,7 +46,32 @@ void main() {
   setUp(() => database = LotsDatabase(NativeDatabase.memory()));
   tearDown(() => database.close());
 
+  /// A lot on disk, so the app opens on the harvest list rather than on the
+  /// logging flow.
+  Future<void> store(WidgetTester tester) => LotStore(database).add(
+        Lot.record(
+          crop: Crop.okra,
+          quantity: Quantity.inUnits(
+            amount: 2,
+            unit: Unit.bigBasket,
+            region: Region.unknown,
+          )!,
+          storage: StorageCondition.shade,
+          harvestedAt: DateTime.now(),
+          now: DateTime.now(),
+        )!,
+      );
+
+  /// Start the app from cold.
+  ///
+  /// The `SizedBox` first is not ceremony. Pumping `HarvestApp` twice reuses
+  /// the same `State` — same type, no key — so in-memory fields survive and a
+  /// test of "is it still there next launch" passes whether or not anything
+  /// was ever written to disk. That is exactly the gate that cannot fail, and
+  /// this file had one.
   Future<_Silent> launch(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     final speaker = _Silent();
     await tester.pumpWidget(
       HarvestApp(
@@ -238,5 +263,65 @@ void main() {
     await launch(tester);
     expect(find.text('What did you harvest?'), findsOneWidget);
     expect(find.text('Your harvest'), findsNothing);
+
+    // And no way "back", because there is nowhere to go. An arrow that leads
+    // nowhere is worse than no arrow: somebody presses it and learns the app
+    // ignores them.
+    expect(find.bySemanticsLabel('back'), findsNothing);
+  });
+
+  testWidgets('with a lot already logged, the grid can be left again',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+    await store(tester);
+    await launch(tester);
+
+    await tester.tap(find.text('Log a harvest'));
+    await tester.pumpAndSettle();
+    expect(find.text('What did you harvest?'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('back'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your harvest'), findsOneWidget);
+  });
+
+  group('the daylight screen', () {
+    testWidgets('dark until the farmer says otherwise', (tester) async {
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await store(tester);
+      await launch(tester);
+
+      expect(
+        Theme.of(tester.element(find.text('Your harvest'))).brightness,
+        Brightness.dark,
+      );
+    });
+
+    testWidgets('and light when they do, next launch too', (tester) async {
+      /*
+        Not a preference — a working condition. The design floor is a phone
+        held in direct sunlight, where a dark screen is the harder of the two
+        to read. A light theme that is authored, contrast-asserted in CI, and
+        reachable by nobody exists only in the test.
+      */
+      SharedPreferences.setMockInitialValues({'speech.language.code': 'ha'});
+      await store(tester);
+      await launch(tester);
+
+      await tester.tap(find.bySemanticsLabel('switch to the daylight screen'));
+      await tester.pumpAndSettle();
+      expect(
+        Theme.of(tester.element(find.text('Your harvest'))).brightness,
+        Brightness.light,
+      );
+
+      // Relaunch: still light.
+      await launch(tester);
+      expect(
+        Theme.of(tester.element(find.text('Your harvest'))).brightness,
+        Brightness.light,
+      );
+      expect(find.bySemanticsLabel('switch to the dark screen'), findsOneWidget);
+    });
   });
 }

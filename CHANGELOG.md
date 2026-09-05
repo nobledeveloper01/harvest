@@ -10,6 +10,17 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A way out of every screen.** The logging flow is four screens driven by
+  state rather than by a `Navigator`, so nothing put a back arrow there on its
+  own — and choosing the wrong crop from a grid of twenty-five pictures, the
+  likeliest wrong tap in the product, meant finishing a lot you did not harvest
+  or killing the app. Backing out of the weight correction returns to the
+  amount you had already entered rather than clearing it.
+- **The daylight screen.** Dark stays the default and light is one tap away on
+  the harvest list, remembered for next launch. Not a preference: the design
+  floor is a phone held in direct sunlight, where a dark screen is the harder
+  of the two to read. The light theme was authored and contrast-asserted in CI
+  from the start and reachable by nobody — a theme that exists only in a test.
 - **A design system with some presence.** Inter bundled as a variable font —
   chosen after checking it covers Hausa's hooked letters, Yorùbá's dot-below
   vowels with tone marks, Igbo's, and ₦, because a typeface that cannot set the
@@ -120,6 +131,10 @@ Entries say *why*, not just what.
   `Lot.record` now agree on the window to the day: fifteen buttons, today and
   the fourteen behind it. A row offering one more would have produced a tap
   that does nothing, on the screen where the farmer is trying to finish.
+- **A status bar you could not read on the daylight screen.** A transparent app
+  bar with no elevation leaves Flutter nothing to infer the style from, so iOS
+  kept drawing white icons — the clock rendered white on near-white, on a phone
+  that is being held up to check the time constantly.
 - **A correction that would have recorded ninety-six baskets.** Once the pad
   is entering kilograms the typed number is no longer a count, and the
   assumption was being recomputed from it. The screen now holds the quantity

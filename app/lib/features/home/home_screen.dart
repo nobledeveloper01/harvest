@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
     required this.stored,
     required this.now,
     required this.onLogAnother,
+    required this.onToggleBrightness,
     super.key,
   });
 
@@ -29,13 +30,60 @@ class HomeScreen extends StatelessWidget {
 
   final VoidCallback onLogAnother;
 
+  /// Dark or light.
+  ///
+  /// **Not a preference — a working condition.** The design floor is a phone
+  /// held in direct sunlight, where a dark screen is the harder of the two to
+  /// read; the same phone in a store at dusk is the opposite. Dark stays the
+  /// default because that is the portfolio's standing choice and most use is
+  /// early morning or evening, but a light theme that no farmer can reach is a
+  /// theme that exists only in a contrast test.
+  final VoidCallback onToggleBrightness;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Your harvest', style: text.titleLarge)),
+      appBar: AppBar(
+        title: Text('Your harvest', style: text.titleLarge),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: Gap.l),
+            child: Semantics(
+              button: true,
+              container: true,
+              label: Theme.of(context).brightness == Brightness.dark
+                  ? 'switch to the daylight screen'
+                  : 'switch to the dark screen',
+              child: ExcludeSemantics(
+                child: Pressable(
+                  borderRadius: Radii.pill,
+                  onTap: onToggleBrightness,
+                  child: Container(
+                    width: Target.standard - 8,
+                    height: Target.standard - 8,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: freshness.high,
+                      borderRadius: Radii.pill,
+                      border: Border.all(color: freshness.outline),
+                    ),
+                    child: Icon(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Icons.wb_sunny_rounded
+                          : Icons.nights_stay_rounded,
+                      size: 22,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: PageCanvas(
         child: SafeArea(
           child: Column(

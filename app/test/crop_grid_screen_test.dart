@@ -72,7 +72,7 @@ void main() {
       for (final crop in Crop.values) {
         if (find.text(crop.label).evaluate().isNotEmpty) seen.add(crop.label);
       }
-      await tester.drag(find.byType(GridView), const Offset(0, -300));
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
       await tester.pump();
     }
 
@@ -155,7 +155,7 @@ void main() {
       of: find.text('Tomato'),
       matching: find.byType(Material),
     ).first);
-    final screen = tester.getSize(find.byType(GridView));
+    final screen = tester.getSize(find.byType(CustomScrollView));
     expect(
       tile.width,
       greaterThan(screen.width * 0.8),
@@ -170,7 +170,7 @@ void main() {
       of: find.text('Tomato'),
       matching: find.byType(Material),
     ).first);
-    final screen = tester.getSize(find.byType(GridView));
+    final screen = tester.getSize(find.byType(CustomScrollView));
     expect(tile.width, lessThan(screen.width / 2.5));
   });
 
@@ -186,7 +186,7 @@ void main() {
       of: find.text('Tomato'),
       matching: find.byType(Material),
     ).first);
-    final screen = tester.getSize(find.byType(GridView));
+    final screen = tester.getSize(find.byType(CustomScrollView));
     expect(tile.width, greaterThan(screen.width / 3));
     expect(tile.width, lessThan(screen.width * 0.6));
   });

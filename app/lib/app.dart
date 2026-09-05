@@ -44,6 +44,9 @@ class _HarvestAppState extends State<HarvestApp> {
   /// True while the farmer is part-way through logging one.
   bool _logging = false;
 
+  /// Dark unless the farmer has said otherwise. See `HomeScreen`.
+  Brightness _brightness = Brightness.dark;
+
   Speech? _language;
   Crop? _crop;
   Quantity? _quantity;
@@ -67,10 +70,12 @@ class _HarvestAppState extends State<HarvestApp> {
 
   Future<void> _start() async {
     final language = await _languages.read();
+    final brightness = await _languages.readBrightness();
     final stored = await _lots.all();
     if (!mounted) return;
     setState(() {
       _language = language;
+      _brightness = brightness ?? Brightness.dark;
       _stored = stored;
       // Straight into logging when there is nothing to show. An empty list
       // above a button is a screen that asks the farmer to read their way to
@@ -120,7 +125,12 @@ class _HarvestAppState extends State<HarvestApp> {
     return MaterialApp(
       title: 'Harvest',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
+      // Dark by default and light by choice. `ThemeMode.system` is still not
+      // it: the decision belongs to the farmer holding the phone in the sun,
+      // not to a setting somebody else made on their behalf.
+      themeMode: _brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       theme: Palette.theme(brightness: Brightness.light),
       darkTheme: Palette.theme(brightness: Brightness.dark),
       home: !_loaded
@@ -137,7 +147,16 @@ class _HarvestAppState extends State<HarvestApp> {
         stored: _stored,
         now: DateTime.now(),
         onLogAnother: () => setState(() => _logging = true),
+        onToggleBrightness: _flipBrightness,
       );
+
+  void _flipBrightness() {
+    final next = _brightness == Brightness.dark
+        ? Brightness.light
+        : Brightness.dark;
+    _languages.writeBrightness(next);
+    setState(() => _brightness = next);
+  }
 
   /// The four steps of logging one lot, in order.
   ///
@@ -152,12 +171,18 @@ class _HarvestAppState extends State<HarvestApp> {
             language: language,
             onChosen: (crop) => setState(() => _crop = crop),
             onChangeLanguage: _forgetLanguage,
+            // No way back on a first launch: this screen is the app until
+            // there is a lot to go back to.
+            onBack: _stored.lots.isEmpty
+                ? null
+                : () => setState(() => _logging = false),
           ),
         (final crop?, null) => QuantityScreen(
             speaker: _speaker,
             language: language,
             crop: crop,
             onEntered: (quantity) => setState(() => _quantity = quantity),
+            onBack: () => setState(() => _crop = null),
           ),
         (final crop?, final quantity?) => StorageScreen(
             speaker: _speaker,
@@ -169,6 +194,7 @@ class _HarvestAppState extends State<HarvestApp> {
             // any of it testable at a date boundary.
             now: DateTime.now(),
             onRecorded: _save,
+            onBack: () => setState(() => _quantity = null),
           ),
       };
 }

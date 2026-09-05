@@ -59,6 +59,7 @@ class _Recording implements Speaker {
 
 void main() {
   late Quantity? entered;
+  late int backs;
 
   Future<_Recording> pump(
     WidgetTester tester, {
@@ -66,6 +67,7 @@ void main() {
     Size size = const Size(360, 900),
   }) async {
     entered = null;
+    backs = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -79,6 +81,7 @@ void main() {
           crop: Crop.tomato,
           region: region,
           onEntered: (quantity) => entered = quantity,
+          onBack: () => backs++,
         ),
       ),
     );
@@ -350,5 +353,44 @@ void main() {
     expect(save.top, greaterThanOrEqualTo(0));
     // And it is the whole button, not a sliver of one.
     expect(save.height, greaterThanOrEqualTo(Target.primary));
+  });
+
+  group('getting out of it', () {
+    testWidgets('the wrong crop is not a dead end', (tester) async {
+      /*
+        Twenty-five pictures in a grid is the likeliest wrong tap in the
+        product, and until the redesign put a picture of the crop in the app
+        bar's leading slot there was at least an arrow there. Finishing a lot
+        you did not harvest is not a way out of having chosen the wrong crop.
+      */
+      await pump(tester);
+      await tester.tap(find.bySemanticsLabel('back'));
+      await tester.pump();
+      expect(backs, 1);
+    });
+
+    testWidgets('backing out of the correction is not backing out of the screen',
+        (tester) async {
+      /*
+        The correction is a mode, not a screen. Somebody who taps "I weighed it
+        myself" and changes their mind wants their four baskets back, not the
+        crop grid — and losing the crop as well would make the mistake
+        expensive enough to be worth avoiding, which is the opposite of what a
+        correction should feel like.
+      */
+      await pump(tester, region: Region.southWest);
+      await type(tester, '4');
+      await choose(tester, Unit.smallBasket);
+      await tester.tap(find.text('I weighed it myself'));
+      await tester.pump();
+      expect(find.textContaining('really weighs'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('back'));
+      await tester.pump();
+
+      expect(backs, 0, reason: 'it left the mode, not the screen');
+      expect(find.text('About 80 kg'), findsOneWidget,
+          reason: 'and the four baskets are still there');
+    });
   });
 }

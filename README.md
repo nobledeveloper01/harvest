@@ -96,6 +96,23 @@ recorded sentences**, fine where lots are small and coarse where they are large,
 nearest ratio. The screen shows 48 kg and the app says *"about fifty"*, which is the honest way
 round given the weight is usually inferred from a table of regional averages.
 
+### Two screens, one working condition
+
+<p align="center">
+  <img src="docs/screenshots/05-home.png" width="250" alt="The harvest list at night, dark" />
+  <img src="docs/screenshots/06-daylight.png" width="250" alt="The same list in daylight, light" />
+</p>
+
+Dark is the default and light is one tap away, because this is not a preference —
+it is a working condition. The design floor is a phone held in **direct
+sunlight**, where a dark screen is the harder of the two to read; the same phone
+in a store at dusk is the opposite. Both themes are authored, neither is derived
+from the other, and every colour pair in both is asserted in CI at 4.5:1 for text
+and 3:1 for the colours that carry state.
+
+That test found a real defect on its first run: the light-theme amber meaning
+*half the window is gone* was 2.69:1 against white.
+
 ### The farmer's correction wins, for ever
 
 That table is versioned, and a farmer who says the app is wrong is not overruled by a later

@@ -1,3 +1,5 @@
+import 'dart:ui' show Brightness;
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/speech/phrase.dart';
@@ -45,6 +47,27 @@ class LanguageStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, language.code);
   }
+
+  /// Which theme the farmer chose, or null if they have not.
+  ///
+  /// Null means dark, which is the product's default. Stored as a word rather
+  /// than a boolean so a third option — following the system — can be added
+  /// without a migration that has to guess what `false` meant.
+  Future<Brightness?> readBrightness() async {
+    final prefs = await SharedPreferences.getInstance();
+    return switch (prefs.getString(_brightness)) {
+      'light' => Brightness.light,
+      'dark' => Brightness.dark,
+      _ => null,
+    };
+  }
+
+  Future<void> writeBrightness(Brightness brightness) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_brightness, brightness.name);
+  }
+
+  static const _brightness = 'theme.brightness';
 
   /// Forget the choice, so the picker is shown again.
   ///

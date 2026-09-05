@@ -29,6 +29,7 @@ class CropGridScreen extends StatefulWidget {
     required this.language,
     required this.onChosen,
     required this.onChangeLanguage,
+    this.onBack,
     super.key,
   });
 
@@ -43,6 +44,13 @@ class CropGridScreen extends StatefulWidget {
   /// by mistake needs to see the word `Hausa` to know they can get back to it,
   /// and a settings glyph tells them nothing.
   final VoidCallback onChangeLanguage;
+
+  /// Back to the harvest list, or null when there is no list to go back to.
+  ///
+  /// Null on a first launch, when this screen *is* the app — an arrow that
+  /// leads nowhere is worse than no arrow, because somebody presses it and
+  /// learns the app ignores them.
+  final VoidCallback? onBack;
 
   @override
   State<CropGridScreen> createState() => _CropGridScreenState();
@@ -111,7 +119,14 @@ class _CropGridScreenState extends State<CropGridScreen> {
         // Left, not centred. A centred title sits in the middle of the row and
         // crowds the language button into the edge — visible the first time the
         // app was actually run, and invisible to every test.
-        title: Text('What did you harvest?', style: text.titleLarge),
+        automaticallyImplyLeading: false,
+        titleSpacing: Gap.l,
+        // Navigation only. The question moved into the body, where it has the
+        // whole width — between a back arrow and a language pill it truncated
+        // to "What did you ha…" on a 6.1" phone, and the floor is 5".
+        title: widget.onBack == null
+            ? const SizedBox.shrink()
+            : BackButtonRow(onBack: widget.onBack!, child: const SizedBox.shrink()),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: Gap.l),
@@ -166,28 +181,43 @@ class _CropGridScreenState extends State<CropGridScreen> {
             // scrolls.
             final pictureHeight = tileWidth.clamp(Target.primary, 200.0);
 
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(padding, 0, padding, Gap.xl),
-              itemCount: Crop.grid.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                crossAxisSpacing: gap,
-                mainAxisSpacing: gap,
-                mainAxisExtent: pictureHeight + labelHeight + 8,
-              ),
-              itemBuilder: (context, index) {
-                final crop = Crop.grid[index];
-                return _CropTile(
-                  crop: crop,
-                  pictureHeight: pictureHeight,
-                  speaking: _speaking == crop,
-                  onChoose: () => _choose(crop),
-                  onHear: () => _say(crop),
-                );
-                },
-              );
-            },
-          ),
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(padding, 0, padding, Gap.s),
+                  sliver: const SliverToBoxAdapter(
+                    child: SectionQuestion(
+                      icon: Icons.agriculture_rounded,
+                      text: 'What did you harvest?',
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(padding, 0, padding, Gap.xl),
+                  sliver: SliverGrid.builder(
+                    itemCount: Crop.grid.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      crossAxisSpacing: gap,
+                      mainAxisSpacing: gap,
+                      mainAxisExtent: pictureHeight + labelHeight + 8,
+                    ),
+                    itemBuilder: (context, index) {
+                      final crop = Crop.grid[index];
+                      return _CropTile(
+                        crop: crop,
+                        pictureHeight: pictureHeight,
+                        speaking: _speaking == crop,
+                        onChoose: () => _choose(crop),
+                        onHear: () => _say(crop),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
         ),
       ),
     );

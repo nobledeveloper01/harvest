@@ -26,6 +26,7 @@ class QuantityScreen extends StatefulWidget {
     required this.language,
     required this.crop,
     required this.onEntered,
+    required this.onBack,
     this.region = Region.unknown,
     super.key,
   });
@@ -34,6 +35,10 @@ class QuantityScreen extends StatefulWidget {
   final Speech language;
   final Crop crop;
   final void Function(Quantity) onEntered;
+
+  /// Back to the crop grid, because the wrong crop is the likeliest wrong tap
+  /// in the product and finishing a lot you did not harvest is not a way out.
+  final VoidCallback onBack;
 
   /// Where the conversion applies.
   ///
@@ -153,21 +158,42 @@ class _QuantityScreenState extends State<QuantityScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.crop.label, style: text.titleLarge),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: Gap.l),
-          child: ClipRRect(
-            borderRadius: Radii.chip,
-            child: Image.asset(
-              'assets/crops/${widget.crop.id}.png',
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            ),
+        automaticallyImplyLeading: false,
+        titleSpacing: Gap.l,
+        title: BackButtonRow(
+          onBack: _correcting
+              /*
+                Out of the correction first: it is a mode, and backing out of a
+                mode is not the same as backing out of the screen.
+
+                The amount comes back with it. Clearing `_typed` was the first
+                version and it threw away the four baskets the farmer had
+                already entered — which makes changing your mind about a
+                correction cost more than making one, the opposite of what a
+                correction should feel like.
+              */
+              ? () => setState(() {
+                    _typed = tidy(_assumed!.amount);
+                    _assumed = null;
+                  })
+              : widget.onBack,
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: Radii.chip,
+                child: Image.asset(
+                  'assets/crops/${widget.crop.id}.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
+                ),
+              ),
+              const SizedBox(width: Gap.s),
+              Text(widget.crop.label, style: text.titleLarge),
+            ],
           ),
         ),
-        leadingWidth: 40 + Gap.l * 2,
       ),
       body: PageCanvas(
         child: SafeArea(

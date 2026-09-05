@@ -239,6 +239,49 @@ The lesson is not "write more tests". It is that **"acceptance criteria met and
 demonstrated on a device" is on the definition of done for a reason**, and it
 had been quietly deferred for two phases because the tests were green.
 
+### Two things the redesign broke, and one it exposed
+
+The redesign put a picture of the crop in the app bar's leading slot, which is
+where a back arrow would go — except there had never been one, because the
+logging flow is four screens driven by state rather than by a `Navigator`.
+Nothing had ever put one there.
+
+So choosing the wrong crop was a **dead end**: twenty-five pictures in a grid,
+the likeliest wrong tap in the whole product, and the only ways out were to
+finish logging a lot you did not harvest or to kill the app. "Every error path
+has a forward path" has been on the definition of done since Phase 0.
+
+The first fix had its own version of the same fault: backing out of the weight
+correction cleared the amount. Somebody who taps "I weighed it myself" and
+changes their mind then has to type their four baskets again — which makes
+changing your mind about a correction cost more than making one, the opposite of
+what a correction should feel like.
+
+And the exposure: the light theme had been authored, written into two design
+documents, and asserted in CI since the contrast test was written — and no
+farmer could reach it. `ThemeMode.dark`, no setting. A whole half of the palette
+existing only inside a test is the `MAX_SCALE` mistake from the Keys build
+wearing different clothes.
+
+It is now one tap on the harvest list, and it is argued rather than assumed:
+the design floor is a phone held in **direct sunlight**, where a dark screen is
+the harder of the two to read. Dark stays the default because most logging
+happens early or late. The choice belongs to the person holding the phone.
+
+### Two gates of my own that could not fail, again
+
+Both in the tests for the work above, both found by breaking rather than reading.
+
+*"The theme choice survives a relaunch"* passed with the persistence deleted.
+Pumping `HarvestApp` twice reuses the same `State` — same type, no key — so the
+in-memory field survived and the "relaunch" was not one. Pumping a `SizedBox`
+between them makes it a real cold start, and the break then fails properly.
+
+*"With nothing logged it goes straight to logging"* could not catch a back arrow
+that leads nowhere, because it only asserted which screen appeared. An arrow to
+nothing is worse than no arrow: somebody presses it and learns the app ignores
+them. The test now asserts its absence, and fails when the arrow is unconditional.
+
 ### The typeface had to pass a check before it was allowed to be beautiful
 
 Inter is the obvious choice and the reason to hesitate is that these are not

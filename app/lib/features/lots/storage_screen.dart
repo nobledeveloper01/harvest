@@ -27,6 +27,7 @@ class StorageScreen extends StatefulWidget {
     required this.quantity,
     required this.now,
     required this.onRecorded,
+    required this.onBack,
     super.key,
   });
 
@@ -41,6 +42,9 @@ class StorageScreen extends StatefulWidget {
   final DateTime now;
 
   final void Function(Lot) onRecorded;
+
+  /// Back to the quantity, with the crop kept.
+  final VoidCallback onBack;
 
   @override
   State<StorageScreen> createState() => _StorageScreenState();
@@ -84,21 +88,27 @@ class _StorageScreenState extends State<StorageScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.crop.label, style: text.titleLarge),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: Gap.l),
-          child: ClipRRect(
-            borderRadius: Radii.chip,
-            child: Image.asset(
-              'assets/crops/${widget.crop.id}.png',
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            ),
+        automaticallyImplyLeading: false,
+        titleSpacing: Gap.l,
+        title: BackButtonRow(
+          onBack: widget.onBack,
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: Radii.chip,
+                child: Image.asset(
+                  'assets/crops/${widget.crop.id}.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
+                ),
+              ),
+              const SizedBox(width: Gap.s),
+              Text(widget.crop.label, style: text.titleLarge),
+            ],
           ),
         ),
-        leadingWidth: 40 + Gap.l * 2,
       ),
       body: PageCanvas(
         child: SafeArea(
@@ -117,10 +127,10 @@ class _StorageScreenState extends State<StorageScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                _Question(
-                  icon: Icons.warehouse_rounded,
-                  text: 'Where are you keeping it?',
-                ),
+                SectionQuestion(
+                        icon: Icons.warehouse_rounded,
+                        text: 'Where are you keeping it?',
+                      ),
                 const SizedBox(height: Gap.m),
                 _Conditions(
                   chosen: _storage,
@@ -130,10 +140,10 @@ class _StorageScreenState extends State<StorageScreen> {
                   },
                 ),
                 const SizedBox(height: Gap.xl),
-                _Question(
-                  icon: Icons.event_available_rounded,
-                  text: 'When did you pick it?',
-                ),
+                SectionQuestion(
+                        icon: Icons.event_available_rounded,
+                        text: 'When did you pick it?',
+                      ),
                 const SizedBox(height: Gap.s),
                 _DayRow(
                   daysAgo: _daysAgo,
@@ -155,39 +165,6 @@ class _StorageScreenState extends State<StorageScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// A section heading with a mark beside it.
-///
-/// The icon is not ornament. This screen asks two questions and a farmer who
-/// reads slowly needs to see, at a glance, that they are two — a bare line of
-/// text half-way down a scroll does not say "new question" to anybody.
-class _Question extends StatelessWidget {
-  const _Question({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final freshness = Theme.of(context).extension<Freshness>()!;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: Gap.m),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: freshness.fresh),
-          const SizedBox(width: Gap.s),
-          Flexible(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-        ],
       ),
     );
   }

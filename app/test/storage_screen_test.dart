@@ -35,12 +35,14 @@ void main() {
   )!;
 
   late Lot? saved;
+  late int backs;
 
   Future<_Recording> pump(
     WidgetTester tester, {
     Size size = const Size(360, 900),
   }) async {
     saved = null;
+    backs = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -55,6 +57,7 @@ void main() {
           quantity: basket,
           now: noon,
           onRecorded: (lot) => saved = lot,
+          onBack: () => backs++,
         ),
       ),
     );
@@ -180,5 +183,15 @@ void main() {
     expect(save.bottom, lessThanOrEqualTo(640),
         reason: 'Save has fallen off the bottom of the screen');
     expect(save.height, greaterThanOrEqualTo(Target.primary));
+  });
+
+  testWidgets('the quantity can be corrected without starting over', (tester) async {
+    // Back to the number, keeping the crop. A farmer who realises they said
+    // four baskets and meant five should not have to find the tomato again.
+    await pump(tester);
+    await tester.tap(find.bySemanticsLabel('back'));
+    await tester.pump();
+    expect(backs, 1);
+    expect(saved, isNull);
   });
 }
