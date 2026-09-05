@@ -86,17 +86,29 @@ moved for the same reason and the precedent held.
 both platforms, and the engine's predictions are checked against recorded
 outcomes rather than against itself.*
 
-## Phase 3 — Prices and storage · **current**
+## Phase 3 — Prices and storage · *cleared, less what needs data nobody has*
 
 Price reporting and ingest, outlier filtering, reputation weighting, net
-realisable price, the market and storage directories, the cost-benefit
-calculator — and the decision screen, which arrives here with the money that
-makes it worth showing.
+realisable price, the cost-benefit calculator — and the decision screen, which
+arrives here with the money that makes it worth showing.
 
 **Exit gate**. *Every figure on screen names its source and its age, and the
-calculator says "do not store" when storing loses money.*
+calculator says "do not store" when storing loses money.* **Met.** Every card on
+the decision screen is asserted individually to carry its figure's source and
+age — a count of provenance lines across the screen was the first version, and
+it stays true when a fourth figure arrives with none. The losing verdict says
+*"Do not store this"* in those words, and says the figure unsigned: it read
+*"it would cost you about -₦180 more than it is worth"* until the sentence was
+looked at.
 
-## Phase 4 — Diagnosis
+**The market and storage directories are deferred to Phase 5**, with the backend
+a shared multi-operator dataset needs. They are blocked on field operations, not
+on engineering: nobody has visited the facilities, and a directory that is 20%
+wrong is worse than none, because the 80% teaches a farmer to trust it before
+the 20% costs them a harvest. See [ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md).
+What ships instead is the arithmetic on an offer the farmer already has.
+
+## Phase 4 — Diagnosis · **current**
 
 Labelling, training, INT8 quantisation, pre-capture guidance, isolate
 inference, the confidence gate, illustrated guidance in five languages.

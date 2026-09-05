@@ -79,7 +79,12 @@ if [ -d .git ]; then
   fi
 fi
 
-# --- 2. PHASE is a number, and the roadmap describes it --------------------
+# --- 2. PHASE is a number, and it is the phase the roadmap calls current ----
+#
+# "The roadmap has a section for it" was the whole check, and it stays true the
+# moment a phase is marked cleared and PHASE is not moved on — which is the only
+# way these two ever disagree. Exactly one heading carries **current**, and it
+# is the one PHASE names.
 if [ -f PHASE ]; then
   phase=$(tr -d '[:space:]' < PHASE)
   if ! [[ "$phase" =~ ^[0-9]+$ ]]; then
@@ -87,7 +92,18 @@ if [ -f PHASE ]; then
   elif ! grep -qE "^## Phase $phase( |$|—)" docs/ROADMAP.md 2>/dev/null; then
     err "PHASE says $phase but docs/ROADMAP.md has no '## Phase $phase' section"
   else
-    ok "PHASE $phase matches docs/ROADMAP.md"
+    current_count=$(grep -cE '^## Phase [0-9]+ .*\*\*current\*\*' docs/ROADMAP.md 2>/dev/null || true)
+    current_phase=$(grep -E '^## Phase [0-9]+ .*\*\*current\*\*' docs/ROADMAP.md 2>/dev/null \
+      | head -1 | sed -E 's/^## Phase ([0-9]+).*/\1/')
+    if [ "$current_count" -eq 0 ]; then
+      err "no phase in docs/ROADMAP.md is marked **current** — PHASE says $phase"
+    elif [ "$current_count" -gt 1 ]; then
+      err "$current_count phases are marked **current** in docs/ROADMAP.md; exactly one may be"
+    elif [ "$current_phase" != "$phase" ]; then
+      err "PHASE says $phase but docs/ROADMAP.md marks Phase $current_phase as **current**"
+    else
+      ok "PHASE $phase is the phase the roadmap calls current"
+    fi
   fi
 fi
 

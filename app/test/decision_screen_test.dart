@@ -167,10 +167,43 @@ void main() {
     });
 
     testWidgets('and on every option that carries a number', (tester) async {
-      await pump(tester, decision(ago: const Duration(days: 3)));
+      /*
+        Scoped to each card, not counted across the screen.
 
-      // Two options with figures, plus the headline: three provenance lines.
-      expect(find.textContaining('you told me · 3 days ago'), findsNWidgets(3));
+        The first version asserted three provenance lines existed. That is a
+        different claim: it stays true when a fourth figure arrives with none,
+        which is exactly the way this gate would be lost. Phase 3's gate says
+        *every figure* names its source, so the question has to be asked of
+        each card in turn — including the storage course, which the old count
+        never covered at all.
+      */
+      final offer = StorageOffer.fromWindows(
+        nairaPerKgPerDay: 2,
+        days: 4,
+        lostOutside: 0.6,
+        lostInside: 0.1,
+      );
+      await pump(
+        tester,
+        decision(ago: const Duration(days: 3), storage: offer),
+      );
+
+      for (final course in Course.values) {
+        final card = find.byKey(ValueKey('course:${course.name}'));
+        expect(card, findsOneWidget, reason: '${course.name} is not on screen');
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.textContaining('you told me · 3 days ago'),
+          ),
+          findsOneWidget,
+          reason: '${course.name} shows a figure without saying where it came '
+              'from or how old it is',
+        );
+      }
+
+      // And the headline, which is a figure too.
+      expect(find.textContaining('you told me · 3 days ago'), findsNWidgets(4));
     });
 
     testWidgets('a modelled figure is not dressed as an observed one',

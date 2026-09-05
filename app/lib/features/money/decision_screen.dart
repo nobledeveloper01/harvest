@@ -124,6 +124,10 @@ class _DecisionScreenState extends State<DecisionScreen> {
                 const SizedBox(height: Gap.l),
                 for (final option in decision.options)
                   _OptionCard(
+                    // Keyed by course, so a test can ask whether *this* card
+                    // names its source. Counting provenance lines across the
+                    // screen passes when a fourth figure arrives without one.
+                    key: ValueKey('course:${option.course.name}'),
                     option: option,
                     best: option.course == decision.best,
                     now: widget.now,
@@ -270,6 +274,7 @@ class _OptionCard extends StatelessWidget {
     required this.option,
     required this.best,
     required this.now,
+    super.key,
   });
 
   final Option option;

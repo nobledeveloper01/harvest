@@ -5,6 +5,76 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Phase 3 closes, and the gate that was watching the wrong thing
+
+### The exit gate, asked properly
+
+Phase 3's gate is *every figure on screen names its source and its age, and the
+calculator says "do not store" when storing loses money.* Both halves were
+believed to be met. Both had a hole.
+
+The provenance half was asserted by counting: three provenance lines on the
+decision screen, so every figure has one. That is a different claim. It stays
+true when a fourth figure arrives with none — and one already had: the storage
+course was never in the decision that test built, so the card that carries the
+newest money on the screen was outside the gate that was meant to cover it. Each
+card is keyed by course now and asked individually.
+
+The other half was worse. The sentence read:
+
+> Do not store this. It would cost you about **-₦180** more than it is worth.
+
+`net` is negative when storing loses and the words already carry the sign. The
+test asserted the sentence `contains('₦')`. "-₦180" contains ₦.
+
+### Three gates, one shape
+
+That is the third gate in two days that passed for a reason unrelated to what it
+checked, and they share a shape I had not named before: **each asserted that
+something was present rather than that it was right.** A currency symbol exists.
+Three provenance lines exist. A widget's rect is inside the screen. All true,
+all irrelevant to the claim.
+
+The counter-question is cheap and I should be asking it every time: *what would
+this test still say if the thing it guards were wrong?*
+
+### What is not shipping, and why
+
+The market and storage directories were Phase 3 scope and F-501 is a P0. They
+are not shipping, and ADR-0006 says so in writing rather than leaving them to
+rot in a backlog.
+
+A facility directory is not a screen. It is a claim about the physical world —
+this cold room exists, it is here, it has space, this number reaches somebody —
+and every one of those facts decays. Nobody has visited the facilities. The
+product statement's own third problem says there is no directory and "often no
+phone number that works", which is both why it is valuable and a description of
+what building it takes.
+
+The failure mode is not an empty screen. It is a farmer with four hundred
+kilograms in a hired vehicle driving twenty kilometres to a cold room that
+closed two seasons ago, **on this app's say-so**. A directory that is 20% wrong
+is worse than none: the 80% teaches the farmer to trust it before the 20% costs
+them a harvest.
+
+So Harvest does the part it can be right about — the arithmetic on an offer the
+farmer already has — and the screen says *"A store quoted me a price"*, a
+sentence that presumes the farmer found the store, rather than *"Find storage
+near me"*, which would presume the app did.
+
+### What surprised us
+
+**The phase gate could not catch a stale phase.** `doc-check` asked whether
+`docs/ROADMAP.md` had a section for the number in `PHASE`. It always does. The
+only way those two ever disagree is a phase being marked cleared while `PHASE`
+stays behind, and that was precisely the case it could not see — a gate written
+against the wrong half of its own subject, which is the same fault as the other
+three, in the tooling rather than the tests. It now requires exactly one heading
+to carry **current** and requires `PHASE` to name it. Broken both ways before
+being trusted: PHASE left behind, and two phases claiming to be current.
+
+---
+
 ## 2026-09-05 — Fifty-four drawings, and a type scale that was reading as shouting
 
 Two pieces of feedback from looking at it, both right, and both about things no

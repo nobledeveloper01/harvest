@@ -10,6 +10,22 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Phase 3 is cleared.** Every figure on the decision screen names its source
+  and its age — asserted **per card** now, including the storage course, rather
+  than by counting provenance lines across the screen, which stayed true when a
+  fourth figure arrived with none. The calculator says *"Do not store this"* in
+  those words when storing loses money.
+- **ADR-0006: no directory of places we have not been.** The market and storage
+  directories move to Phase 5. They are blocked on field operations rather than
+  engineering — nobody has visited the facilities — and a directory that is 20%
+  wrong is worse than none, because the 80% teaches a farmer to trust it before
+  the 20% sends them twenty kilometres to a cold room that closed two seasons
+  ago. What ships is the arithmetic on an offer the farmer already has.
+- **`make doc-check` now ties `PHASE` to the phase the roadmap calls current.**
+  The old check asked only whether the roadmap had a section for that number,
+  which stays true the moment a phase is marked cleared and `PHASE` is not moved
+  on — the only way those two ever disagree.
+
 - **Fifty-four illustrations, drawn rather than hatched.** `scripts/illustrate.py`
   draws every crop, measure, storage condition, region, outcome and loss reason
   — flat shapes, two or three tones each, family-tinted grounds. A script rather
