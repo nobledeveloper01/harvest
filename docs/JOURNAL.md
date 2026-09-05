@@ -5,6 +5,59 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-05 — Phase 2 opens, and a promise from ADR-0003 comes due
+
+**Phase 2.**
+
+### The cross-check that was written eight hours before it could run
+
+ADR-0003 gave `Perishability` — three coarse buckets that order the crop grid —
+an `atMostHours` field for one reason: so that the day a shelf-life engine
+existed, the two descriptions of how fast a tomato spoils could be checked
+against each other rather than drifting apart for a year.
+
+It came due today, and it works. Moving cassava's base window above its bucket
+fails with
+
+> Cassava is in the hours bucket (at most 72 h) but the engine gives it 100 h at
+> the short end
+
+which is exactly the sentence the ADR was imagining. Naming a number in a
+qualitative bucket cost one field and bought a real gate.
+
+### A ring that could not fail
+
+The freshness ring empties rather than fills — a ring that fills reads as
+progress towards something good, and this is a countdown. So a test: invert the
+formula, watch it fail.
+
+It passed. The test asserted `FreshnessRing.spent`, which is the widget's own
+**argument**; the direction lives in the painter and nothing touched it. Same
+shape of mistake as the language-picker flash and the picture starvation before
+it: measuring the input to the thing rather than the thing.
+
+The painter is public now, named rather than private, and the arc fraction is a
+function with a test of its own. Inverting it fails in two places.
+
+### Midnight is the pessimistic assumption, and that is the point
+
+`Lot.record` dates a harvest to the day, so a lot logged this afternoon has been
+"out of the ground" since midnight. A tomato in the shade with unknown weather
+gets about twenty-six hours, so by six in the evening the app calls it *at risk*
+— on the same day it was picked.
+
+That reads oddly and it is correct. The app does not know what hour the crop was
+lifted, midnight is the earliest it could have been, and the whole model errs
+short deliberately: being warned about a tomato that had another day left costs
+a glance, and being warned after it turned costs the lot.
+
+It did produce a genuinely flaky test — the stored lot's state depended on the
+hour the suite ran, passing on a Wednesday morning and failing on a Tuesday
+evening. Fixed by storing a yam, which has three weeks and no opinion about
+what time it is.
+
+---
+
 ## 2026-09-05 — A hundred and twenty-five clips that would not have shipped
 
 **Phase 1.**

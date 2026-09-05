@@ -7,6 +7,9 @@ import '../../data/speech/speaker.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_weight.dart';
+import '../../domain/spoilage/lot_state.dart';
+import '../../domain/spoilage/shelf_life.dart';
+import 'freshness_ring.dart';
 
 /// What the farmer has logged.
 ///
@@ -147,10 +150,16 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(height: Gap.m),
                         itemBuilder: (context, index) {
                           final lot = stored.lots[index];
+                          final life = ShelfLifeEngine.predict(lot: lot);
+                          final spent = life?.spentAt(lot.harvestedAt, now);
+                          final state =
+                              spent == null ? null : LotState.from(spent);
                           return _LotCard(
                             lot: lot,
                             now: now,
-                            onSay: () => _sayLot(speaker, language, lot),
+                            spent: spent,
+                            state: state,
+                            onSay: () => _sayLot(speaker, language, lot, state),
                           );
                         },
                       ),
@@ -179,11 +188,35 @@ class HomeScreen extends StatelessWidget {
 /// does not read could use. They could see that they had *a tomato lot* and
 /// nothing else about it — on the screen the whole product is supposed to hand
 /// them at the start of each day.
-Future<void> _sayLot(Speaker speaker, Speech language, Lot lot) async {
-  // Crop first, then weight, awaited in turn — the speaker stops whatever is
-  // playing before starting the next clip.
+Future<void> _sayLot(
+  Speaker speaker,
+  Speech language,
+  Lot lot,
+  LotState? state,
+) async {
+  // Crop, then weight, then how it is doing — awaited in turn, because the
+  // speaker stops whatever is playing before starting the next clip.
   await speaker.sayCrop(lot.crop, language);
   await speaker.sayWeight(SpokenWeight.nearest(lot.quantity.kilograms), language);
+
+  /*
+    The state, out loud.
+
+    It is the product's whole point and it was, until this, carried only by a
+    colour and an arc — two channels that both require looking, on a screen
+    built for somebody who may not read. Null when the engine has no row for
+    the crop, in which case the app says nothing rather than guessing.
+  */
+  if (state == null) return;
+  await speaker.say(
+    switch (state) {
+      LotState.fresh => Phrase.stillFine,
+      LotState.atRisk => Phrase.halfGone,
+      LotState.critical => Phrase.nearlyFinished,
+      LotState.overdue => Phrase.timeIsUp,
+    },
+    language,
+  );
 }
 
 class _Empty extends StatelessWidget {
@@ -223,10 +256,23 @@ class _Empty extends StatelessWidget {
 }
 
 class _LotCard extends StatelessWidget {
-  const _LotCard({required this.lot, required this.now, required this.onSay});
+  const _LotCard({
+    required this.lot,
+    required this.now,
+    required this.spent,
+    required this.state,
+    required this.onSay,
+  });
 
   final Lot lot;
   final DateTime now;
+
+  /// Null when the engine has no row for this crop — in which case the card
+  /// shows no ring at all rather than an empty one, because an empty ring says
+  /// "out of time" and the truth is "no opinion".
+  final double? spent;
+  final LotState? state;
+
   final VoidCallback onSay;
 
   /// How long since it left the ground, in the words somebody would use.
@@ -253,7 +299,9 @@ class _LotCard extends StatelessWidget {
     return Semantics(
       container: true,
       label: '${lot.crop.label}, ${tidy(lot.quantity.kilograms)} kilograms, '
-          '${lot.storage.label}, $_since. Tap to hear it.',
+          '${lot.storage.label}, $_since'
+          '${state == null ? '' : ', ${_stateWords[state]!}'}'
+          '. Tap to hear it.',
       button: true,
       child: ExcludeSemantics(
         child: Pressable(
@@ -270,14 +318,35 @@ class _LotCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: Radii.chip,
-                  child: Image.asset(
-                    'assets/crops/${lot.crop.id}.png',
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                  ),
+                SizedBox(
+                  width: 76,
+                  height: 76,
+                  child: switch ((spent, state)) {
+                    (final fraction?, final lotState?) => FreshnessRing(
+                        spent: fraction,
+                        state: lotState,
+                        // Circular inside the ring, so the two are concentric.
+                        // A rounded square inside a circle leaves its corners
+                        // reaching for the arc, which reads as two objects
+                        // that nearly collide rather than one status.
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/crops/${lot.crop.id}.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    _ => Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: ClipRRect(
+                          borderRadius: Radii.chip,
+                          child: Image.asset(
+                            'assets/crops/${lot.crop.id}.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                  },
                 ),
                 const SizedBox(width: Gap.m),
                 Expanded(
@@ -336,6 +405,19 @@ class _LotCard extends StatelessWidget {
     );
   }
 }
+
+/// The state, in words a screen reader can read.
+///
+/// Separate from the spoken clips because they are different audiences with
+/// different needs: a clip is a whole sentence in five languages for somebody
+/// who cannot read, and this is a phrase in English for a screen reader that is
+/// already reading the rest of the card.
+const _stateWords = {
+  LotState.fresh: 'still fine',
+  LotState.atRisk: 'half its time is gone',
+  LotState.critical: 'nearly finished',
+  LotState.overdue: 'its time is up',
+};
 
 /// A small fact about a lot.
 ///

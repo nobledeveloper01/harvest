@@ -79,6 +79,28 @@ enum Phrase {
   /// that cannot be guessed.
   howMuch('how-much'),
 
+  /// *"This one is still fine."*
+  ///
+  /// Said of a lot the farmer taps on the harvest list. The state is the
+  /// product's whole point and it was, until this, visible only as a colour and
+  /// a ring — two channels that both require looking, on a screen designed for
+  /// somebody who may not read.
+  stillFine('still-fine'),
+
+  /// *"Half its time is gone. Start looking for a buyer."*
+  halfGone('half-gone'),
+
+  /// *"This one is nearly finished. Sell it or move it today."*
+  nearlyFinished('nearly-finished'),
+
+  /// *"Its time is up. Tell me what happened to it."*
+  ///
+  /// Not *"it is lost"*. The window closing is the app's estimate running out,
+  /// not a fact about the crop — the farmer may have sold it a week ago and
+  /// not said so, and an app that announces a loss it invented is an app that
+  /// gets argued with rather than used.
+  timeIsUp('time-is-up'),
+
   /// *"Where are you keeping it?"*
   ///
   /// FR-2.3. The answer feeds the shelf-life model directly — open air and a

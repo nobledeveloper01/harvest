@@ -10,6 +10,25 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The spoilage clock.** `ShelfLifeEngine` turns a crop, where it is kept and
+  the weather into a **window with two ends** — never a single hour. The base
+  values are bundled and versioned, the range starts at the base because a
+  tomato lasts two to four days depending on things this app cannot know, and
+  every factor multiplies both ends. A missing weather reading widens the window
+  rather than being quietly filled in with an average, because a label saying
+  "estimated" is not a disclosure anybody discounts a number for.
+- **The freshness ring**, which waited for the engine that fills it. It
+  **empties** as time is spent rather than filling, because a ring that fills up
+  reads as progress towards something good and this is a countdown. Three
+  channels, as `DESIGN.md` requires: the arc's length, the spoken sentence, and
+  the colour last.
+- **The lot says how it is doing, out loud.** Tapping a lot now says what it is,
+  how much of it, and whether it is still fine, half gone, nearly finished, or
+  out of time. A lot whose window has closed says *"its time is up"* and not
+  that it is lost — the window closing is the app's estimate running out, not a
+  fact about the crop, and an app that announces a loss it invented gets argued
+  with rather than used.
+
 - **The harvest list speaks.** Tapping a lot says what it is and how much of it,
   in the chosen language. It was the one screen in the app with no audio at all
   — crop name, weight, storage and date, all of it text, with the picture the

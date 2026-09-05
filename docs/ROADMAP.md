@@ -37,7 +37,7 @@ recording it fails the build.
 **Android is unproven here** — no JDK, so nothing Android has been compiled.
 R2.
 
-## Phase 1 — Voice and logging · **current**
+## Phase 1 — Voice and logging · *cleared, less what needs a handset*
 
 Language selection persisted, composed-audio templates, push-to-talk with a
 constrained grammar, the crop catalogue and its illustrations, unit conversion,
@@ -70,7 +70,7 @@ coverage for these four languages has not been checked and cannot be checked
 here, and the gate above never named voice input — that wording turns out to
 have been careful.
 
-## Phase 2 — The spoilage engine
+## Phase 2 — The spoilage engine · **current**
 
 `ShelfLifeEngine` in pure Dart, weather integration and caching, alerts
 scheduled at log time, lot lifecycle, the decision screen, loss recording.

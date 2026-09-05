@@ -54,9 +54,16 @@ void main() {
 
   /// A lot on disk, so the app opens on the harvest list rather than on the
   /// logging flow.
+  ///
+  /// **Yam, deliberately.** `Lot.record` dates a harvest to the day, so a lot
+  /// logged today has been "out of the ground" since midnight — and by evening
+  /// an okra lot, whose window is about a day, is genuinely at risk. Its state
+  /// would then depend on the hour the suite happens to run, which is a test
+  /// that fails on a Tuesday afternoon and passes on a Wednesday morning. A
+  /// yam has three weeks, so it is fresh whenever this runs.
   Future<void> store(WidgetTester tester) => LotStore(database).add(
         Lot.record(
-          crop: Crop.okra,
+          crop: Crop.yam,
           quantity: Quantity.inUnits(
             amount: 2,
             unit: Unit.bigBasket,
@@ -344,10 +351,12 @@ void main() {
     final speaker = await launch(tester);
     speaker.said.clear();
 
-    await tester.tap(find.text('Okra'));
+    await tester.tap(find.text('Yam'));
     await tester.pumpAndSettle();
 
-    // What it is, then how much of it — in the language they chose.
-    expect(speaker.said, ['crop:okra', 'weight:kg-100']);
+    // What it is, how much of it, and how it is doing — in the language they
+    // chose. The state is the product's whole point and was, until this,
+    // carried only by a colour and an arc.
+    expect(speaker.said, ['crop:yam', 'weight:kg-100', 'phrase:still-fine']);
   });
 }

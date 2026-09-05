@@ -29,14 +29,18 @@ See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full 
 
 ## Status
 
-**Phase 1 of 7 — voice and logging.** A lot is logged end to end: language, crop,
-quantity in local units, where it is kept, and when it was picked. It is stored in
-SQLite and still there tomorrow. The pure-Dart domain is at 100% coverage and
-`make ci` is green.
+**Phase 2 of 7 — the spoilage engine.** A lot is logged end to end — language,
+crop, quantity in local units, where it is kept, when it was picked — stored in
+SQLite, and now carries a **window**: how long it has, as a range with two ends,
+from bundled versioned base values scaled by storage and weather. The harvest
+list draws it as a ring that empties, and says out loud whether a lot is still
+fine, half gone, nearly finished or out of time.
 
-What is not done: the spoilage engine and its alerts (Phase 2), prices, diagnosis
-and the marketplace. Push-to-talk is the one Phase 1 item still outstanding, and it
-is blocked on hardware rather than on work — see **The hard part**.
+The pure-Dart domain is at 100% coverage and `make ci` is green.
+
+What is not done: alerts and the decision screen (the rest of Phase 2), prices,
+diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
+work — see **The hard part**.
 
 ## The insight
 
@@ -77,6 +81,22 @@ English voices and not one** for Hausa, Yoruba, Igbo or Pidgin. So every fixed p
 bundled recording, and `make audio-check` fails the build when one is missing in any of the five
 languages — reading the language, phrase, crop, unit and storage lists out of the Dart enums
 rather than a manifest that goes stale. See [ADR-0001](docs/adr/0001-speech-is-bundled-not-synthesised.md).
+
+### The window has two ends, and says so
+
+The engine returns a range, never an hour. The base value is itself a range — a
+tomato out of the ground lasts two to four days depending on variety, bruising
+and how ripe it was picked, and the app knows none of those three — and every
+factor multiplies both ends. Temperature is the biggest lever by far: the Q10
+rule, respiration roughly doubling every 10 °C, which is why a cold room is worth
+paying for and is a claim the Phase 3 calculator will have to make in naira.
+
+**A missing weather reading widens the window rather than filling it in.** FR-3.1
+asks for the estimate to be marked lower-confidence; marking alone is not enough,
+because nobody discounts a number because a word beside it said "estimated". So
+the pessimistic end assumes a hot afternoon and the optimistic end a cool night,
+and the sentence the app says gets visibly less useful — which is the honest
+consequence of not knowing.
 
 ### Saying a number without stitching words together
 

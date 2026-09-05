@@ -14,6 +14,10 @@
 en/choose-language.wav
 en/what-did-you-harvest.wav
 en/how-much.wav
+en/still-fine.wav
+en/half-gone.wav
+en/nearly-finished.wav
+en/time-is-up.wav
 en/where-is-it-kept.wav
 en/is-that-right.wav
 en/crop/tomato.wav
@@ -97,6 +101,10 @@ en/weight/kg-more.wav
 pcm/choose-language.wav
 pcm/what-did-you-harvest.wav
 pcm/how-much.wav
+pcm/still-fine.wav
+pcm/half-gone.wav
+pcm/nearly-finished.wav
+pcm/time-is-up.wav
 pcm/where-is-it-kept.wav
 pcm/is-that-right.wav
 pcm/crop/tomato.wav
@@ -180,6 +188,10 @@ pcm/weight/kg-more.wav
 ha/choose-language.wav
 ha/what-did-you-harvest.wav
 ha/how-much.wav
+ha/still-fine.wav
+ha/half-gone.wav
+ha/nearly-finished.wav
+ha/time-is-up.wav
 ha/where-is-it-kept.wav
 ha/is-that-right.wav
 ha/crop/tomato.wav
@@ -263,6 +275,10 @@ ha/weight/kg-more.wav
 yo/choose-language.wav
 yo/what-did-you-harvest.wav
 yo/how-much.wav
+yo/still-fine.wav
+yo/half-gone.wav
+yo/nearly-finished.wav
+yo/time-is-up.wav
 yo/where-is-it-kept.wav
 yo/is-that-right.wav
 yo/crop/tomato.wav
@@ -346,6 +362,10 @@ yo/weight/kg-more.wav
 ig/choose-language.wav
 ig/what-did-you-harvest.wav
 ig/how-much.wav
+ig/still-fine.wav
+ig/half-gone.wav
+ig/nearly-finished.wav
+ig/time-is-up.wav
 ig/where-is-it-kept.wav
 ig/is-that-right.wav
 ig/crop/tomato.wav
