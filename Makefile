@@ -2,6 +2,11 @@
 
 FLUTTER ?= flutter
 APP     := app
+SERVER  := server
+
+# The server's test database. Created once with `createdb harvest_test`; the
+# suite migrates it and empties it between runs.
+TEST_DATABASE_URL ?= postgres://localhost:5432/harvest_test
 
 .DEFAULT_GOAL := help
 
@@ -13,7 +18,7 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check design-check counts-check audio-check picture-check analyze test coverage-gate ## Everything CI runs
+ci: doc-check design-check counts-check audio-check picture-check analyze test coverage-gate server-check ## Everything CI runs
 
 .PHONY: gates
 gates: doc-check design-check counts-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
@@ -115,6 +120,18 @@ coverage: ## Run tests with coverage and print the per-file breakdown
 coverage-gate: ## Fail if the pure-Dart domain drops below 95%
 	cd $(APP) && $(FLUTTER) test --coverage >/dev/null
 	@python3 scripts/coverage-report.py $(APP)/coverage/lcov.info --gate 95 --only /domain/
+
+.PHONY: server-check
+server-check: ## Typecheck and test the server
+	@if [ ! -d $(SERVER)/node_modules ]; then \
+	  echo "\033[0;33m!\033[0m server dependencies are not installed:  cd server && pnpm install"; \
+	else \
+	  cd $(SERVER) && pnpm run typecheck && TEST_DATABASE_URL=$(TEST_DATABASE_URL) pnpm run test; \
+	fi
+
+.PHONY: server-run
+server-run: ## Run the server against the development database
+	cd $(SERVER) && DATABASE_URL=postgres://localhost:5432/harvest_dev pnpm run dev
 
 .PHONY: run
 run: ## Run on the attached device

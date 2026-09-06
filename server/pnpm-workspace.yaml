@@ -1,0 +1,9 @@
+# Not a workspace — this is where pnpm 11 reads its settings from.
+#
+# pnpm 11 asks about every dependency that wants to run an install script and
+# fails the install until each is answered. Answered here rather than by
+# `pnpm approve-builds`, so a fresh clone and CI behave the same as this
+# machine. esbuild ships a prebuilt binary and its script only unpacks it; both
+# `tsx` and `vitest` are unusable without it.
+allowBuilds:
+  esbuild: true

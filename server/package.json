@@ -1,0 +1,27 @@
+{
+  "name": "harvest-server",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "fastify": "5.12.3",
+    "pg": "8.16.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.1",
+    "@types/pg": "8.15.5",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}
