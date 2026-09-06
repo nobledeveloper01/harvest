@@ -53,6 +53,10 @@ en/crop/yam.m4a
 en/do-not-recognise.m4a
 en/do-not-store.m4a
 en/fairly-sure.m4a
+en/framing/ready.m4a
+en/framing/too-blurry.m4a
+en/framing/too-bright.m4a
+en/framing/too-dark.m4a
 en/half-gone.m4a
 en/how-much.m4a
 en/is-that-right.m4a
@@ -237,6 +241,10 @@ ha/crop/yam.m4a
 ha/do-not-recognise.m4a
 ha/do-not-store.m4a
 ha/fairly-sure.m4a
+ha/framing/ready.m4a
+ha/framing/too-blurry.m4a
+ha/framing/too-bright.m4a
+ha/framing/too-dark.m4a
 ha/half-gone.m4a
 ha/how-much.m4a
 ha/is-that-right.m4a
@@ -421,6 +429,10 @@ ig/crop/yam.m4a
 ig/do-not-recognise.m4a
 ig/do-not-store.m4a
 ig/fairly-sure.m4a
+ig/framing/ready.m4a
+ig/framing/too-blurry.m4a
+ig/framing/too-bright.m4a
+ig/framing/too-dark.m4a
 ig/half-gone.m4a
 ig/how-much.m4a
 ig/is-that-right.m4a
@@ -605,6 +617,10 @@ pcm/crop/yam.m4a
 pcm/do-not-recognise.m4a
 pcm/do-not-store.m4a
 pcm/fairly-sure.m4a
+pcm/framing/ready.m4a
+pcm/framing/too-blurry.m4a
+pcm/framing/too-bright.m4a
+pcm/framing/too-dark.m4a
 pcm/half-gone.m4a
 pcm/how-much.m4a
 pcm/is-that-right.m4a
@@ -789,6 +805,10 @@ yo/crop/yam.m4a
 yo/do-not-recognise.m4a
 yo/do-not-store.m4a
 yo/fairly-sure.m4a
+yo/framing/ready.m4a
+yo/framing/too-blurry.m4a
+yo/framing/too-bright.m4a
+yo/framing/too-dark.m4a
 yo/half-gone.m4a
 yo/how-much.m4a
 yo/is-that-right.m4a

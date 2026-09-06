@@ -144,6 +144,19 @@ the thirteen ailments, nineteen treatment steps under
 [ADR-0008](adr/0008-the-app-never-states-a-dose.md), thirty-two illustrations,
 and the classifier port with a stand-in that recognises nothing.
 
+**And everything else in the phase that needs no model is built.**
+[ADR-0010](adr/0010-the-photograph-is-judged-before-it-is-taken.md): the frame is
+judged *before* the shutter, by pure arithmetic in the domain — brightness, the
+fraction clipped, and high-frequency energy as a share of the frame's own
+contrast — and only a frame worth photographing offers the button. The verdict is
+one of four sentences, spoken in all five languages, because this is the one
+prompt in the app said to somebody who is not looking at the screen. Inference
+runs in a fresh isolate per photograph behind a two-second budget that abandons
+rather than blocks, and an abandoned answer reads as *"I don't recognise this"*
+rather than as an error. The four thresholds are provisional and carried as
+**R11**: the arithmetic is exact, the numbers have never met a photograph of a
+leaf.
+
 **The other two need a labelled dataset, and that is not an engineering
 problem.** Precision and recall cannot be published for a model that does not
 exist, and inference cannot be timed with nothing to run. No amount of work in

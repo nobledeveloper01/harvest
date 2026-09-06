@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart' hide Step;
@@ -14,6 +15,9 @@ import 'package:harvest/core/theme.dart';
 import 'package:harvest/domain/diagnosis/ailment.dart';
 import 'package:harvest/domain/diagnosis/certainty.dart';
 import 'package:harvest/domain/diagnosis/guidance.dart';
+import 'package:harvest/data/diagnosis/viewfinder.dart';
+import 'package:harvest/domain/diagnosis/framing.dart';
+import 'package:harvest/features/diagnosis/capture_screen.dart';
 import 'package:harvest/features/diagnosis/diagnosis_result_screen.dart';
 import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/outcome.dart';
@@ -66,6 +70,8 @@ class SilentSpeaker implements Speaker {
   Future<void> sayAilment(Ailment ailment, Speech language) async {}
   @override
   Future<void> sayStep(Step step, Speech language) async {}
+  @override
+  Future<void> sayFraming(Framing framing, Speech language) async {}
   @override
   Future<void> dispose() async {}
   @override
@@ -344,6 +350,29 @@ Future<void> pumpTheUnreachable(
   WidgetTester tester, {
   required AtEachStep at,
 }) async {
+  /*
+    The capture screen, in the two states that differ: nothing worth
+    photographing, and something. The shutter appears in one and not the other,
+    so a suite that only saw one of them would be checking half a screen.
+  */
+  for (final ready in [false, true]) {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: CaptureScreen(
+          viewfinder: _OneFrame(ready: ready),
+          speaker: SilentSpeaker(),
+          language: Speech.english,
+          onCaptured: (_) {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('the camera, ${ready ? 'ready' : 'with nothing to shoot'}',
+        find.byType(CaptureScreen));
+  }
+
   final worst = Ailment.values.reduce(
     (a, b) => Guidance.forAilment(a).length >= Guidance.forAilment(b).length
         ? a
@@ -370,4 +399,31 @@ Future<void> pumpTheUnreachable(
     await at('the diagnosis result, $label',
         find.byType(DiagnosisResultScreen));
   }
+}
+
+
+/// A viewfinder that shows one frame and stops.
+class _OneFrame implements Viewfinder {
+  _OneFrame({required this.ready});
+
+  final bool ready;
+
+  @override
+  Stream<Frame> get frames {
+    const side = 48;
+    final plane = Uint8List(side * side);
+    for (var i = 0; i < plane.length; i++) {
+      plane[i] = ready ? (((i ~/ 2) % 2 == 0) ? 190 : 100) : 4;
+    }
+    return Stream.value(Frame(luma: plane, width: side, height: side));
+  }
+
+  @override
+  Object? get preview => null;
+
+  @override
+  Future<Uint8List?> shoot() async => Uint8List(1);
+
+  @override
+  Future<void> dispose() async {}
 }

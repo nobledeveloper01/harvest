@@ -23,7 +23,7 @@ See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full 
 > outcome, loss and ailment tiles are illustrations now — flat shapes, silhouettes
 > chosen so the three greens and the three peppers are told apart by shape and not
 > only by colour. What R4 still wants is the judgement of somebody who has seen the
-> crops in an actual market. The audio has not moved: all 920 clips say, in English,
+> crops in an actual market. The audio has not moved: all 940 clips say, in English,
 > that they are placeholders and which language belongs there, because a stand-in
 > that sounded like the product is how a missing feature ships.
 

@@ -89,6 +89,15 @@ ASSET_SETS = {
         'source': DOMAIN / 'diagnosis/guidance.dart',
         'enum': 'Step',
     },
+    # Spoken only, and said to somebody who is not looking at the screen — they
+    # are holding the phone over a plant at arm's length. A picture of "hold
+    # still" would be shown to nobody.
+    'framing': {
+        'speech': 'framing',
+        'pictures': None,
+        'source': DOMAIN / 'diagnosis/framing.dart',
+        'enum': 'Framing',
+    },
     # Spoken only, like the weights: there is no picture of eighty thousand
     # naira, and a banknote would be a drawing of the wrong thing.
     'naira': {

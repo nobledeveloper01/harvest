@@ -61,6 +61,16 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Phase 4's engineering, all of it that needs no model.** The frame is judged
+  before the shutter — brightness, clipping, and sharpness normalised by the
+  frame's own contrast — and only a frame worth photographing offers the button.
+  Four sentences, spoken in five languages, because this is the one prompt said
+  to somebody who is not looking at the screen. Inference runs in a fresh isolate
+  per photograph behind a two-second budget that abandons rather than blocks.
+  See [ADR-0010](docs/adr/0010-the-photograph-is-judged-before-it-is-taken.md).
+- **R11**: the four capture thresholds are provisional. The arithmetic is exact
+  and tested; the numbers have never been compared against a photograph of a
+  leaf, and being too strict is the safe direction.
 - `make counts-check`: `README.md` and `RELEASE-GATES.md` are checked against
   the counts the gates themselves compute. R1 said 725 clips and R4 said 85
   illustrations — there are 920 and 86, and the first of those is a person's

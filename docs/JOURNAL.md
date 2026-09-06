@@ -1999,3 +1999,65 @@ Seven left, and **not one of them is engineering**. Four native speakers and a
 quiet room; a physical handset; an illustrator who has seen the crops in a
 market; a labelled dataset. That was true before this session and it is still
 true; what changed is that the document now says so.
+
+## Phase 4, everything in it that does not need a model
+
+The exit gate needs a labelled dataset and no work here moves it. The phase also
+lists **pre-capture guidance** and **isolate inference**, and neither needs one.
+
+`domain/diagnosis/framing.dart` judges a frame before the shutter: mean
+brightness, the fraction clipped at either end, and high-frequency energy **as a
+share of the frame's own contrast**. The last one is the interesting choice. The
+variance of the Laplacian is the standard sharpness measure and it is famously
+content-dependent — a sharp photograph of a plain wall scores below a blurred
+photograph of a hedge — so a threshold in raw units rejects the wall and accepts
+the hedge. Dividing by the luminance variance takes most of that out, and the
+test asserts it: the same stripe pattern at a quarter of the contrast reads as
+the same sharpness to within 5%.
+
+Exposure is decided before blur, and that ordering is load-bearing: a dark frame
+is mostly sensor noise, noise is high-frequency energy, and a black frame
+measures *sharper* than a well-lit one that is slightly soft. Saying "hold still"
+to somebody standing in shade sends them looking for a problem they do not have.
+
+Inference runs in **a fresh isolate per photograph**, wrapped in a two-second
+budget that returns an empty result rather than throwing — `ConfidenceGate`
+already turns empty into *"I don't recognise this"*, so a timeout needs no second
+error path on the one screen whose purpose is never to guess. A warm isolate pool
+is the obvious optimisation and the wrong trade on a 2 GB phone; it is also what
+would make abandonment meaningless, since an abandoned isolate exits and gives
+its memory back, and work queued onto a shared one does not.
+
+### Three things the gates caught within a minute of the screen existing
+
+**The viewfinder disagreed with you in silence.** The screen opens on `tooDark`,
+and what is shown and what is said were one field — so the first frame of a
+genuinely dark scene matched the initial state, changed nothing, and said
+nothing. A farmer opening the camera in shade would have got no voice at all,
+on the one screen in the app whose prompts exist for somebody not looking at it.
+
+**The placeholder overflowed.** At 200% on the 5" floor the preview area is 197
+dp and the *"no camera is wired to this screen yet"* notice is taller than that.
+A placeholder that renders a yellow-striped bar instead of its own message looks
+exactly like the bug it exists to prevent.
+
+**The 200% suite did not cover the screens with no route into them.** `pumpTheUnreachable`
+existed and `text_scaling_test.dart` was not using it — the file that had the
+comment explaining why a screen outside the flow is outside the flow's suite. It
+does now, and the capture screen joined all four suites at once, which is how
+both defects above surfaced before the code was five minutes old.
+
+### What is deliberately not built
+
+There is no camera plugin behind the viewfinder. Adding one changes the native
+build on both platforms and adds a camera permission string to both manifests;
+neither build can be verified from here, and an app that declares access to a
+camera it cannot use is a store-review problem and a promise to the reader that
+is not kept. The port, the judgement, the screen and the sentences are built and
+tested; what is missing is sixty lines that need a handset to run once. It is
+written into R11 rather than left as a silence, and `NoViewfinder` says so on the
+screen — the same rule that makes every clip announce itself.
+
+**The gate list is now eight.** That is the number to watch: this repository's
+own rule is that if the list grows past what one screen holds, the product is
+being built past the point anybody can honestly ship it.

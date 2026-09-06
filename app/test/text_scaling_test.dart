@@ -48,15 +48,16 @@ void main() {
       return tester.binding.setSurfaceSize(null);
     });
 
-    await walkTheFlow(
-      tester,
-      database: database,
-      at: (where, showing) async {
-        expect(tester.takeException(), isNull, reason: 'overflowed on $where');
-        expect(showing, findsAtLeastNWidgets(1),
-            reason: 'never arrived at $where');
-      },
-    );
+    Future<void> clean(String where, Finder showing) async {
+      expect(tester.takeException(), isNull, reason: 'overflowed on $where');
+      expect(showing, findsAtLeastNWidgets(1), reason: 'never arrived at $where');
+    }
+
+    await walkTheFlow(tester, database: database, at: clean);
+    // The screens with no route into them, at the same size. They were outside
+    // this suite while it was the only suite; leaving them outside now that the
+    // helper exists would be choosing the gap.
+    await pumpTheUnreachable(tester, at: clean);
   });
 
   testWidgets('the diagnosis result at 200% type, in all three states',

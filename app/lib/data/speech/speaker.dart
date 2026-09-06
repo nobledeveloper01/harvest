@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 
 import '../../domain/crops/crop.dart';
 import '../../domain/diagnosis/ailment.dart';
+import '../../domain/diagnosis/framing.dart';
 import '../../domain/diagnosis/guidance.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/lots/outcome.dart';
@@ -94,6 +95,15 @@ class Speaker {
   /// Say one thing to do about it.
   Future<void> sayStep(Step step, Speech language) =>
       _play('${language.code}/step/${step.id}');
+
+  /// Say what is wrong with the frame the camera is looking at.
+  ///
+  /// The one prompt in the app said to somebody who is **not looking at the
+  /// screen**: they are holding the phone over a plant at arm's length, aiming
+  /// it. Text on the viewfinder is the wrong channel for that, and a picture is
+  /// no better; it has to be a voice.
+  Future<void> sayFraming(Framing framing, Speech language) =>
+      _play('${language.code}/framing/${framing.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {
