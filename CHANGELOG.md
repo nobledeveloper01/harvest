@@ -10,6 +10,11 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **The decision screen's only action is reachable at 200% type.** With no price
+  yet, its button was the last item in a scroll and sat 150 dp below the bottom
+  edge of the 5" floor — on the screen whose whole purpose is to ask for a
+  price. It is pinned below the scroll like the other five.
+
 - Twelve of the thirteen screenshots retaken. Every one of them predated the
   daylight switch, which by then appeared in three app bars and no picture. The
   documentation gate now says how many commits of `app/lib` the screenshots are
@@ -39,6 +44,10 @@ Entries say *why*, not just what.
 
 ### Added
 
+- `test/primary_action_test.dart`: every screen the flow walks, at 100% and
+  200% type on the 5" floor, must keep its primary action on the screen and
+  must have exactly one. The rule was in `DESIGN.md` and asserted on two of the
+  six screens that have one.
 - `test/touch_target_test.dart`: the whole flow walked at 100% on the 5" floor
   with **every** tappable measured — 256 of them — replacing seven hand-written
   assertions that named one or two widgets per screen and missed all six

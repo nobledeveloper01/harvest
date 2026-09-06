@@ -152,11 +152,14 @@ class _DecisionScreenState extends State<DecisionScreen> {
       ),
       body: PageCanvas(
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.xl),
+          child: Column(
             children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.xl),
+                  children: [
               if (decision?.costOfWaiting == null)
-                _NoPrice(onReportPrice: widget.onReportPrice)
+                const _NoPrice()
               else ...[
                 _Headline(cost: decision!.costOfWaiting!, now: widget.now),
                 const SizedBox(height: Gap.l),
@@ -212,6 +215,32 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   ),
                 ],
               ],
+                  ],
+                ),
+              ),
+              /*
+                Pinned, on the one screen where it is the only thing to do.
+
+                `DESIGN.md`: *a primary action that has to be scrolled to is one
+                a farmer in a market will not find* — and at 200% type on the
+                5" floor this one sat at y=789 on a 640 dp screen. A hundred and
+                fifty dp below the bottom edge, on the screen that exists to say
+                *tell me what you were offered*, for the reader most likely to
+                be running at 200%.
+
+                Two screens asserted this rule and six had a primary action.
+                Now the walk asserts it on every screen it visits, at both
+                sizes.
+              */
+              if (decision?.costOfWaiting == null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
+                  child: PrimaryButton(
+                    label: 'Somebody offered me a price',
+                    icon: Icons.handshake_outlined,
+                    onPressed: widget.onReportPrice,
+                  ),
+                ),
             ],
           ),
         ),
@@ -473,10 +502,9 @@ class _OptionCard extends StatelessWidget {
   }
 }
 
+/// The sentence, without the button — which is pinned below the scroll.
 class _NoPrice extends StatelessWidget {
-  const _NoPrice({required this.onReportPrice});
-
-  final VoidCallback onReportPrice;
+  const _NoPrice();
 
   @override
   Widget build(BuildContext context) {
@@ -502,12 +530,6 @@ class _NoPrice extends StatelessWidget {
           'Nobody has told me what this crop is fetching. Tell me what you '
           'were offered and I can work out what waiting costs you.',
           style: text.bodyMedium,
-        ),
-        const SizedBox(height: Gap.l),
-        PrimaryButton(
-          label: 'Somebody offered me a price',
-          icon: Icons.handshake_outlined,
-          onPressed: onReportPrice,
         ),
       ],
     );

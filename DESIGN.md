@@ -69,8 +69,12 @@ whether the phone felt the tap at all.
 **One primary action per screen, pinned below the scroll.** Found by running the app rather
 than by testing it: with the assumption card showing, a keypad and a button at the end of a
 scroll pushed Save off the bottom of a 6.1" phone, and the floor is 5". A primary action that
-has to be scrolled to is one a farmer in a market will not find. Both screens now assert it
-stays on a 360×640 screen.
+has to be scrolled to is one a farmer in a market will not find.
+
+Asserted on **every screen the flow walks, at 100% and 200% type**, by
+`test/primary_action_test.dart`. It was asserted on two screens for a while, and six screens
+have a primary action — the decision screen's, on the one screen where it is the only thing to
+do, sat 150 dp below the bottom edge at 200% on the floor.
 
 ## Type
 

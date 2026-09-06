@@ -1830,3 +1830,44 @@ nobody was told.
 the target before writing it. `simctl` runs in its own sandbox and is
 intermittently refused permission to overwrite a file it did not create; the
 script swallowed that into a bare exit 1, which cost ten minutes to attribute.
+
+## The screen that asks for a price had no way to give one, at 200%
+
+`DESIGN.md` has had this rule since the day it was found by running the app:
+*one primary action per screen, pinned below the scroll — a primary action that
+has to be scrolled to is one a farmer in a market will not find.* Two screens
+asserted it. Six screens have a primary action.
+
+The one nobody had checked was the decision screen without a price, and it is
+the worst possible place for this bug. That screen exists to say *nobody has
+told me what this crop is fetching; tell me what you were offered.* Its only
+button was the last item in a `ListView`, and at 200% type on the 5" floor it
+sat at **y=789 on a 640 dp screen** — a hundred and fifty dp past the bottom
+edge, for the reader most likely to be running at 200%. The screen asked a
+question and hid the answer.
+
+Pinned now, below the scroll, like the other five. And asserted on every screen
+the shared walk visits, at 100% **and** 200% — 100% being the size at which
+nothing was wrong, which is why nothing was found.
+
+The gate also counts: more than one primary action on a screen is a failure too,
+because "one decision per screen" decays by addition rather than by removal —
+somebody adds a second full-width button for a good local reason and the screen
+stops having an obvious next step. Proved that one by adding a second button and
+watching two steps report it.
+
+### What the same measurements say about the floor, and what they do not
+
+Measuring the quantity screen at 360×640 to check the fix, the scroll viewport
+turns out to be **198 dp** — the app bar takes 64 and the pinned pad and Save
+button take 378 between them. The measures strip is 104 dp tall and starts at
+177, so on the floor device the row of pictures the screen tells you to choose
+from is cut in half by the fold before anything is typed.
+
+That is not a regression — reverting the touch-target change moves it by four dp
+— and it is not obviously wrong either: a cut row is itself a strong scroll
+affordance, and the faded edge is there to say so. But nothing in the repository
+has an opinion about it, and no gate looks at the floor device at 100% type
+except the one written today. Recording it rather than acting on it: a redesign
+of the busiest screen in the app on the strength of one measurement is how a
+product acquires changes nobody asked for.
