@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth.js';
 import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
+import { priceRoutes } from './routes/prices.js';
 
 export type BuildOptions = {
   readonly db: Db;
@@ -59,6 +60,7 @@ export function build({
   listingRoutes(app, { signingKey });
   enquiryRoutes(app, { signingKey });
   dealRoutes(app, { signingKey });
+  priceRoutes(app, { signingKey });
 
   return app;
 }

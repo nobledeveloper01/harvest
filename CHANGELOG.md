@@ -61,6 +61,12 @@ Entries say *why*, not just what.
 
 ### Added
 
+- Listings and radius search, enquiries with voice as a first-class message
+  kind, deals that count only when both parties confirm, illustrated ratings,
+  and the price surface: reports weighted by reputation, outliers rejected by
+  median absolute deviation, and no reporter allowed more than a quarter of any
+  figure — a cap that is per person rather than per report, because the attack
+  is a hundred SIM cards.
 - **Phase 5 opens: the server.** Fastify on Node 22 against one Postgres — see
   [ADR-0011](docs/adr/0011-the-server-runs-on-postgres-alone.md), which measures
   the radius query the specification said needed PostGIS: 4.5 ms over 200,000

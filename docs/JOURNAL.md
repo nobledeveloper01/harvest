@@ -2110,3 +2110,39 @@ Postgres renders `bytea` as hex, and `\x313233` does not contain `123`. Green,
 for a reason unrelated to what it checked, in a test written *that hour* by
 somebody who has spent all day finding exactly this. It reads the column as
 bytes now, and the plaintext break turns it red.
+
+## Prices, and the second gate that tested the wrong thing
+
+The price surface is the only arithmetic on the server a farmer's decision
+depends on, and the one an interested party would most like to move: a buyer who
+can push the displayed tomato price down by a fifth has changed what every
+farmer in that market thinks their crop is worth.
+
+Outliers are rejected by the **median absolute deviation**, not the standard
+deviation, and the test says why by doing the sum both ways. Standard deviation
+is computed from the mean, and the mean is what the outlier has already moved:
+four honest reports around ₦900 and one typo of ₦90,000 give a spread so wide
+that the typo sits **inside three sigma of the set it stretched**. The median
+does not move, so neither does the ruler.
+
+Then the break-it habit earned its keep twice in one file.
+
+**The influence cap passed with the cap deleted.** FR-4.2 says a single report
+may not move a displayed price by more than a bounded amount, and the test used
+a shouter at ₦5,000 against a crowd at ₦910 — which the outlier filter threw out
+before the cap was ever consulted. It was a test of the MAD filter wearing the
+name of the cap. Rewritten with a value *inside* the fence, at ₦990, it failed —
+and then the code failed too, which was the point.
+
+**Because the cap did not do what it said.** `min(weight, total * maxShare)`
+caps against a total that includes the reporter's own weight, so a heavy enough
+voice capped at a quarter of a total they dominate still ends up holding
+ninety-three per cent of what remains. The ceiling is a share of *everybody
+else* now — to end up with at most a quarter, you may hold at most a third of
+what the others hold together — and it is per **reporter**, not per report,
+because the attack that actually happens is a hundred reports from one person
+with a hundred SIM cards, and a per-report cap has nothing to say about that.
+
+Two gates in one session that passed for a reason unrelated to what they
+checked, both written by somebody who spent the morning finding exactly that.
+The habit is not that you stop writing them. It is that you break every one.
