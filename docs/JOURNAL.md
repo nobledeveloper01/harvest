@@ -1970,3 +1970,32 @@ The coverage claim is not checked, and is not a number any more either: *held
 above 95% by `make coverage-gate`*. A figure in prose that nothing computes is
 the thing that just went wrong; replacing it with a second one would have been
 the same mistake with a fresher date on it.
+
+## Three unmet release gates were filed under "Cleared"
+
+The question was "what do we have left", and answering it honestly meant reading
+`RELEASE-GATES.md` — the document that calls itself *the commitment* — rather
+than remembering. R6, R7 and R8 were sitting under `## Cleared`.
+
+All three are four-column rows: number, gate, **waiting on**, expected phase.
+The cleared table takes three. Each had a blank line above it, which ends a
+markdown table, so they rendered as loose text under the wrong heading rather
+than as rows of the wrong shape. R10 had the same blank line above it in the
+blocking table and rendered as an orphan there too.
+
+So the ledger said four gates left and it is seven: a native speaker to listen
+to the weight scale, ASR coverage measured on real handsets, the speech budget
+becoming a threshold once R1 clears — none of them cleared, all of them shown as
+cleared, in the one document written so nobody has to take the answer on trust.
+
+`make counts-check` reads the shape now, because in this document the shape *is*
+the claim: which table a row is in is the assertion the row makes. It checks that
+every row is inside a table, that its column count matches its section, that no
+number appears twice, and that none is missing from the run — a gate deleted
+rather than cleared is the failure this file exists to prevent. All three
+proved by reintroducing them.
+
+Seven left, and **not one of them is engineering**. Four native speakers and a
+quiet room; a physical handset; an illustrator who has seen the crops in a
+market; a labelled dataset. That was true before this session and it is still
+true; what changed is that the document now says so.

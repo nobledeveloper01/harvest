@@ -8,6 +8,15 @@ Entries say *why*, not just what.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Three release gates that block v1.0 were filed under "Cleared".** R6, R7 and
+  R8 are four-column blocking rows that had drifted into the three-column
+  cleared table, each behind a blank line that ends the table above it — so they
+  rendered as loose text under the wrong heading. The ledger said four gates
+  left; there are seven. `make counts-check` now reads the document's shape,
+  because which table a row is in is the claim the row makes.
+
 ### Changed
 
 - The README's Status section describes the app as it is: the decision screen
