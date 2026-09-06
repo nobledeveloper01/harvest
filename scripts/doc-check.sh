@@ -93,7 +93,8 @@ if [ -d .git ]; then
     shots=$(git log -1 --format=%ct -- docs/screenshots 2>/dev/null || echo 0)
     if [ "${code:-0}" -gt "${shots:-0}" ]; then
       behind=$(git rev-list --count "$(git log -1 --format=%H -- docs/screenshots)"..HEAD -- app/lib 2>/dev/null || echo '?')
-      note "the screenshots are $behind commits of app/lib behind — retake any screen that moved:  make screenshot N=<name>"
+      [ "$behind" = 1 ] && commits=commit || commits=commits
+      note "the screenshots are $behind $commits of app/lib behind — retake any screen that moved:  make screenshot N=<name>"
     else
       ok "the screenshots are no older than the last change to the app"
     fi
