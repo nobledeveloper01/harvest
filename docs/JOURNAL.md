@@ -1899,3 +1899,29 @@ twelve. A hand-written roster would have had the same failure mode as every
 other list this session has had to delete — it would have been right about what
 it listed. Proved it by adding an `AboutScreen` that nothing walks: named within
 a second.
+
+## The release gates were quoting numbers from two hundred clips ago
+
+`RELEASE-GATES.md` is the document somebody would plan from: it is the list of
+what stands between this repository and a v1.0, and who is needed to clear each
+item. R1 said *all 725 are placeholders*. There are 920. R4 said *all 85 are now
+drawn*. There are 86.
+
+That is not a typo. The difference between recording 725 clips and recording 920
+is a person's week, and the number was in the one document written to tell
+somebody what they were taking on. Both figures had been right when they were
+written; clips and tiles were added by the handful afterwards and the sentences
+around them were not.
+
+`make gates-check` reads both from `dartenum`, which is where the audio and
+picture gates already count from — so the document cannot drift from the release
+gates without drifting from the app. Three failures proved, and the third is the
+one worth having: **rewording the sentence fails loudly** rather than quietly
+matching nothing, which is how a regex over prose usually stops working.
+
+Two constants went the same way while the counts moved. `PHRASES` — the path to
+the enum of everything the app says — had a copy in three scripts, which is
+three chances to point one of them at a file that has moved, and `clip_stems()`
+was a loop that `audio-check` and the new counter would both have had to keep in
+step. One definition each, in `dartenum`, next to the asset table that is there
+for exactly this reason.

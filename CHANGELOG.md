@@ -44,6 +44,9 @@ Entries say *why*, not just what.
 
 ### Added
 
+- `make gates-check`: `RELEASE-GATES.md` is checked against the counts the gates
+  themselves compute. R1 said 725 clips and R4 said 85 illustrations; there are
+  920 and 86, and the first of those is a person's week of recording.
 - `test/screen_coverage_test.dart`: the shared walk must build every screen
   class that exists under `lib/features/`, checked by collecting the runtime
   types actually rendered rather than by keeping a list. It found the region

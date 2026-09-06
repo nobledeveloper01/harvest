@@ -44,11 +44,10 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
     asset_sets,
-    GREEN, OFF, RED, ROOT, YELLOW, enum_values, m4a_padding, m4a_signal,
-    manifest, undeclared,
+    GREEN, OFF, PHRASES, RED, ROOT, YELLOW, clip_stems, enum_values,
+    m4a_padding, m4a_signal, manifest, undeclared,
 )
 
-PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 
 # `subdirectory: (source, enum)` — names of things, spoken. See the module
 # docstring for why they are not `Phrase` constants.
@@ -77,12 +76,7 @@ def main() -> int:
     # `<language>/<stem>.m4a` — the crop names sit in their own subdirectory so
     # that a crop and a phrase can never collide on a filename, and so that a
     # glance at the tree tells you which is which.
-    stems = enum_values(PHRASES, 'Phrase')
-    for spec in asset_sets().values():
-        stems += [
-            f'{spec["speech"]}/{name}'
-            for name in enum_values(spec['source'], spec['enum'])
-        ]
+    stems = clip_stems()
 
     placeholders = manifest(MANIFEST)
 

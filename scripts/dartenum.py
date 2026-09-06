@@ -20,6 +20,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 DOMAIN = ROOT / 'app/lib/domain'
 
+# The enum of everything the app says, and of the languages it says it in.
+# Here rather than in each gate: three scripts had their own copy of this path,
+# which is three chances to point one of them at a file that has moved.
+PHRASES = DOMAIN / 'speech/phrase.dart'
+
 # ── The one list of enums that own assets ───────────────────────────────────
 #
 # `speech` is the subdirectory under `assets/speech/<language>/`; `pictures` is
@@ -110,6 +115,30 @@ def asset_sets(*, pictures: bool = False) -> dict:
         for name, spec in ASSET_SETS.items()
         if not pictures or spec['pictures']
     }
+
+
+def clip_stems() -> list[str]:
+    """Every `<subdirectory>/<name>` the app can say, in one language."""
+    stems = enum_values(PHRASES, 'Phrase')
+    for spec in asset_sets().values():
+        stems += [
+            f'{spec["speech"]}/{name}'
+            for name in enum_values(spec['source'], spec['enum'])
+        ]
+    return stems
+
+
+def clip_count() -> int:
+    """Clips the app ships: everything it says, in every language."""
+    return len(enum_values(PHRASES, 'Speech')) * len(clip_stems())
+
+
+def picture_count() -> int:
+    """Tiles the app draws: every crop, unit, condition, outcome and ailment."""
+    return sum(
+        len(enum_values(spec['source'], spec['enum']))
+        for spec in asset_sets(pictures=True).values()
+    )
 
 
 def enum_values(path: pathlib.Path, enum: str) -> list[str]:

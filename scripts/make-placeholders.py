@@ -36,14 +36,13 @@ import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
-    GREEN, OFF, ROOT, YELLOW, asset_sets, enum_values, manifest,
+    GREEN, OFF, PHRASES, ROOT, YELLOW, asset_sets, enum_values, manifest,
 )
 
 # ADR-0009. Mirrored in `audio-check.py`, which has to know what it is reading.
 SAMPLE_RATE = 16000
 BITRATE = 32000
 
-PHRASES = ROOT / 'app/lib/domain/speech/phrase.dart'
 SPEECH = ROOT / 'app/assets/speech'
 ASSETS = ROOT / 'app/assets'
 
