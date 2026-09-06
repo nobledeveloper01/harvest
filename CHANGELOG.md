@@ -10,6 +10,10 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- `make audio-check` enforces a ceiling as well as a floor: a clip encoded far
+  above the rate ADR-0009 fixes now fails. Nothing enforced the bitrate, and the
+  moment it will be broken is when the real recordings arrive.
+
 - **The decision screen's only action is reachable at 200% type.** With no price
   yet, its button was the last item in a scroll and sat 150 dp below the bottom
   edge of the 5" floor — on the screen whose whole purpose is to ask for a

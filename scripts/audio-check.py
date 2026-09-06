@@ -67,6 +67,23 @@ from dartenum import (  # noqa: E402
 FLOOR = 800      # bytes of encoded audio per second
 SHORTEST = 0.25  # seconds; anything less is a click, not a word
 
+# And a ceiling, which matters most on the day this gate is least likely to be
+# watched.
+#
+# ADR-0009 fixed the encoding at 32 kbps — 4,000 bytes per second — because 920
+# clips is 16 MB at that rate and the design floor is a farmer paying for the
+# download by the megabyte. Nothing enforced it. The moment it will be broken is
+# **R1**: real recordings arrive from four native speakers, somebody converts
+# them, and one wrong `afconvert` flag ships the whole set at 128 kbps. That is
+# 64 MB of app for no audible gain, discovered by a farmer on a metered
+# connection.
+#
+# Measured, like the floor: the 920 clips here run 3,750 to 4,497 bytes per
+# second, the spread being container overhead on short clips. The ceiling is
+# 1.75× nominal, which is 56% clear of the worst clip in the set and still
+# catches the next rate up.
+CEILING = 7000   # bytes of encoded audio per second
+
 SPEECH = ROOT / 'app/assets/speech'
 MANIFEST = SPEECH / 'placeholders.txt'
 
@@ -83,6 +100,7 @@ def main() -> int:
     missing: list[str] = []
     silent: list[str] = []
     padded: list[str] = []
+    heavy: list[str] = []
     pending: list[str] = []
 
     for language in languages:
@@ -101,6 +119,11 @@ def main() -> int:
                 seconds, payload = signal
                 if seconds < SHORTEST or payload < seconds * FLOOR:
                     silent.append(rel)
+                elif payload > seconds * CEILING:
+                    heavy.append(
+                        f'{rel} — {payload / seconds:.0f} bytes/s, '
+                        f'{payload / seconds / 4000:.1f}× the rate ADR-0009 fixed'
+                    )
             if m4a_padding(clip) > 512:
                 padded.append(rel)
 
@@ -135,7 +158,7 @@ def main() -> int:
         if str(path.relative_to(SPEECH)) not in expected
     )
 
-    if missing or silent or unshipped or orphans or padded:
+    if missing or silent or unshipped or orphans or padded or heavy:
         # Capped, because 125 identical lines buries the one that differs.
         for rel in missing[:12]:
             print(f'{RED}✗{OFF} no clip: assets/speech/{rel}')
@@ -154,6 +177,11 @@ def main() -> int:
         if len(padded) > 6:
             print(f'  … and {len(padded) - 6} more padded — re-run '
                   f'`make placeholders`, which strips it')
+        for line in heavy[:6]:
+            print(f'{RED}✗{OFF} encoded far above the fixed rate: '
+                  f'assets/speech/{line}')
+        if len(heavy) > 6:
+            print(f'  … and {len(heavy) - 6} more over the ceiling')
         for rel in orphans[:12]:
             print(f'{RED}✗{OFF} nothing asks for it: assets/speech/{rel}')
         if len(orphans) > 12:
@@ -166,6 +194,10 @@ def main() -> int:
         if missing or silent:
             print('  `python3 scripts/make-placeholders.py` writes stand-ins that')
             print('  announce themselves, which is what to do while building.')
+        if heavy:
+            print('  ADR-0009 fixes the encoding at AAC-LC, mono, 16 kHz,')
+            print('  32 kbps. Re-encode:  afconvert -f m4af -d aac -b 32000')
+            print('  -c 1 -r 16000 <in> <out>')
         if unshipped:
             print("  Add the directory to `flutter: assets:` in app/pubspec.yaml.")
             print('  Directory entries are not recursive — a subdirectory needs')

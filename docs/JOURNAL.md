@@ -1925,3 +1925,24 @@ three chances to point one of them at a file that has moved, and `clip_stems()`
 was a loop that `audio-check` and the new counter would both have had to keep in
 step. One definition each, in `dartenum`, next to the asset table that is there
 for exactly this reason.
+
+## The bitrate the ADR fixed had nothing enforcing it
+
+`audio-check` has had a floor since R5: a clip must carry at least 800 bytes of
+encoded audio per second, or it is silence wearing a filename. It had no ceiling.
+Any clip large enough to contain a signal passed, at any rate.
+
+The day that matters is R1. Real recordings arrive from four native speakers,
+somebody converts them in a hurry, and one forgotten flag ships the whole set at
+64 kbps, or at 44.1 kHz stereo. Sixteen megabytes of speech becomes sixty-four.
+Nobody can hear the difference; the farmer paying for the download by the
+megabyte is the only person who ever finds out.
+
+Both mistakes were made on purpose against the gate and both come out at **2.1×
+the fixed rate**, named, with the `afconvert` line to fix them. The ceiling is
+7,000 bytes per second — 1.75× nominal — taken from the measured spread of the
+920 clips in the tree, which run 3,750 to 4,497 with the variance being
+container overhead on short clips. Fifty-six per cent clear of the heaviest real
+clip, and it still catches the next rate up.
+
+Measured, not chosen — the same way the floor was, three ADRs ago.

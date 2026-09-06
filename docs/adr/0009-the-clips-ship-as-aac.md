@@ -48,6 +48,17 @@ written.
   and three seconds of speech to 12,057, or **3,694**. The floor sits at 800,
   with roughly sixty times the margin below it and four times above. A real
   recording of a quiet voice has room; an empty one does not.
+- **The rate is a ceiling as well as a floor now.** The bitrate this ADR fixes
+  had nothing enforcing it: any clip large enough to contain a signal passed. The
+  moment that matters is R1 — real recordings arrive from four native speakers,
+  somebody converts them, and one forgotten `afconvert` flag ships the set at 64
+  kbps or at 44.1 kHz stereo. Both were tried against the gate; both come out at
+  2.1× and are named. The ceiling is 7,000 bytes per second, 1.75× nominal,
+  chosen from the measured spread of the 920 clips here — 3,750 to 4,497, the
+  variance being container overhead on short clips — so it is 56% clear of the
+  heaviest real clip and still catches the next rate up. **Sixteen megabytes of
+  speech becoming sixty-four is not audible to anybody; it is only visible to a
+  farmer paying for the download.**
 - **The parser was checked against something that did not share its
   assumptions.** Reading the container two independent ways — `mdhd`'s duration,
   and counting AAC frames out of `stsz` at 1024 samples each — agrees to the
