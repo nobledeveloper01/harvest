@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Db } from './db.js';
 import type { Sms } from './sms.js';
 import { authRoutes } from './routes/auth.js';
+import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 
 export type BuildOptions = {
@@ -55,6 +56,7 @@ export function build({
 
   authRoutes(app, { signingKey, otpSalt, sms });
   listingRoutes(app, { signingKey });
+  enquiryRoutes(app, { signingKey });
 
   return app;
 }
