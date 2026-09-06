@@ -76,6 +76,27 @@ if [ -d .git ]; then
     else
       ok "every screenshot is referenced by a document"
     fi
+
+    # And the direction nothing was watching: whether they still show the app.
+    #
+    # "Tracked" and "referenced" are both true of a picture two months out of
+    # date. Every screenshot in this repository was once thirteen commits and
+    # one whole feature behind — the daylight switch had been added to three
+    # app bars and appeared in none of them — and the gate was green the entire
+    # time, because it was counting files.
+    #
+    # A warning, not a failure. Most commits under app/lib change nothing you
+    # can see, and a gate that goes red on every one of them is a gate people
+    # learn to run with --no-verify. What it can do is refuse to let the drift
+    # go unmentioned.
+    code=$(git log -1 --format=%ct -- app/lib 2>/dev/null || echo 0)
+    shots=$(git log -1 --format=%ct -- docs/screenshots 2>/dev/null || echo 0)
+    if [ "${code:-0}" -gt "${shots:-0}" ]; then
+      behind=$(git rev-list --count "$(git log -1 --format=%H -- docs/screenshots)"..HEAD -- app/lib 2>/dev/null || echo '?')
+      note "the screenshots are $behind commits of app/lib behind — retake any screen that moved:  make screenshot N=<name>"
+    else
+      ok "the screenshots are no older than the last change to the app"
+    fi
   fi
 fi
 

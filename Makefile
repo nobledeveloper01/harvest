@@ -126,6 +126,15 @@ doc-check: ## Verify the documentation is present, well-formed and current
 adr: ## Scaffold the next ADR:  make adr T="the decision"
 	@scripts/new-adr.sh "$(T)"
 
+.PHONY: screenshot
+screenshot: ## Capture a booted simulator screen:  make screenshot N=03-quantity
+	@if [ -z "$(N)" ]; then \
+	  echo "\033[0;33m!\033[0m no name given:  make screenshot N=03-quantity"; \
+	  ls docs/screenshots | sed 's/\.png$$//' | sed 's/^/    /'; \
+	else \
+	  scripts/screenshot.sh "$(N)"; \
+	fi
+
 .PHONY: journal
 journal: ## Add a session entry:  make journal T="what this session was about"
 	@scripts/journal.sh "$(T)"

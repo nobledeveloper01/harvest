@@ -1803,3 +1803,30 @@ cards are 20 — and that the type scale it published named nothing above 22,
 while three screens set a typed figure at 32 or 34. Those readouts are
 deliberate and are now written down, with the reason: on those screens the
 figure being entered is not part of the screen, it is the screen.
+
+## Every screenshot in the repository was a feature behind
+
+Thirteen of them, all captured before the daylight switch existed. That switch
+had been added to three app bars and appeared in none of the pictures. Two more
+commits had changed the diagnosis screen and the touch targets since. The
+documentation gate was green throughout, because what it checked was that every
+screenshot is tracked and that every screenshot is referenced — both true of a
+picture of a different app.
+
+Twelve retaken on the simulator: the language picker, the crop grid, the
+quantity screen, the storage screen, the harvest list in both themes, the two
+closing sheets, and the four money screens. The thirteenth, the diagnosis
+result, is not reachable from the app on purpose and is left alone.
+
+`make doc-check` now compares the last commit touching `docs/screenshots` with
+the last commit touching `app/lib` and says how far behind the pictures are.
+**A warning, not a failure**: most commits under `app/lib` change nothing you can
+see, and a gate that goes red on every one of them is a gate people learn to run
+with `--no-verify`. What it can do is refuse to let the drift go unmentioned,
+which is the part that failed here — nobody was wrong about the screenshots,
+nobody was told.
+
+`make screenshot N=<name>` exists now too, and `scripts/screenshot.sh` deletes
+the target before writing it. `simctl` runs in its own sandbox and is
+intermittently refused permission to overwrite a file it did not create; the
+script swallowed that into a bare exit 1, which cost ten minutes to attribute.

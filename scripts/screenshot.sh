@@ -27,6 +27,10 @@ fi
 device="${GRID_SIM:-booted}"
 out="docs/screenshots/${name}.png"
 
+# Removed first, not overwritten. `simctl` runs in its own sandbox and is
+# refused permission to write over a file it did not create — intermittently,
+# and with an error this script used to swallow into a bare exit 1.
+rm -f "$out"
 xcrun simctl io "$device" screenshot --type=png "$out" >/dev/null 2>&1
 sips --resampleWidth 540 "$out" --out "$out" >/dev/null
 

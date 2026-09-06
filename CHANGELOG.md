@@ -10,6 +10,11 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- Twelve of the thirteen screenshots retaken. Every one of them predated the
+  daylight switch, which by then appeared in three app bars and no picture. The
+  documentation gate now says how many commits of `app/lib` the screenshots are
+  behind — a warning, because most commits change nothing you can see.
+
 - **Every touch target in the app now meets the 56 dp floor.** Six controls were
   drawn at 34, 44 or 48 dp with hit areas to match — one of them the back
   button, which is on every screen. The floor moved inside `Pressable`, where
