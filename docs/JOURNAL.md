@@ -1871,3 +1871,31 @@ has an opinion about it, and no gate looks at the floor device at 100% type
 except the one written today. Recording it rather than acting on it: a redesign
 of the busiest screen in the app on the strength of one measurement is how a
 product acquires changes nobody asked for.
+
+## Asking the walk which screens it actually reaches
+
+Three suites are built on `walkTheFlow` now — 200% type, touch targets, primary
+actions — and every one of them is exactly as complete as the walk. So the
+question that has run through this whole session applies to the walk itself:
+does it know about every screen it is used to check?
+
+It did not. The **region screen** was outside all three, reachable in one tap
+from the assumption card and visited by none of them. The **diagnosis result**
+was outside two — `text_scaling_test.dart` pumps it directly, with a comment
+explaining exactly why a screen outside the flow is a screen outside the flow's
+suite, and then the two suites written afterwards inherited the gap that comment
+was warning about.
+
+Both fixed: the region screen is a step in the walk now (opened and backed out
+of without choosing — a region changes what a basket weighs, and choosing one
+would move every naira figure downstream), and `pumpTheUnreachable` hands the
+diagnosis result's three states to the same callback, so any suite built on the
+flow covers it by construction.
+
+And the gate for it asks the product, not a list. `test/screen_coverage_test.dart`
+walks, collects the **runtime type of every screen widget actually built**, and
+compares that against the classes on disk under `lib/features/`. Twelve and
+twelve. A hand-written roster would have had the same failure mode as every
+other list this session has had to delete — it would have been right about what
+it listed. Proved it by adding an `AboutScreen` that nothing walks: named within
+a second.

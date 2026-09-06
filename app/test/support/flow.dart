@@ -10,8 +10,11 @@ import 'package:harvest/data/settings/settings.dart';
 import 'package:harvest/data/speech/speaker.dart';
 import 'package:harvest/data/weather/weather_store.dart';
 import 'package:harvest/domain/crops/crop.dart';
+import 'package:harvest/core/theme.dart';
 import 'package:harvest/domain/diagnosis/ailment.dart';
+import 'package:harvest/domain/diagnosis/certainty.dart';
 import 'package:harvest/domain/diagnosis/guidance.dart';
+import 'package:harvest/features/diagnosis/diagnosis_result_screen.dart';
 import 'package:harvest/domain/lots/lot.dart';
 import 'package:harvest/domain/lots/outcome.dart';
 import 'package:harvest/domain/lots/quantity.dart';
@@ -161,6 +164,26 @@ Future<void> walkTheFlow(
   await tester.pumpAndSettle();
   await at('the quantity screen, with the assumption showing', find.textContaining('national average for a big basket'));
 
+  /*
+    The region screen, opened and backed out of without choosing.
+
+    It was outside every walk-based suite until the roster gate asked which
+    screens exist and which this function actually reaches. Opened and left
+    alone on purpose: a region changes what a basket weighs, so choosing one
+    here would move every naira figure downstream and every witness with it.
+  */
+  final farm = find.text('Where do you farm?');
+  await tester.ensureVisible(farm);
+  await tester.pumpAndSettle();
+  await tester.tap(farm);
+  await tester.pumpAndSettle();
+  await at('the region screen',
+      find.textContaining('the app never asks for your location'));
+  await tester.tap(find.bySemanticsLabel('back'));
+  await tester.pumpAndSettle();
+  await at('backing out of the region screen',
+      find.textContaining('national average for a big basket'));
+
   // The correction, which swaps the card for a differently shaped one. At
   // 200% on the floor it is below the fold — reachable, behind the faded
   // edge, which is what the fade is there to say.
@@ -298,4 +321,53 @@ Future<void> walkTheFlow(
   await reachAndTap(find.text('Lost it'));
   await at('the loss reasons', find.text('It went bad'));
 
+}
+
+
+/*
+  The screens the walk cannot reach, pumped directly and handed to the same
+  callback.
+
+  The diagnosis result has no model behind it and no route into it — that is
+  R10, and deliberate: a screen a farmer can open and get a guess from is worse
+  than one they cannot open. But **a screen outside the flow is a screen outside
+  every suite built on the flow**, and that is how one quietly stops being
+  covered without anybody deciding it should be. It was outside the touch-target
+  and primary-action walks until `make screen-check` asked which screens exist
+  and which this file reaches.
+
+  All three certainties, because they are three different layouts: a name with
+  steps, a name with steps *and* an escalation above them, and an escalation
+  with no name and no steps at all.
+*/
+Future<void> pumpTheUnreachable(
+  WidgetTester tester, {
+  required AtEachStep at,
+}) async {
+  final worst = Ailment.values.reduce(
+    (a, b) => Guidance.forAilment(a).length >= Guidance.forAilment(b).length
+        ? a
+        : b,
+  );
+
+  for (final (label, scores) in [
+    ('fairly sure', {worst: 0.95, Ailment.aphids: 0.01}),
+    ('might be', {worst: 0.60, Ailment.aphids: 0.30}),
+    ('unrecognised', {Ailment.aphids: 0.10}),
+  ]) {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: DiagnosisResultScreen(
+          speaker: SilentSpeaker(),
+          language: Speech.english,
+          diagnosis: ConfidenceGate.read(scores),
+          onDone: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('the diagnosis result, $label',
+        find.byType(DiagnosisResultScreen));
+  }
 }

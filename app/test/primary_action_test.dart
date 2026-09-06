@@ -34,26 +34,27 @@ void main() {
   tearDown(() => database.close());
 
   for (final scale in [1.0, 2.0]) {
-    testWidgets('the primary action stays on the floor at ${scale * 100}% type',
-        (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      await tester.binding.setSurfaceSize(_floor);
-      tester.platformDispatcher.textScaleFactorTestValue = scale;
-      addTearDown(() {
-        tester.platformDispatcher.clearTextScaleFactorTestValue();
-        return tester.binding.setSurfaceSize(null);
-      });
+    testWidgets(
+      'the primary action stays on the floor at ${scale * 100}% type',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        await tester.binding.setSurfaceSize(_floor);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(() {
+          tester.platformDispatcher.clearTextScaleFactorTestValue();
+          return tester.binding.setSurfaceSize(null);
+        });
 
-      final offScreen = <String>[];
-      final crowded = <String>[];
-      var seen = 0;
+        final offScreen = <String>[];
+        final crowded = <String>[];
+        var seen = 0;
 
-      await walkTheFlow(
-        tester,
-        database: database,
-        at: (where, showing) async {
-          expect(showing, findsAtLeastNWidgets(1),
-              reason: 'never arrived at $where, so nothing was checked there');
+        Future<void> check(String where, Finder showing) async {
+          expect(
+            showing,
+            findsAtLeastNWidgets(1),
+            reason: 'never arrived at $where, so nothing was checked there',
+          );
 
           final buttons = find.byType(PrimaryButton);
           final count = buttons.evaluate().length;
@@ -77,16 +78,26 @@ void main() {
               );
             }
           }
-        },
-      );
+        }
 
-      expect(offScreen, isEmpty, reason: 'a primary action a thumb cannot reach');
-      expect(crowded, isEmpty, reason: 'more than one primary action');
+        await walkTheFlow(tester, database: database, at: check);
+        await pumpTheUnreachable(tester, at: check);
 
-      // An empty list satisfies both of the above, and a walk that found no
-      // buttons at all would have produced one.
-      expect(seen, greaterThan(10),
-          reason: 'only $seen primary actions seen on the whole walk');
-    });
+        expect(
+          offScreen,
+          isEmpty,
+          reason: 'a primary action a thumb cannot reach',
+        );
+        expect(crowded, isEmpty, reason: 'more than one primary action');
+
+        // An empty list satisfies both of the above, and a walk that found no
+        // buttons at all would have produced one.
+        expect(
+          seen,
+          greaterThan(10),
+          reason: 'only $seen primary actions seen on the whole walk',
+        );
+      },
+    );
   }
 }

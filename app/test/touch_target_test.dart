@@ -58,19 +58,19 @@ void main() {
     final unguarded = <String>{};
     var measured = 0;
 
-    await walkTheFlow(
-      tester,
-      database: database,
-      at: (where, showing) async {
-        expect(showing, findsAtLeastNWidgets(1),
-            reason: 'never arrived at $where, so nothing was measured there');
+    Future<void> check(String where, Finder showing) async {
+      expect(
+        showing,
+        findsAtLeastNWidgets(1),
+        reason: 'never arrived at $where, so nothing was measured there',
+      );
 
-        for (final type in _tappable) {
-          for (final element in find.byType(type).evaluate()) {
-            final size = element.size;
-            if (size == null) continue;
+      for (final type in _tappable) {
+        for (final element in find.byType(type).evaluate()) {
+          final size = element.size;
+          if (size == null) continue;
 
-            /*
+          /*
               A raw `InkWell` or `GestureDetector` outside a `Pressable` is
               reported separately, and it is the more interesting failure.
 
@@ -79,39 +79,46 @@ void main() {
               — and it has also skipped the press animation, which on a budget
               screen in sunlight is often the only sign the phone felt the tap.
             */
-            var guarded = element.widget is Pressable;
-            if (!guarded) {
-              element.visitAncestorElements((ancestor) {
-                if (ancestor.widget is Pressable) {
-                  guarded = true;
-                  return false;
-                }
-                return true;
-              });
-            }
-            if (!guarded) {
-              unguarded.add('$where: a bare $type is not a Pressable');
-              continue;
-            }
-            if (element.widget is! Pressable) continue;
+          var guarded = element.widget is Pressable;
+          if (!guarded) {
+            element.visitAncestorElements((ancestor) {
+              if (ancestor.widget is Pressable) {
+                guarded = true;
+                return false;
+              }
+              return true;
+            });
+          }
+          if (!guarded) {
+            unguarded.add('$where: a bare $type is not a Pressable');
+            continue;
+          }
+          if (element.widget is! Pressable) continue;
 
-            measured++;
-            if (size.width < Target.standard || size.height < Target.standard) {
-              tooSmall.add('$where: ${size.width.toStringAsFixed(0)}x'
-                  '${size.height.toStringAsFixed(0)}, floor is '
-                  '${Target.standard.toStringAsFixed(0)}');
-            }
+          measured++;
+          if (size.width < Target.standard || size.height < Target.standard) {
+            tooSmall.add(
+              '$where: ${size.width.toStringAsFixed(0)}x'
+              '${size.height.toStringAsFixed(0)}, floor is '
+              '${Target.standard.toStringAsFixed(0)}',
+            );
           }
         }
-      },
-    );
+      }
+    }
+
+    await walkTheFlow(tester, database: database, at: check);
+    await pumpTheUnreachable(tester, at: check);
 
     expect(tooSmall, isEmpty, reason: 'under the touch floor');
     expect(unguarded, isEmpty, reason: 'tappable, but outside the mechanism');
 
     // The walk having happened is not the same as the walk having seen
     // anything, and an empty set satisfies both assertions above.
-    expect(measured, greaterThan(60),
-        reason: 'only $measured targets measured — the walk saw almost nothing');
+    expect(
+      measured,
+      greaterThan(60),
+      reason: 'only $measured targets measured — the walk saw almost nothing',
+    );
   });
 }

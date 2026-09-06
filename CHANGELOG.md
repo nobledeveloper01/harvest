@@ -44,6 +44,11 @@ Entries say *why*, not just what.
 
 ### Added
 
+- `test/screen_coverage_test.dart`: the shared walk must build every screen
+  class that exists under `lib/features/`, checked by collecting the runtime
+  types actually rendered rather than by keeping a list. It found the region
+  screen outside all three walk-based suites and the diagnosis result outside
+  two.
 - `test/primary_action_test.dart`: every screen the flow walks, at 100% and
   200% type on the 5" floor, must keep its primary action on the screen and
   must have exactly one. The rule was in `DESIGN.md` and asserted on two of the
