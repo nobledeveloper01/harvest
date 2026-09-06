@@ -19,24 +19,41 @@ See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full 
   <img src="docs/screenshots/05-home.png" width="240" alt="Home: the lots logged so far, newest harvest first" />
 </p>
 
-> **Every crop tile and every storage tile above is hatched grey on purpose.** Those
-> are placeholders that announce themselves — the illustrations are a release gate
-> (R4), and a stand-in that looked like a drawing would be how a missing feature
-> ships. The same is true of the audio: all 415 clips currently say, in English,
-> that they are placeholders and which language belongs there.
+> **The pictures are drawn; the voices are not.** All 86 crop, unit, storage,
+> outcome, loss and ailment tiles are illustrations now — flat shapes, silhouettes
+> chosen so the three greens and the three peppers are told apart by shape and not
+> only by colour. What R4 still wants is the judgement of somebody who has seen the
+> crops in an actual market. The audio has not moved: all 920 clips say, in English,
+> that they are placeholders and which language belongs there, because a stand-in
+> that sounded like the product is how a missing feature ships.
 
 ---
 
 ## Status
 
-**Phase 2 of 7 — the spoilage engine.** A lot is logged end to end — language,
-crop, quantity in local units, where it is kept, when it was picked — stored in
-SQLite, and now carries a **window**: how long it has, as a range with two ends,
-from bundled versioned base values scaled by storage and weather. The harvest
-list draws it as a ring that empties, and says out loud whether a lot is still
-fine, half gone, nearly finished or out of time.
+**Phase 4 of 7 — diagnosis, and blocked on a dataset.** Phases 0 to 3 are
+cleared, less what needs a handset or data nobody has.
 
-The pure-Dart domain is at 100% coverage and `make ci` is green.
+A lot is logged end to end — language, crop, quantity in local units, where it is
+kept, when it was picked — stored in SQLite, and carries a **window**: how long it
+has, as a range with two ends, from bundled versioned base values scaled by
+storage and weather. The harvest list draws it as a ring that empties, and says
+out loud whether a lot is still fine, half gone, nearly finished or out of time.
+
+**The decision screen turns that window into money.** Tell it what somebody
+offered and it prices selling today against waiting and against a cold room, in
+naira, with the transport and the agent's share taken off — and every figure on
+it names its source and its age, because a farmer deciding on ₦180,000 is
+entitled to know whether that number came from a person or a guess.
+
+Phase 4 has the half of its gate that needs no model: an uncertain result routes
+to a person rather than guessing, and both hedged answers do it. The other half
+needs a labelled dataset, so the diagnosis feature is **not reachable from the
+app** — a screen a farmer can open and get a guess from is worse than one they
+cannot open.
+
+The pure-Dart domain is held above 95% by `make coverage-gate`, and `make ci` is
+green.
 
 Warnings are scheduled the moment a lot is logged — three of them, at half the
 window, nine tenths, and the end — and they move **earlier** into waking hours,
@@ -53,9 +70,8 @@ lost — and a loss asks **why** from a fixed illustrated list. That answer is t
 only thing in the product that can tell whether the engine was wrong about
 tomatoes or wrong about tomatoes in the rain.
 
-What is not done: the decision screen, which needs prices (Phase 3), then
-diagnosis and the marketplace. Push-to-talk is blocked on hardware rather than on
-work — see **The hard part**.
+What is not done: the trained classifier, and the marketplace. Push-to-talk is
+blocked on hardware rather than on work — see **The hard part**.
 
 ## The insight
 

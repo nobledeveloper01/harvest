@@ -13,18 +13,18 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check design-check gates-check audio-check picture-check analyze test coverage-gate ## Everything CI runs
+ci: doc-check design-check counts-check audio-check picture-check analyze test coverage-gate ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check design-check gates-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check design-check counts-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
 
 .PHONY: design-check
 design-check: ## Fail if DESIGN.md disagrees with the theme it documents
 	@python3 scripts/design-check.py
 
-.PHONY: gates-check
-gates-check: ## Fail if RELEASE-GATES.md quotes a figure the gates do not produce
-	@python3 scripts/gates-check.py
+.PHONY: counts-check
+counts-check: ## Fail if README or RELEASE-GATES quote a figure the code does not produce
+	@python3 scripts/counts-check.py
 
 .PHONY: audio-check
 audio-check: ## Fail if anything the app says is missing a clip, or is not bundled

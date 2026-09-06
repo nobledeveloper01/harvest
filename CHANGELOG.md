@@ -10,6 +10,10 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- The README's Status section describes the app as it is: the decision screen
+  and the money that makes it worth showing, the confidence gate, and the
+  diagnosis feature that is deliberately unreachable until there is a model.
+
 - `make audio-check` enforces a ceiling as well as a floor: a clip encoded far
   above the rate ADR-0009 fixes now fails. Nothing enforced the bitrate, and the
   moment it will be broken is when the real recordings arrive.
@@ -48,9 +52,13 @@ Entries say *why*, not just what.
 
 ### Added
 
-- `make gates-check`: `RELEASE-GATES.md` is checked against the counts the gates
-  themselves compute. R1 said 725 clips and R4 said 85 illustrations; there are
-  920 and 86, and the first of those is a person's week of recording.
+- `make counts-check`: `README.md` and `RELEASE-GATES.md` are checked against
+  the counts the gates themselves compute. R1 said 725 clips and R4 said 85
+  illustrations — there are 920 and 86, and the first of those is a person's
+  week of recording. The README said 415, and described every tile as hatched
+  grey, which was an accurate description of the app two phases earlier.
+- `make doc-check` also checks that the README names the phase the repository is
+  in. It opened with "Phase 2 of 7" while `PHASE` said 4.
 - `test/screen_coverage_test.dart`: the shared walk must build every screen
   class that exists under `lib/features/`, checked by collecting the runtime
   types actually rendered rather than by keeping a list. It found the region

@@ -1946,3 +1946,27 @@ container overhead on short clips. Fifty-six per cent clear of the heaviest real
 clip, and it still catches the next rate up.
 
 Measured, not chosen — the same way the floor was, three ADRs ago.
+
+## The front door described an app from two phases ago
+
+`README.md` opened with **"Phase 2 of 7 — the spoilage engine"** while `PHASE`
+said 4. It said the pure-Dart domain was at 100% coverage; it is at 99.7%
+against a 95% floor. It told every reader that *every crop tile and every
+storage tile above is hatched grey on purpose* — all 86 have been drawn for two
+days — and that *all 415 clips* announce themselves as placeholders, when there
+are 920. Under "what is not done" it listed the decision screen, which is the
+thing three of the screenshots below it show.
+
+Every one of those had been true when it was written. That is the whole failure
+mode: a README is a snapshot that keeps its tense.
+
+It is rewritten, and two checks stop it happening again. `make counts-check` —
+which was `gates-check` until the README turned out to quote the same two
+figures — reads both documents against the counts `dartenum` produces, and
+`make doc-check` compares the phase the README opens with against `PHASE`.
+Proved both by putting the old numbers back.
+
+The coverage claim is not checked, and is not a number any more either: *held
+above 95% by `make coverage-gate`*. A figure in prose that nothing computes is
+the thing that just went wrong; replacing it with a second one would have been
+the same mistake with a fresher date on it.

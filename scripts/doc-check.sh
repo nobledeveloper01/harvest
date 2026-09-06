@@ -126,6 +126,19 @@ if [ -f PHASE ]; then
     else
       ok "PHASE $phase is the phase the roadmap calls current"
     fi
+
+    # And the front door, which is the document a reader cannot check against
+    # anything. It said "Phase 2 of 7 — the spoilage engine" while the repo was
+    # in Phase 4, describing an app two phases old to everybody who arrived.
+    readme_phase=$(grep -oE '\*\*Phase [0-9]+ of [0-9]+' README.md 2>/dev/null \
+      | head -1 | sed -E 's/.*Phase ([0-9]+).*/\1/')
+    if [ -z "$readme_phase" ]; then
+      err "README.md does not say which phase this is — the Status section opened with '**Phase N of 7'"
+    elif [ "$readme_phase" != "$phase" ]; then
+      err "README.md says Phase $readme_phase; PHASE says $phase"
+    else
+      ok "README.md names the phase the repository is in"
+    fi
   fi
 fi
 
