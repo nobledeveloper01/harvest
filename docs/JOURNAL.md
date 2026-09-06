@@ -5,6 +5,64 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-06 — Android has never compiled, and could not have
+
+R2 has sat on the release-gate list since Phase 0 with the same note: no JDK on
+this machine, so nothing Android has been compiled here. It read like a chore —
+install a toolchain, watch a build go green, tick the box.
+
+There was a JDK. Homebrew installed `openjdk@17` eleven days ago and it is
+keg-only, so it never appears where `/usr/libexec/java_home` or `flutter doctor`
+look. One `JAVA_HOME` and the doctor went fully green for the first time.
+
+Then the build failed.
+
+### The alerts could not be built at all
+
+> Dependency `:flutter_local_notifications` requires core library desugaring to
+> be enabled for `:app`.
+
+Not a warning. `checkDebugAarMetadata` refuses the dependency and the build
+stops. **The spoilage alerts could not be compiled for Android.**
+
+Which is the product. The countdown is the wedge — the one thing that is useful
+to a farmer with one crop and no buyer within a hundred kilometres — and
+`docs/00-PRODUCT-STATEMENT.md` says the farmer persona is effectively
+Android-only. iOS matters for the buyer and the operator; it does not matter for
+the person this was designed around.
+
+Phase 2's exit gate is *alerts fire with the device permanently offline, on both
+platforms*. That gate has been reported as met-less-what-needs-a-handset for two
+phases. There is an on-device integration suite that asks iOS what it actually
+accepted. All of it true, all of it iOS, and the platform that carries the
+product could not produce a binary.
+
+The cause is not an accident, it is the design floor arriving: the plugin uses
+`java.time` to schedule a future alert, and a ₦40,000 handset means a `minSdk`
+low enough that `java.time` is not in the platform. Desugaring back-ports it.
+
+### What surprised us
+
+**"No toolchain" was hiding "no build", and they are not the same gap.** R2's
+note described a missing JDK, so the gate read as an errand. What it was
+actually holding was a defect that made the primary platform unbuildable — and
+the note gave no hint of that, because nobody had got far enough to know. A gate
+whose description is about the obstacle rather than about what the obstacle is
+concealing will always be under-priced.
+
+**Two phases of green tests on the wrong platform.** Nothing was wrong with the
+iOS work; it simply could not speak to this. That is the same shape as the
+faux-bold and the audio-queue failure earlier today: a check that is honest,
+passing, and about a different thing than the one you care about.
+
+**And a second one, dated rather than broken.** The same run warned that
+`flutter_timezone` applies the Kotlin Gradle Plugin and that future Flutter
+versions will fail to build because of it. Nothing is broken today. It is a
+dependency with a known expiry date on the platform the product can least afford
+to lose, and it is in the backlog rather than in this fix.
+
+---
+
 ## 2026-09-06 — A light theme nobody could reach
 
 A pass through every screen in the light theme, from a clean install, looking for

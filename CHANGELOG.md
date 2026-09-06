@@ -378,6 +378,23 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The Android build was impossible, and nobody knew.** The first Android
+  compile in this project's history failed: `flutter_local_notifications`
+  requires **core library desugaring**, and `checkDebugAarMetadata` refuses the
+  dependency without it. Not a warning — the build cannot complete. Which means
+  the spoilage alerts, the product's entire wedge, could not be built for the
+  platform the farmer persona actually uses, after two phases of shipping green
+  on iOS with on-device tests proving the platform accepted the schedules.
+
+  The cause follows from the design floor rather than from an accident: the
+  plugin uses `java.time` to schedule a future alert, and a ₦40,000 handset
+  means a `minSdk` low enough that `java.time` is not in the platform.
+  Desugaring back-ports it into the APK. Enabled, with a pinned
+  `desugar_jdk_libs` — a build that silently changes what it desugars is a build
+  whose behaviour on a 2 GB handset changes without anybody choosing it.
+
+  `flutter build apk` now produces a 183 MB debug APK. **R2 is cleared; R3 is
+  not** — a build succeeding is not the app running on a handset.
 - **The placeholder generator was quietly undoing R4.** It rewrote the picture
   manifest with *every* filename it knew about rather than the ones it had
   written — so running it to add a clip re-declared fifty-four finished

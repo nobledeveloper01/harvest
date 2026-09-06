@@ -34,8 +34,11 @@ absent for the primary user is not a capability.
 the Dart enum rather than a list beside it, so adding a phrase without
 recording it fails the build.
 
-**Android is unproven here** — no JDK, so nothing Android has been compiled.
-R2.
+**Android compiles, as of Phase 4.** The first Android build in this project's
+history failed — `flutter_local_notifications` needs core library desugaring,
+and without it the alerts could not be built for the platform the farmer
+persona uses at all. R2 is cleared. R3 is not: a build succeeding is not a
+product running on a handset.
 
 ## Phase 1 — Voice and logging · *cleared, less what needs a handset*
 
