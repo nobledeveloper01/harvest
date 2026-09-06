@@ -2,9 +2,14 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 
 import type { Db } from './db.js';
+import type { Sms } from './sms.js';
+import { authRoutes } from './routes/auth.js';
 
 export type BuildOptions = {
   readonly db: Db;
+  readonly signingKey: string;
+  readonly otpSalt: string;
+  readonly sms: Sms;
   readonly logLevel?: string;
 };
 
@@ -16,7 +21,13 @@ export type BuildOptions = {
  * port, a container or a sleep. `fastify.inject` is a real request through the
  * real router; nothing here is a mock of the server.
  */
-export function build({ db, logLevel = 'info' }: BuildOptions): FastifyInstance {
+export function build({
+  db,
+  signingKey,
+  otpSalt,
+  sms,
+  logLevel = 'info',
+}: BuildOptions): FastifyInstance {
   const app = Fastify({ logger: { level: logLevel } });
 
   app.decorate('db', db);
@@ -40,6 +51,8 @@ export function build({ db, logLevel = 'info' }: BuildOptions): FastifyInstance 
     }
     return { status: 'ok' };
   });
+
+  authRoutes(app, { signingKey, otpSalt, sms });
 
   return app;
 }

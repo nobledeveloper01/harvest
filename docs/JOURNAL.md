@@ -2061,3 +2061,52 @@ screen — the same rule that makes every clip announce itself.
 **The gate list is now eight.** That is the number to watch: this repository's
 own rule is that if the list grows past what one screen holds, the product is
 being built past the point anybody can honestly ship it.
+
+## Phase 5 opens: one Postgres, and a measurement instead of an assertion
+
+`docs/07-BACKEND-SPEC.md` asks for PostgreSQL **with PostGIS**, Redis and S3,
+and says of the first: *radius search is the core query. PostGIS is not optional
+here.* That is an assertion, and this repository measures the ones that decide
+an architecture.
+
+Two hundred thousand points scattered over Nigeria's bounding box, a composite
+btree on `(lat, lng)`, and the query a search actually runs — inside 50 km of
+Ibadan, ordered by distance, first fifty: **4.5 ms**, the box narrowing 200,000
+rows to 1,313 index hits and 1,037 true matches. Two hundred thousand live
+listings is already past the spec's *Scale: 100,000 farmers*, because a farmer
+has one or two lots on the market, not one each.
+
+The reason it holds is specific and worth writing down, because it is what makes
+the decision safe rather than lucky: a bounding box is a worse prefilter the
+further it is from square around its circle, and the distortion is `1/cos(lat)`.
+Nigeria is 4°N to 14°N, where that runs 1.003 to 1.031 — at most 3% wasted. **In
+Norway the same code would read four times the rows it needs.** ADR-0011 says so,
+and says to re-take the decision the day this stops being a product for one
+country. Three stateful systems is not a neutral choice for a pilot whose whole
+monthly budget is sixty dollars.
+
+## The auth surface, and a gate I wrote that passed for the wrong reason
+
+Phone and OTP, no password, because that is what the market is. Six digits,
+five-minute expiry, three attempts, and a lockout that doubles from a minute
+after the third request in an hour — that last one bounding the SMS bill, which
+is the largest line in this product's operating cost.
+
+Access tokens are HS256 written out rather than taken from a library, and the
+reason is the part of JWT deliberately absent: **this never reads an algorithm
+from the token it is verifying.** Most interesting JWT failures are that
+flexibility used against the verifier. A verifier with one algorithm and one key
+cannot be talked into `alg: none`, and there is a test that tries.
+
+Refresh tokens are rows, not signatures, because that is what makes revocation
+and reuse detection possible: a token presented twice is either a retry or a
+theft, the server cannot tell, and the whole chain goes. A stateless refresh
+token has nothing to revoke.
+
+**And then the session's own lesson arrived on schedule.** The test asserting
+that a one-time code is never stored in plaintext rendered the row with `::text`
+and looked for the digits. It passed with the code stored in plaintext — because
+Postgres renders `bytea` as hex, and `\x313233` does not contain `123`. Green,
+for a reason unrelated to what it checked, in a test written *that hour* by
+somebody who has spent all day finding exactly this. It reads the column as
+bytes now, and the plaintext break turns it red.

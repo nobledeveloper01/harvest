@@ -2,6 +2,7 @@ import { build } from './app.js';
 import { readConfig } from './config.js';
 import { connect } from './db.js';
 import { migrate } from './migrate.js';
+import { consoleSms } from './sms.js';
 
 const config = readConfig();
 const db = connect(config.databaseUrl);
@@ -16,5 +17,11 @@ const db = connect(config.databaseUrl);
 */
 await migrate(db);
 
-const app = build({ db, logLevel: config.logLevel });
+const app = build({
+  db,
+  signingKey: config.signingKey,
+  otpSalt: config.otpSalt,
+  sms: consoleSms(),
+  logLevel: config.logLevel,
+});
 await app.listen({ port: config.port, host: '0.0.0.0' });

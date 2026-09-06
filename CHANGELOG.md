@@ -61,6 +61,14 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Phase 5 opens: the server.** Fastify on Node 22 against one Postgres — see
+  [ADR-0011](docs/adr/0011-the-server-runs-on-postgres-alone.md), which measures
+  the radius query the specification said needed PostGIS: 4.5 ms over 200,000
+  points, and the latitude arithmetic that says why that holds in Nigeria and
+  would not in Norway.
+- Phone-and-OTP authentication: hashed six-digit codes, five-minute expiry,
+  three attempts, a lockout that doubles, fixed-algorithm access tokens, and
+  single-use refresh tokens with reuse detection that revokes the chain.
 - **Phase 4's engineering, all of it that needs no model.** The frame is judged
   before the shutter — brightness, clipping, and sharpness normalised by the
   frame's own contrast — and only a frame worth photographing offers the button.

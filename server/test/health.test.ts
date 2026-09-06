@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { build } from '../src/app.js';
 import { connect } from '../src/db.js';
 import { reset, testDatabase } from './support/database.js';
+import { testServer } from './support/server.js';
 
 describe('health', () => {
   const db = testDatabase();
@@ -16,7 +16,7 @@ describe('health', () => {
   });
 
   it('says ok when it can reach the database', async () => {
-    const app = build({ db, logLevel: 'silent' });
+    const app = testServer(db);
     const response = await app.inject({ method: 'GET', url: '/health' });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: 'ok' });
@@ -32,7 +32,7 @@ describe('health', () => {
   */
   it('says so when it cannot', async () => {
     const missing = connect('postgres://localhost:5432/harvest_no_such_database');
-    const app = build({ db: missing, logLevel: 'silent' });
+    const app = testServer(missing);
     const response = await app.inject({ method: 'GET', url: '/health' });
     expect(response.statusCode).toBe(503);
     expect(response.json().status).toBe('no database');
