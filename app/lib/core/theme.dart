@@ -392,6 +392,56 @@ abstract final class Palette {
 /// A widget rather than a copied `BoxDecoration`, because a screen that forgets
 /// it is a screen with a visibly different background from every other, and
 /// that is the kind of thing nobody notices until all of them are wrong.
+/// The daylight switch.
+///
+/// **Wherever a farmer can be standing in the sun, not only on the home
+/// screen.** It lived on the harvest list alone until somebody walked the app
+/// from a fresh install and could not reach it: the list is behind the whole
+/// logging flow, so on first launch there were five screens — picker, grid,
+/// quantity, storage, save — before a light theme became available at all.
+///
+/// The design floor is *direct sunlight*. A light theme that is authored,
+/// contrast-asserted, and unreachable at the moment it is needed is a light
+/// theme nobody has.
+class DaylightButton extends StatelessWidget {
+  const DaylightButton({required this.onTap, super.key});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: dark ? 'switch to the daylight screen' : 'switch to the dark screen',
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.pill,
+          onTap: onTap,
+          child: Container(
+            width: Target.standard - 8,
+            height: Target.standard - 8,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: freshness.high,
+              borderRadius: Radii.pill,
+              border: Border.all(color: freshness.outline),
+            ),
+            child: Icon(
+              dark ? Icons.wb_sunny_rounded : Icons.nights_stay_rounded,
+              size: 22,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class PageCanvas extends StatelessWidget {
   const PageCanvas({required this.child, super.key});
 

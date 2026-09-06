@@ -54,6 +54,7 @@ void main() {
             language: language,
             onChosen: onChosen ?? (_) {},
             onChangeLanguage: () {},
+            onToggleBrightness: () {},
           ),
         ),
       ),

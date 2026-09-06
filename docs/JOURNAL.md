@@ -5,6 +5,59 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-06 — A light theme nobody could reach
+
+A pass through every screen in the light theme, from a clean install, looking for
+what the tests cannot see.
+
+### Five screens before the sun
+
+The daylight switch was on the harvest list. The harvest list is behind the whole
+logging flow. So from a fresh install: picker, grid, quantity, storage, save —
+**five screens** before a farmer could reach a light theme at all.
+
+The design floor is *direct sunlight*. Both themes are authored, neither derived
+from the other, every pair contrast-asserted in CI, and the light amber was moved
+twice this week to clear 4.5:1. All of that work, and the theme was unreachable
+at the moment somebody would want it: standing in a field, opening the app for
+the first time.
+
+It is on the picker and on the crop grid now — the grid beside the language chip,
+because the two are the same kind of control, and because the grid is one
+back-tap from the rest of the flow.
+
+The test walks to it rather than looking for the widget. *"A `DaylightButton`
+exists somewhere"* was already true when the bug was there.
+
+### And two documents describing an app that no longer exists
+
+`DESIGN.md` and `docs/04-UX-DESIGN.md` both still specified 30/22/18/16 and a
+**minimum body size of 18 sp**. The app has been at 22/18/17/15/14 since the type
+scale came down, twice, at the request of the person whose product it is.
+
+I wrote the code change and left the documents contradicting it. A design
+document that disagrees with the code is worse than not having one: the next
+person to read it builds a screen that does not match the others, and finds out
+at review. Both now describe the real scale, with the reason the floor is a
+minimum rather than a target, and the note that touch targets did not move with
+it.
+
+### What surprised us
+
+**Nothing, in twelve screens — and one false alarm I nearly acted on.** The
+price display looked like the naira sign was touching the zero again, in a
+downscaled screenshot. Cropping the same pixels at full resolution showed a clean
+gap: the hair space was doing its job and the *screenshot* was lying, because a
+0.28× resample of a 3× render smears a one-pixel gap into nothing.
+
+Worth writing down because the reflex was to go and fix it. Twice today a defect
+has been found by looking at a rendering more closely — the ₦ crossbar, the tile
+scrim — so the third time the pattern matched, I believed it. **Looking closer
+is how you find these; looking closer is also how you invent them.** The
+difference is whether you looked at the real pixels before changing anything.
+
+---
+
 ## 2026-09-06 — The number the whole app is for, said out loud
 
 The decision screen leads with *"if you wait, you could lose ₦70,000"*. Every

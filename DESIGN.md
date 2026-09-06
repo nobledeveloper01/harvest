@@ -79,10 +79,24 @@ Chosen after checking, not assuming, that it covers what these languages need: H
 letters (ɓ ɗ ƙ Ɓ Ɗ Ƙ), Yorùbá's dot-below vowels with tone marks (ẹ ọ ṣ), Igbo's (ị ọ ụ ṅ),
 and ₦. A beautiful typeface that cannot set the product's own languages is not a candidate.
 
-Display 30 sp, title 22, body 18, secondary 16. Moderate on purpose: a headline that fills
-the screen leaves no room for the thing it introduces. The hierarchy is carried by **weight
-and tracking** rather than by size alone, which is what lets the scale stay moderate and
-still read as a hierarchy at arm's length in bright light.
+Display 22 sp, headline 18, title 17, body 15, secondary 14, with a single 13 for marks that
+only qualify something already legible — a provenance line, a badge, a tile caption. The
+hierarchy is carried by **weight and tracking** rather than by size alone, which is what lets
+the scale stay this moderate and still read at arm's length in bright light. And weight means
+weight: Inter ships as one variable file, so every style names the `wght` axis explicitly —
+`fontWeight` alone gives Skia nothing to instance and it synthesises bold instead, which is a
+smear rather than a hierarchy.
+
+**It came down twice from 30/22/18/16, and the reason is worth keeping.** The floor — 5",
+720p, sunlight, dust — sets the *minimum* that can be read. It had been read as an instruction
+to set everything at that minimum, and the result on an ordinary 6.1" phone was a product that
+shouts: three and a half rows of a twenty-five crop grid, a headline crowding the thing it
+introduces.
+
+**The touch targets did not move with it.** 56 dp, and 64 dp for anything used one-handed
+outdoors, are about work-hardened hands on a dusty screen — a different constraint from
+legibility, and not negotiable against how a screen looks. Holding that line is what made the
+rest safe to trim.
 
 Figures are **tabular** wherever they change under the thumb — the quantity display, the
 keypad. A number that shifts sideways as it is typed reads as the app struggling.

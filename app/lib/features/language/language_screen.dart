@@ -19,10 +19,22 @@ import '../../domain/speech/phrase.dart';
 /// There is no Continue button. Choosing *is* continuing: one decision per
 /// screen, and a second control here would be a second decision.
 class LanguageScreen extends StatefulWidget {
-  const LanguageScreen({required this.speaker, required this.onChosen, super.key});
+  const LanguageScreen({
+    required this.speaker,
+    required this.onChosen,
+    required this.onToggleBrightness,
+    super.key,
+  });
 
   final Speaker speaker;
   final void Function(Speech) onChosen;
+
+  /// The daylight switch, on the **first** screen.
+  ///
+  /// Somebody opening this app for the first time is standing wherever they
+  /// are standing, which the design floor says is often direct sunlight. The
+  /// switch used to be on the harvest list, five screens away.
+  final VoidCallback onToggleBrightness;
 
   @override
   State<LanguageScreen> createState() => _LanguageScreenState();
@@ -96,6 +108,8 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     Flexible(
                       child: Text('Harvest', style: text.displaySmall),
                     ),
+                    const SizedBox(width: Gap.s),
+                    DaylightButton(onTap: widget.onToggleBrightness),
                   ],
                 ),
                 const SizedBox(height: Gap.l),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
+import 'package:harvest/core/theme.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -320,6 +321,44 @@ void main() {
       isNot(contains('phrase:choose-language')),
       reason: 'the picker was built and spoke before the stored answer arrived',
     );
+  });
+
+  testWidgets('the daylight switch is reachable before anything is logged',
+      (tester) async {
+    /*
+      Found by opening the app from a fresh install and looking for it.
+
+      The switch lived on the harvest list, which is behind the whole logging
+      flow — so on a first launch there were five screens before a farmer could
+      reach a light theme at all: picker, grid, quantity, storage, save. The
+      design floor is **direct sunlight**. A light theme that is authored,
+      contrast-asserted in CI, and unreachable at the moment it is wanted is a
+      light theme nobody has.
+
+      Asserted by walking, not by looking for the widget: "it exists on some
+      screen" is what was already true.
+    */
+    SharedPreferences.setMockInitialValues({});
+    await launch(tester);
+
+    Brightness shown() => Theme.of(
+          tester.element(find.byType(DaylightButton).first),
+        ).brightness;
+
+    // The picker, which is the first thing anybody sees.
+    expect(find.byType(DaylightButton), findsOneWidget);
+    expect(shown(), Brightness.dark);
+    await tester.tap(find.byType(DaylightButton));
+    await tester.pumpAndSettle();
+    expect(shown(), Brightness.light, reason: 'the picker cannot switch');
+
+    // And again from the crop grid, one back-tap from the rest of the flow.
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DaylightButton), findsOneWidget);
+    await tester.tap(find.byType(DaylightButton));
+    await tester.pumpAndSettle();
+    expect(shown(), Brightness.dark, reason: 'the crop grid cannot switch');
   });
 
   testWidgets('a lot is logged end to end, from the first launch', (tester) async {

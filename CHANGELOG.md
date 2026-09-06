@@ -91,6 +91,11 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **`DESIGN.md` and `docs/04-UX-DESIGN.md` now describe the type scale the app
+  actually uses.** Both still specified 30/22/18/16 and a *minimum body size of
+  18 sp* — the scale as it was two steps ago. A design document that contradicts
+  the code is worse than none: the next person to read it makes a screen that
+  does not match the others.
 - **Every README screenshot recaptured**, and two added — the costs screen and a
   store's quote as a third course, neither of which had ever been shown. The old
   ten were a tour of grey hatching.

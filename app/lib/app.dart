@@ -370,7 +370,11 @@ class _HarvestAppState extends State<HarvestApp> {
       home: !_loaded
           ? const Scaffold(body: SizedBox.shrink())
           : switch (_language) {
-              null => LanguageScreen(speaker: _speaker, onChosen: _choose),
+              null => LanguageScreen(
+                  speaker: _speaker,
+                  onChosen: _choose,
+                  onToggleBrightness: _flipBrightness,
+                ),
               final language =>
                 _logging ? _logFlow(language) : _home(),
             },
@@ -414,6 +418,7 @@ class _HarvestAppState extends State<HarvestApp> {
             language: language,
             onChosen: (crop) => setState(() => _crop = crop),
             onChangeLanguage: _forgetLanguage,
+            onToggleBrightness: _flipBrightness,
             // No way back on a first launch: this screen is the app until
             // there is a lot to go back to.
             onBack: _stored.lots.isEmpty

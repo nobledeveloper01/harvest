@@ -28,7 +28,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: Palette.theme(brightness: Brightness.dark),
-        home: LanguageScreen(speaker: speaker, onChosen: (_) {}),
+        home: LanguageScreen(
+          speaker: speaker,
+          onChosen: (_) {},
+          onToggleBrightness: () {},
+        ),
       ),
     );
     await tester.pump();

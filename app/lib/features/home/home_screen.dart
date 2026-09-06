@@ -79,36 +79,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: Gap.l),
-            child: Semantics(
-              button: true,
-              container: true,
-              label: Theme.of(context).brightness == Brightness.dark
-                  ? 'switch to the daylight screen'
-                  : 'switch to the dark screen',
-              child: ExcludeSemantics(
-                child: Pressable(
-                  borderRadius: Radii.pill,
-                  onTap: onToggleBrightness,
-                  child: Container(
-                    width: Target.standard - 8,
-                    height: Target.standard - 8,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: freshness.high,
-                      borderRadius: Radii.pill,
-                      border: Border.all(color: freshness.outline),
-                    ),
-                    child: Icon(
-                      Theme.of(context).brightness == Brightness.dark
-                          ? Icons.wb_sunny_rounded
-                          : Icons.nights_stay_rounded,
-                      size: 22,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            child: DaylightButton(onTap: onToggleBrightness),
           ),
         ],
       ),

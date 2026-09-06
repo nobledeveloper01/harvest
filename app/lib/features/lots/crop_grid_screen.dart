@@ -29,6 +29,7 @@ class CropGridScreen extends StatefulWidget {
     required this.language,
     required this.onChosen,
     required this.onChangeLanguage,
+    required this.onToggleBrightness,
     this.onBack,
     super.key,
   });
@@ -36,6 +37,14 @@ class CropGridScreen extends StatefulWidget {
   final Speaker speaker;
   final Speech language;
   final void Function(Crop) onChosen;
+
+  /// The daylight switch, beside the language chip.
+  ///
+  /// The two belong together: both are about how the app presents itself
+  /// rather than about the harvest, and this is the top of the logging flow —
+  /// one back-tap from the quantity and storage screens, so it is reachable
+  /// from anywhere in it.
+  final VoidCallback onToggleBrightness;
 
   /// Back to the language picker.
   ///
@@ -128,8 +137,10 @@ class _CropGridScreenState extends State<CropGridScreen> {
             ? const SizedBox.shrink()
             : BackButtonRow(onBack: widget.onBack!, child: const SizedBox.shrink()),
         actions: [
+          DaylightButton(onTap: widget.onToggleBrightness),
           Padding(
-            padding: const EdgeInsets.only(right: Gap.l),
+            padding: const EdgeInsets.symmetric(horizontal: Gap.s)
+                .copyWith(right: Gap.l),
             child: _LanguagePill(
               language: widget.language,
               onTap: widget.onChangeLanguage,
