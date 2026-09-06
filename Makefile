@@ -13,10 +13,14 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check audio-check picture-check analyze test coverage-gate ## Everything CI runs
+ci: doc-check palette-check audio-check picture-check analyze test coverage-gate ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check palette-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
+
+.PHONY: palette-check
+palette-check: ## Fail if DESIGN.md's palette table disagrees with the theme
+	@python3 scripts/palette-check.py
 
 .PHONY: audio-check
 audio-check: ## Fail if anything the app says is missing a clip, or is not bundled

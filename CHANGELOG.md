@@ -10,6 +10,12 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- The contrast assertions measure the canvas gradient the page is actually
+  painted with, not the surface underneath it — which in the dark theme was the
+  darker of the two stops, so the top of every screen went unchecked. The light
+  `atRisk` amber moved to `#8E4E00` because the real background failed it at
+  4.4970:1.
+
 - The 200% text-scaling walk continues past the price pad through the decision,
   costs and storage-offer screens and the two closing sheets, and every step now
   names a witness — a string only on the screen it claims to be on — because
@@ -17,6 +23,9 @@ Entries say *why*, not just what.
 
 ### Added
 
+- `make palette-check`: DESIGN.md's palette table is compared against the theme
+  in both directions, because the table had been wrong about the light amber
+  through two separate moves of that colour and nothing said so.
 - **Phase 4 opens with the half of its gate that needs no model: the confidence
   gate.** Certainty is read from **two numbers** — the top score, and its
   distance from whatever came second — because a single threshold treats 0.88

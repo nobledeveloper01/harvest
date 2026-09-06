@@ -30,13 +30,16 @@ too subtle to read at arm's length on a dusty screen.
 | `textSecondary` | `#505A4D` | `#A6B2A2` | |
 | `accent` / `fresh` | `#1F6F33` | `#6BCB6F` | |
 | `onAccent` | `#FFFFFF` | `#07120A` | What is legible **on** the accent |
-| `atRisk` | `#A85E00` | `#F3B24E` | |
+| `atRisk` | `#8E4E00` | `#F3B24E` | |
 | `critical` | `#B3261E` | `#F17A78` | |
 | `sold` | `#505A4D` | `#A6B2A2` | |
 
-The page carries a two-stop vertical gradient — `#101A13` to `#0B0F0C` in the dark, barely
-apart. Enough that the screen is not a flat rectangle; little enough that nothing on it has
-to fight a moving background.
+The page carries a two-stop vertical gradient — `#101A13` to `#0B0F0C` in the dark,
+`#FBFCFA` to `#F2F6F0` in the light — barely apart. Enough that the screen is not a flat
+rectangle; little enough that nothing on it has to fight a moving background. **The
+gradient, not `surface`, is what text is actually drawn on**, and in the dark its top stop
+is the *lighter* of the two — so the contrast assertions measure every stop rather than
+the surface underneath them.
 
 **Dark is the default**, not `ThemeMode.system`. Both are authored; neither is derived.
 

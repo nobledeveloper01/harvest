@@ -46,9 +46,40 @@ void main() {
         );
       }
 
+      /*
+        The page is a gradient, not a colour.
+
+        Every "on the surface" pair below used to measure `scheme.surface`, and
+        **no screen in this app paints `scheme.surface` behind its content**:
+        `PageCanvas` covers the scaffold with a two-stop gradient. In the dark
+        theme the top stop, `#101A13`, is *lighter* than the surface beneath it
+        — so the gate was reading the friendlier of two backgrounds, and the top
+        of the page is precisely where the headline and the countdown sit.
+
+        Nothing failed when the real stops were finally measured; every pair had
+        the margin to absorb it. That is the point. A gate that reads a colour
+        the user never sees is right by luck, and the next colour to move will
+        not be so generous.
+
+        Built from `crop.canvas` rather than listed, so a third stop is measured
+        the day it is added.
+      */
+      final pageTones = <String, Color>{
+        'the page': scheme.surface,
+        for (final (index, stop) in crop.canvas.indexed)
+          'the canvas, stop ${index + 1}': stop,
+      };
+
+      void assertOnPage(String what, Color foreground,
+          {required double atLeast}) {
+        pageTones.forEach((where, background) {
+          assertPair('$what on $where', foreground, background,
+              atLeast: atLeast);
+        });
+      }
+
       test('body text on both surfaces', () {
-        assertPair('primary text on the surface', scheme.onSurface,
-            scheme.surface, atLeast: 4.5);
+        assertOnPage('primary text', scheme.onSurface, atLeast: 4.5);
         assertPair('primary text on a card', scheme.onSurface,
             scheme.surfaceContainerHighest, atLeast: 4.5);
       });
@@ -63,8 +94,7 @@ void main() {
           correct it.
         */
         final secondary = theme.textTheme.bodyMedium!.color!;
-        assertPair('secondary text on the surface', secondary, scheme.surface,
-            atLeast: 4.5);
+        assertOnPage('secondary text', secondary, atLeast: 4.5);
         assertPair('secondary text on a card', secondary,
             scheme.surfaceContainerHighest, atLeast: 4.5);
       });
@@ -82,8 +112,7 @@ void main() {
           ('critical', crop.critical),
           ('sold', crop.sold),
         ]) {
-          assertPair('$label on the surface', colour, scheme.surface,
-              atLeast: 3);
+          assertOnPage(label, colour, atLeast: 3);
           assertPair('$label on a card', colour, scheme.surfaceContainerHighest,
               atLeast: 3);
         }
@@ -116,18 +145,19 @@ void main() {
           ('critical', crop.critical),
           ('sold', crop.sold),
         ]) {
-          assertPair(
-            '$label on its own 12% tint',
-            colour,
-            over(colour, 0.12, scheme.surface),
-            atLeast: 4.5,
-          );
+          pageTones.forEach((where, background) {
+            assertPair(
+              '$label on its own 12% tint over $where',
+              colour,
+              over(colour, 0.12, background),
+              atLeast: 4.5,
+            );
+          });
         }
       });
 
       test('the primary button, which is the one people must find', () {
-        assertPair('the button against the page', scheme.primary,
-            scheme.surface, atLeast: 3);
+        assertOnPage('the button', scheme.primary, atLeast: 3);
       });
 
       test('anything drawn on the accent itself', () {
@@ -161,8 +191,7 @@ void main() {
           so it has to clear the 3:1 floor for a graphical object rather than
           being a decorative whisper.
         */
-        assertPair('the outline on the page', crop.outline, scheme.surface,
-            atLeast: 1.4);
+        assertOnPage('the outline', crop.outline, atLeast: 1.4);
         assertPair('the outline on a card', crop.outline, crop.raised,
             atLeast: 1.4);
       });

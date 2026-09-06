@@ -1698,3 +1698,37 @@ screen's commission row: *"overflowed on the costs screen"*, naming the screen
 rather than one three steps later. Deleting the "Remember this offer" tap:
 *"never arrived at the decision screen, with money on it"* — which under the old
 one-assertion `clean` would have been green.
+
+## The contrast gate was measuring a colour nothing is drawn on
+
+`PageCanvas` covers every screen with a two-stop gradient. The contrast suite
+asserted everything against `scheme.surface` — which is the colour *underneath*
+that gradient, and in the dark theme is the darker of the two stops. So the gate
+measured the friendlier background, and the top of the page, where the headline
+and the countdown live, was never checked at all.
+
+Nothing failed in the dark. The light theme failed immediately: `#995400` as
+text on a card tinted with itself at 12%, over the bottom stop of the canvas, is
+**4.4970:1** — under the floor by three thousandths, on the busiest screen in the
+app. That colour had already moved twice for this exact composition. It moved a
+third time, to `#8E4E00`: same hue to a tenth of a degree, half a point of margin
+instead of none.
+
+The page tones are now built from `crop.canvas` rather than listed, so a third
+stop is measured the day somebody adds one. Proved it by adding one — two pairs
+failed against `stop 3` within a second.
+
+### And the document a person reads had been wrong for two colour moves
+
+`DESIGN.md` still said `#A85E00` for the light amber. `CLAUDE.md` says read that
+file before any visual decision, which makes its table the authority — and the
+authority named a colour that had twice failed the repository's own contrast
+test. Nothing checked it, so nothing said so.
+
+`make palette-check` now compares the table to `theme.dart` in both directions.
+The second direction is the one that matters: a palette gains a role far more
+often than it changes one, and a table that is only *correct about what it
+lists* rots the first time somebody adds a token. Proved both halves — a wrong
+hex in the table, and a `_lightWarning`/`_darkWarning` pair the table never heard
+about. It caught the stale amber and an undocumented gradient on its first run,
+before either break was staged.

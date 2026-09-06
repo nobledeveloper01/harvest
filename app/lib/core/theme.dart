@@ -205,8 +205,17 @@ abstract final class Palette {
       moves the two toward each other, so 4.78:1 against the surface became
       4.09:1 against what the sentence is actually drawn on. Lowering the tint
       does not save it; at 6% it is still 4.43:1. The colour had to move.
+
+      And darker once more, from `#995400`, when the contrast gate stopped
+      measuring `scheme.surface` and started measuring the two stops of the
+      canvas gradient that is *actually* behind the page. `#995400` on its own
+      tint over the bottom stop is **4.4970:1** — under the floor by three
+      thousandths, in the one composition on the busiest screen in the app. The
+      hue is unchanged at 33°; only the lightness moved, so nothing that was
+      recognisably "the amber one" stopped being it. There is now half a point
+      of margin rather than none.
     */
-    atRisk: Color(0xFF995400),
+    atRisk: Color(0xFF8E4E00),
     critical: Color(0xFFB3261E),
     sold: Color(0xFF505A4D),
     onAccent: Color(0xFFFFFFFF),
