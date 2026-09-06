@@ -40,20 +40,24 @@ the phrase played before it — *you could lose*, *waiting is fine* — a separa
 recording, so a translator shortening one cannot take the direction with it.
 The same split the diagnosis screen makes between its hedge and its name.
 
-### The device check could not be re-run, and that is not a pass
+### The device check went red for a reason that was not the code
 
-The naira clips are generated, gated and wired. They have **not** been played on
-a device, because the machine's audio output stopped working partway through the
-session: `afplay` on the host fails with `AudioQueueStart failed (-66681)` on a
-file it played an hour earlier and which every gate still passes. The simulator
-uses the host's device, so nothing can play there either, and all three speech
-tests time out identically.
+For an hour the naira clips could not be verified: every speech test timed out,
+and so did `afplay` on the host, on a file it had played an hour earlier and
+that every gate still passed. `AudioQueueStart failed (-66681)` — the machine's
+audio output had stopped working, and the simulator uses the host's device.
 
-The format question is already answered — an earlier run proved AAC decodes
-through `audioplayers` on iOS, and these clips are the same format from the same
-pipeline. What is unverified is narrower: that these particular hundred and
-ninety files play. That is worth re-running, and it is worth **not** recording
-as done.
+Worth writing down because of what it nearly cost. Three tests going red
+immediately after a change to the speech pipeline is a very loud accusation, and
+the obvious move is to start unpicking the change. The thing that settled it in
+one command was **testing the claim outside the app entirely**: if `afplay`
+cannot play the file either, the app is not the variable. That is the same move
+that settled the naira glyph — render the font outside Flutter — and it has now
+paid twice in one day.
+
+It was recorded as outstanding rather than as passed, and re-run once the
+machine's audio came back: three tests, thirty-seven seconds, green. **The clips
+play on the device**, including the naira scale.
 
 ### What surprised us
 
