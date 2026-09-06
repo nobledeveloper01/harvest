@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 /// The design system, from `DESIGN.md`.
@@ -478,12 +481,29 @@ class PageCanvas extends StatelessWidget {
 /// Not decoration: on a resistive-feeling budget screen in bright light, the
 /// ripple alone is often invisible, and the one thing a farmer needs to know is
 /// whether the phone felt the tap at all.
+/// It also guarantees the control can be hit.
+///
+/// `DESIGN.md`'s floor is **56 dp, and 64 for anything used one-handed
+/// outdoors** — work-hardened hands, a dusty screen, direct sunlight. That is a
+/// floor on what a finger can reach, not on what an eye can see, and the two
+/// had been conflated: six controls were drawn at 34, 44 or 48 dp and had hit
+/// areas to match, because `Target.standard - 8` was written where the visual
+/// size belonged. One of them was the back button, so **every screen in the app
+/// carried a target under the floor**, and nothing said so — the size
+/// assertions that existed named one or two widgets per screen by hand.
+///
+/// The floor lives here rather than at the call sites, because a rule every
+/// author has to remember is a rule that holds until somebody adds a control.
+/// [least] grows the box; it never grows the child, so nothing looks heavier
+/// for it. That matters: this app's type scale came down twice for being too
+/// heavy, and buying reach with visual weight would have undone it quietly.
 class Pressable extends StatefulWidget {
   const Pressable({
     required this.child,
     required this.onTap,
     this.onLongPress,
     this.borderRadius = Radii.tile,
+    this.least = Target.standard,
     super.key,
   });
 
@@ -491,6 +511,9 @@ class Pressable extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final BorderRadius borderRadius;
+
+  /// The smallest this may be to a finger, in either direction.
+  final double least;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -514,9 +537,92 @@ class _PressableState extends State<Pressable> {
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           onHighlightChanged: (down) => setState(() => _down = down),
-          child: widget.child,
+          child: _AtLeast(least: widget.least, child: widget.child),
         ),
       ),
+    );
+  }
+}
+
+
+/// Lays the child out exactly as its parent asked, then takes up more room.
+///
+/// Deliberately **not** `ConstrainedBox`, which forces the minimum onto the
+/// child and would have made every 48 dp circle in the app a 56 dp circle. And
+/// deliberately not `Center` inside one, which loosens the width and would have
+/// let the full-width pills shrink to fit their labels. The child keeps the
+/// constraints it had; only the box around it grows, and the child sits in the
+/// middle of it.
+class _AtLeast extends SingleChildRenderObjectWidget {
+  const _AtLeast({required this.least, required super.child});
+
+  final double least;
+
+  @override
+  _RenderAtLeast createRenderObject(BuildContext context) =>
+      _RenderAtLeast(least);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderAtLeast box) {
+    box.least = least;
+  }
+}
+
+class _RenderAtLeast extends RenderShiftedBox {
+  _RenderAtLeast(this._least) : super(null);
+
+  double _least;
+
+  double get least => _least;
+
+  set least(double value) {
+    if (_least == value) return;
+    _least = value;
+    markNeedsLayout();
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      math.max(super.computeMinIntrinsicWidth(height), least);
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      math.max(super.computeMaxIntrinsicWidth(height), least);
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      math.max(super.computeMinIntrinsicHeight(width), least);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      math.max(super.computeMaxIntrinsicHeight(width), least);
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final child = this.child;
+    if (child == null) return constraints.constrain(Size(least, least));
+    final inner = child.getDryLayout(constraints);
+    return constraints.constrain(Size(
+      math.max(inner.width, least),
+      math.max(inner.height, least),
+    ));
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.constrain(Size(least, least));
+      return;
+    }
+    child.layout(constraints, parentUsesSize: true);
+    size = constraints.constrain(Size(
+      math.max(child.size.width, least),
+      math.max(child.size.height, least),
+    ));
+    (child.parentData! as BoxParentData).offset = Offset(
+      (size.width - child.size.width) / 2,
+      (size.height - child.size.height) / 2,
     );
   }
 }

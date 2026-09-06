@@ -59,7 +59,7 @@ sunlight on a dusty screen loses one channel and keeps two.
 
 ## Shape and spacing
 
-Radii: 20 for tiles, 24 for cards, 16 for chips, fully round for pills and the primary
+Radii: 16 for tiles, 20 for cards, 12 for chips, fully round for pills and the primary
 button. Spacing on a four-point grid — 4, 8, 12, 16, 24, 32.
 
 Every tappable surface scales to 0.96 under the thumb. Not decoration: on a budget screen in
@@ -83,7 +83,15 @@ letters (ɓ ɗ ƙ Ɓ Ɗ Ƙ), Yorùbá's dot-below vowels with tone marks (ẹ �
 and ₦. A beautiful typeface that cannot set the product's own languages is not a candidate.
 
 Display 22 sp, headline 18, title 17, body 15, secondary 14, with a single 13 for marks that
-only qualify something already legible — a provenance line, a badge, a tile caption. The
+only qualify something already legible — a provenance line, a badge, a tile caption.
+
+Three readouts sit **above** the scale, and only three: 34 sp for a money figure being
+typed, 32 for a weight, 20 for a keypad digit. They are the one place where size rather
+than weight carries the hierarchy, because on those screens the figure being entered is
+not part of the screen — it is the screen, read at arm's length by somebody who is also
+holding a crate. Nothing else in the app is allowed above 22.
+
+The
 hierarchy is carried by **weight and tracking** rather than by size alone, which is what lets
 the scale stay this moderate and still read at arm's length in bright light. And weight means
 weight: Inter ships as one variable file, so every style names the `wght` axis explicitly —

@@ -10,6 +10,12 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **Every touch target in the app now meets the 56 dp floor.** Six controls were
+  drawn at 34, 44 or 48 dp with hit areas to match — one of them the back
+  button, which is on every screen. The floor moved inside `Pressable`, where
+  it applies to every tappable surface, and it grows the box without growing the
+  child: nothing looks bigger for it.
+
 - `make domain-purity` enforces the whole rule it is documented as enforcing:
   platform imports, plugin imports, the clock and randomness. It had been a
   single grep for `package:flutter/` while `CLAUDE.md` and ADR-0002 both claimed
@@ -28,9 +34,15 @@ Entries say *why*, not just what.
 
 ### Added
 
-- `make palette-check`: DESIGN.md's palette table is compared against the theme
-  in both directions, because the table had been wrong about the light amber
-  through two separate moves of that colour and nothing said so.
+- `test/touch_target_test.dart`: the whole flow walked at 100% on the 5" floor
+  with **every** tappable measured — 256 of them — replacing seven hand-written
+  assertions that named one or two widgets per screen and missed all six
+  offenders. A tappable that is not a `Pressable` is reported separately.
+- `make design-check`: DESIGN.md is compared against the theme in both
+  directions — the palette, the radii, the spacing grid, the type scale and the
+  touch floor — because the document had been wrong about the light amber
+  through two separate moves of that colour, and wrong about every corner
+  radius since the density pass, and nothing said so.
 - **Phase 4 opens with the half of its gate that needs no model: the confidence
   gate.** Certainty is read from **two numbers** — the top score, and its
   distance from whatever came second — because a single threshold treats 0.88

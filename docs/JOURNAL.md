@@ -1725,7 +1725,7 @@ file before any visual decision, which makes its table the authority — and the
 authority named a colour that had twice failed the repository's own contrast
 test. Nothing checked it, so nothing said so.
 
-`make palette-check` now compares the table to `theme.dart` in both directions.
+`make design-check` now compares the document to `theme.dart` in both directions.
 The second direction is the one that matters: a palette gains a role far more
 often than it changes one, and a table that is only *correct about what it
 lists* rots the first time somebody adds a token. Proved both halves — a wrong
@@ -1757,3 +1757,49 @@ this cost nothing to adopt and would have cost a season to discover.
 
 ADR-0002 had *named this hole itself* and said it was not closed. It is three
 quarters closed now; the transitive one is still open and still written down.
+
+## Every screen in the app had a touch target under the floor
+
+The back button. Forty-eight dp, on a floor that `CLAUDE.md` lists among the
+things that are never traded: **56 dp, and 64 for anything used one-handed
+outdoors**. The daylight switch, the language chip at 44, the say-again row on
+the assumption card at 34, and the two pills under it at 48 — six controls in
+all, each drawn with `Target.standard - 8` or a bare number where the *visual*
+size belonged.
+
+What was enforcing the rule was seven assertions scattered across five screen
+tests, each naming one or two widgets by hand. Every one of them passed the
+whole time, because none of them named any of the six. A rule checked on the
+widgets somebody thought about is a rule about that person's memory.
+
+Two changes. The floor moved **inside `Pressable`**, which every tappable
+surface in the app already goes through: a small `RenderShiftedBox` lays the
+child out under exactly the constraints its parent gave it, then takes up
+`max(child, 56)` and centres the child in that. Not `ConstrainedBox`, which
+would have forced the minimum onto the child and turned every 48 dp circle into
+a 56 dp circle; not `Center` inside one, which loosens the width and would have
+let the full-width pills shrink to their labels. **Nothing looks bigger.** That
+was a requirement, not a bonus — this app's type scale came down twice for being
+too heavy, and buying reach with visual weight would have undone it quietly.
+
+And the gate became a walk. `test/touch_target_test.dart` reuses the flow that
+`text_scaling_test.dart` walks — now shared in `test/support/flow.dart` — and
+measures **every** tappable on every screen: 256 of them. It also reports a
+tappable that is not a `Pressable`, which is the more interesting failure, since
+such a control has escaped the mechanism rather than merely failed it. Proved
+all three: remove the `_AtLeast` and twenty-nine controls report their size;
+swap one `Pressable` for a bare `InkWell` and it is named as unguarded; the
+count guard catches a walk that measured nothing.
+
+The two suites now share one walk, which is the point. A screen added to the
+flow is covered by both, and by whatever the next question turns out to be.
+
+### The design document was wrong about the radii too
+
+`make palette-check` grew into `make design-check`. It found that DESIGN.md
+still described 20/24/16 corner radii, a whole density pass out of date — a
+reader following the authority would have drawn a 24 dp card in an app whose
+cards are 20 — and that the type scale it published named nothing above 22,
+while three screens set a typed figure at 32 or 34. Those readouts are
+deliberate and are now written down, with the reason: on those screens the
+figure being entered is not part of the screen, it is the screen.
