@@ -36,7 +36,7 @@ import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from dartenum import (  # noqa: E402
-    GREEN, OFF, ROOT, YELLOW, enum_values, manifest,
+    GREEN, OFF, ROOT, YELLOW, asset_sets, enum_values, manifest,
 )
 
 # ADR-0009. Mirrored in `audio-check.py`, which has to know what it is reading.
@@ -53,23 +53,15 @@ ASSETS = ROOT / 'app/assets'
 # directory by adding an "s" worked for crops and units and turns `storage`
 # into `storages`, which is the kind of rule that reads as clever until the
 # third case arrives.
-NAMES = {
-    'crop': ('crops', ROOT / 'app/lib/domain/crops/crop.dart', 'Crop'),
-    'unit': ('units', ROOT / 'app/lib/domain/lots/quantity.dart', 'Unit'),
-    'storage': ('storage', ROOT / 'app/lib/domain/lots/lot.dart', 'StorageCondition'),
-    'region': ('regions', ROOT / 'app/lib/domain/lots/quantity.dart', 'Region'),
-    'outcome': ('outcomes', ROOT / 'app/lib/domain/lots/outcome.dart', 'LotOutcome'),
-    'loss': ('losses', ROOT / 'app/lib/domain/lots/outcome.dart', 'LossReason'),
-    'ailment': (
-        'ailments',
-        ROOT / 'app/lib/domain/diagnosis/ailment.dart',
-        'Ailment',
-    ),
-    'step': ('steps', ROOT / 'app/lib/domain/diagnosis/guidance.dart', 'Step'),
-    # Spoken only. There is nothing to draw for "about forty-five kilograms",
-    # so this one has no picture directory and `picture-check` never sees it.
-    'weight': (None, ROOT / 'app/lib/domain/speech/spoken_weight.dart', 'SpokenWeight'),
-}
+# Which enums own assets: `dartenum.ASSET_SETS`, like both gates.
+#
+# This file kept its own copy until the naira scale was added — to the shared
+# table, to `audio-check` and to `picture-check`, and *not* here, because there
+# was nothing to add it to there any more. The generator then reported "nothing
+# missing" while the gate reported a hundred and ninety absent clips, which is
+# the two of them disagreeing about what the product contains.
+#
+# The unification a few hours ago said "one table, three gates" and did two.
 
 # Beside the directories rather than inside them: `assets/crops/` is a pubspec
 # entry, and everything in a declared directory ships in the binary.
@@ -284,9 +276,17 @@ def main() -> int:
 
     languages = enum_values(PHRASES, 'Speech')
     phrases = enum_values(PHRASES, 'Phrase')
+    # `(speech subdirectory, picture directory or None, values)` per set. Both
+    # names come from the table rather than from the key, because they differ:
+    # the pictures of storage conditions live in `assets/storage/` and their
+    # clips in `<language>/storage/`, but the crops are `crops/` and `crop/`.
     names = {
-        name: (folder, enum_values(source, enum))
-        for name, (folder, source, enum) in NAMES.items()
+        name: (
+            spec['speech'],
+            spec['pictures'],
+            enum_values(spec['source'], spec['enum']),
+        )
+        for name, spec in asset_sets().items()
     }
 
     # `enum_values` returns only the first literal on each constant. The
@@ -316,7 +316,7 @@ def main() -> int:
     }
 
     seed = 0
-    for directory, values in names.values():
+    for _, directory, values in names.values():
         if directory is None:
             continue
         folder = ASSETS / directory
@@ -336,9 +336,10 @@ def main() -> int:
 
     if not args.pictures_only:
         stems = [(phrase, phrase.replace('-', ' ')) for phrase in phrases]
-        for name, (_, values) in names.items():
+        for speech, _, values in names.values():
             stems += [
-                (f'{name}/{value}', value.replace('-', ' ')) for value in values
+                (f'{speech}/{value}', value.replace('-', ' '))
+                for value in values
             ]
         for language in languages:
             for stem, spoken in stems:

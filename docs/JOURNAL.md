@@ -5,6 +5,84 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-06 — The number the whole app is for, said out loud
+
+The decision screen leads with *"if you wait, you could lose ₦70,000"*. Every
+other screen in this product exists to set that sentence up. It has been English
+text since it was written.
+
+Principle 1 of `CLAUDE.md` is that **reading is optional** — every P0 flow
+completes with pictures and speech alone. A farmer who cannot read heard the
+crop, heard the measure, heard *about two hundred kilograms*, arrived at the
+money, and got silence. Not a bug anybody would report: the screen looks
+finished, and the person it fails is the one least able to say so.
+
+### The scale
+
+`SpokenNaira`, on the same argument as `SpokenWeight`: whole recorded sentences,
+never composed from digit-words. Yoruba counts subtractively and does not
+decompose into digits; a sentence stitched from separately recorded words has
+the wrong intonation on every one of them, which is a bad thing for an app to
+sound like when it is telling somebody what their harvest is worth.
+
+Thirty-eight sentences, ₦500 to ₦2,000,000, nearest by ratio, never out by more
+than a quarter. Finest between ₦50,000 and ₦100,000, because that is where a
+lot's value, a week's loss and a storage bill all land — and because *seventy
+thousand* and *ninety thousand* are figures a trader says every day.
+
+**Both ends are bounds rather than clamps.** *More than two million* above and
+*less than five hundred* below. Rounding forty million down to two would be a
+lie; rounding a ₦120 loss up to ₦500 would be an alarm about nothing, which is
+the kind of wrong that makes somebody act.
+
+And it carries **magnitudes only**. Whether the money is coming or going is in
+the phrase played before it — *you could lose*, *waiting is fine* — a separate
+recording, so a translator shortening one cannot take the direction with it.
+The same split the diagnosis screen makes between its hedge and its name.
+
+### The device check could not be re-run, and that is not a pass
+
+The naira clips are generated, gated and wired. They have **not** been played on
+a device, because the machine's audio output stopped working partway through the
+session: `afplay` on the host fails with `AudioQueueStart failed (-66681)` on a
+file it played an hour earlier and which every gate still passes. The simulator
+uses the host's device, so nothing can play there either, and all three speech
+tests time out identically.
+
+The format question is already answered — an earlier run proved AAC decodes
+through `audioplayers` on iOS, and these clips are the same format from the same
+pipeline. What is unverified is narrower: that these particular hundred and
+ninety files play. That is worth re-running, and it is worth **not** recording
+as done.
+
+### What surprised us
+
+**A test bent to fit its data, and I nearly let it.** The scale asserts that
+every entry is something a native speaker would say naturally, which I first
+wrote as divisibility by bands — multiples of 50,000 above a hundred thousand.
+It rejected ₦120,000.
+
+*One hundred and twenty thousand naira* is a figure a trader says every day. The
+rule was arbitrary, not the scale. The temptation at that point is to widen the
+band until the test goes green, which is how an assertion stops meaning
+anything. What "round figure" actually means is **at most two significant
+figures**, and that rule is defensible, catches ₦37,412, and passes ₦120,000
+because it should.
+
+**And the unification I was pleased with had done two thirds of the job.**
+Adding the naira scale meant four edits: the shared table, `audio-check`,
+`picture-check` — and `make-placeholders`, which I had left holding its own copy
+of which enums own assets. The generator reported *nothing missing* while the
+gate reported a hundred and ninety absent clips.
+
+Two tools disagreeing about what the product contains is precisely the failure
+the shared table was written to end, hours earlier, in an entry that says "one
+table, three gates". It was one table and two gates. The third had a table of
+its own and I never looked at it, because I had already decided the problem was
+solved.
+
+---
+
 ## 2026-09-06 — Forty-two megabytes of placeholder
 
 The bundle is 42 MB of speech. The design floor is a ₦40,000 handset on a

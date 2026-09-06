@@ -11,6 +11,7 @@ import 'package:harvest/domain/money/net_price.dart';
 import 'package:harvest/domain/money/sourced.dart';
 import 'package:harvest/domain/money/storing.dart';
 import 'package:harvest/domain/speech/phrase.dart';
+import 'package:harvest/domain/speech/spoken_naira.dart';
 import 'package:harvest/domain/spoilage/shelf_life.dart';
 import 'package:harvest/features/money/decision_screen.dart';
 
@@ -20,6 +21,10 @@ class _Recording implements Speaker {
   @override
   Future<void> say(Phrase phrase, Speech language) async =>
       said.add('phrase:${phrase.id}');
+
+  @override
+  Future<void> sayNaira(SpokenNaira money, Speech language) async =>
+      said.add('naira:${money.id}');
 
   @override
   Future<void> dispose() async {}
@@ -126,10 +131,22 @@ void main() {
       expect(find.text(naira(20000)), findsOneWidget);
     });
 
-    testWidgets('and says so out loud', (tester) async {
+    testWidgets('and says so out loud, with the figure', (tester) async {
+      /*
+        R9. The direction and the amount are two clips in that order — a
+        translator shortening one cannot take the other with it, and the speaker
+        stops what is playing before starting the next, so fired together a
+        farmer hears the tail of one and none of the other.
+
+        This was the last place principle 1 was not true: somebody who cannot
+        read heard the crop, the measure and the weight, reached the screen the
+        rest of the app exists to set up, and got a sentence with the number
+        missing.
+      */
       final speaker = await pump(tester, decision());
-      expect(speaker.said, ['phrase:you-could-lose']);
+      expect(speaker.said, ['phrase:you-could-lose', 'naira:naira-20000']);
     });
+
 
     testWidgets('when waiting is fine it says that instead', (tester) async {
       // Four days into a two-to-six-day window loses half the lot; one day
@@ -145,6 +162,9 @@ void main() {
       final speaker = await pump(tester, fine);
 
       expect(find.text('Waiting is fine for now'), findsOneWidget);
+      // And no figure after it: there is no loss to name, and a scale that
+      // always produced its nearest entry would announce "less than five
+      // hundred naira" about nothing.
       expect(speaker.said, ['phrase:waiting-is-fine']);
     });
 

@@ -8,6 +8,7 @@ import '../../domain/money/decision.dart';
 import '../../domain/money/net_price.dart';
 import '../../domain/money/sourced.dart';
 import '../../domain/speech/phrase.dart';
+import '../../domain/speech/spoken_naira.dart';
 import '../../domain/spoilage/shelf_life.dart';
 
 /// What to do with this lot.
@@ -79,6 +80,25 @@ class _DecisionScreenState extends State<DecisionScreen> {
     if (cost == null) return;
     await widget.speaker.say(
       cost.value > 0 ? Phrase.youCouldLose : Phrase.waitingIsFine,
+      widget.language,
+    );
+    if (!mounted || cost.value <= 0) return;
+
+    /*
+      Then the number, as a second clip.
+
+      R9, and the last place principle 1 was not true: a farmer who cannot read
+      heard the crop, the measure and the weight, arrived at the screen every
+      other screen exists to set up, and got a sentence with the figure missing.
+
+      The magnitude only — the direction is in the phrase above, recorded
+      separately so that shortening one cannot lose the other. Awaited in order
+      because the speaker stops whatever is playing before it starts the next;
+      fired together, what a farmer hears is the tail of one and none of the
+      other.
+    */
+    await widget.speaker.sayNaira(
+      SpokenNaira.nearest(cost.value),
       widget.language,
     );
   }

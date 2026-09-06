@@ -84,6 +84,14 @@ ASSET_SETS = {
         'source': DOMAIN / 'diagnosis/guidance.dart',
         'enum': 'Step',
     },
+    # Spoken only, like the weights: there is no picture of eighty thousand
+    # naira, and a banknote would be a drawing of the wrong thing.
+    'naira': {
+        'speech': 'naira',
+        'pictures': None,
+        'source': DOMAIN / 'speech/spoken_naira.dart',
+        'enum': 'SpokenNaira',
+    },
     # Spoken only. There is nothing to draw for "about forty-five kilograms",
     # so `pictures` is None and the picture gate never sees it.
     'weight': {

@@ -379,6 +379,27 @@ Entries say *why*, not just what.
   illustrations as hatched placeholders, and the gate went back to reporting
   85 of 85. Nothing failed; the count just went up again. The manifest is a
   record of what is **not real**, not an inventory of what exists.
+- **Money is spoken, and R9 is cleared.** The decision screen leads with the
+  figure the whole product is built to deliver — *"if you wait, you could lose
+  ₦70,000"* — and it was English text on a screen whose first principle is that
+  reading is optional. A farmer who cannot read heard the crop, the measure and
+  the weight, reached the screen the rest of the app exists to set up, and got a
+  sentence with the number missing.
+
+  `SpokenNaira`: thirty-eight whole recorded sentences from ₦500 to ₦2,000,000,
+  chosen nearest **by ratio**, never wrong by more than a quarter, finest
+  between ₦50,000 and ₦100,000 where a lot's value, a week's loss and a storage
+  bill all land. Not composed from digit-words, for the reasons `SpokenWeight`
+  sets out — Yoruba's subtractive counting does not decompose, and a sentence
+  assembled from separately recorded words has the wrong intonation on all of
+  them.
+
+  **Both ends are bounds, not clamps.** *More than two million* above, *less
+  than five hundred* below: rounding a fortune down is a lie, and rounding a
+  ₦120 loss up to ₦500 is an alarm about nothing. And it carries **magnitudes
+  only** — whether the money is coming or going lives in the phrase played
+  before it, so a translator shortening one sentence cannot take the direction
+  with it.
 - **The clips ship as AAC, and R5 is cleared.** 42 MB of 8 kHz WAV was the
   speech bundle, on a product whose design floor is a ₦40,000 handset and a
   metered connection — and those are placeholders; real recordings at a usable
@@ -431,6 +452,13 @@ Entries say *why*, not just what.
   the colour against an untinted surface at the 3:1 floor for a *graphical
   object*, and this is a sentence. Lowering the tint does not save it — at 6% it
   is still 4.43:1 — so the light amber moved again, to `#995400`.
+- **The unification said "one table, three gates" and did two.** Adding the
+  naira scale went into the shared table, into `audio-check` and into
+  `picture-check` — and not into `make-placeholders`, which still kept its own
+  copy of which enums own assets. The generator then reported *nothing missing*
+  while the gate reported a hundred and ninety absent clips: the two of them
+  disagreeing about what the product contains, which is the exact failure the
+  unification was for. It reads the shared table now.
 - **The audio gate never checked for orphans.** The picture gate has failed on
   them since it was written; this one only ever asked whether what it expected
   was present, never whether what was present was expected. Renaming a phrase

@@ -23,6 +23,7 @@ built past the point anybody can honestly ship it.
 
 | # | Gate | How |
 |---|---|---|
+| R9 | **Money is spoken, not only written** | `SpokenNaira`: thirty-eight whole sentences from ₦500 to ₦2,000,000, nearest by ratio, never wrong by more than a quarter, and bounded at both ends rather than clamped — *more than two million* above it, *less than five hundred* below, because rounding a fortune down is a lie and rounding a ₦120 loss up to ₦500 is an alarm about nothing. The decision screen plays the direction and the amount as two clips in order, so shortening one cannot lose the other. **What remains is R1's problem, not R9's**: these are placeholder recordings like every other clip. *The clips have not yet been played on a device — the host's audio output failed mid-session and the simulator uses it. The format is proven; these particular files are not* |
 | R5 | The bundled clips are **compressed** | AAC-LC, mono, 16 kHz, 32 kbps, in `.m4a` — [ADR-0009](adr/0009-the-clips-ship-as-aac.md). Native on both platforms, which Opus is not on iOS. And the gate survived the change rather than being dropped with it: `audio-check` parses the MP4 container for duration and encoded payload, with no decoder, because a gate that needs a codec stops running the day the codec is absent. Digital silence encodes to 62 bytes per second and speech to 3,700 — measured — so the floor between them has sixty times the margin either way. Proved on a device, because no gate here could: `integration_test/speech_test.dart` plays a clip from every namespace in all five languages through the real player, and a clip the platform will not decode never completes |
 
 | R6 | The spoken weight scale is **checked against how it sounds**. `SpokenWeight` says "about fifty kilograms" for forty-eight, and never rounds by more than a third — asserted. What is not asserted is whether a Yoruba speaker finds the chosen sentence natural for the weight in front of them, which is a question for a person, not a test | A native speaker of each of the four Nigerian languages, listening | Phase 2 |
@@ -31,7 +32,6 @@ built past the point anybody can honestly ship it.
 
 | R8 | **`make speech-budget` becomes a gate.** The app talks for 29 seconds on the shortest path to a logged lot, against a 60-second phase gate — but every clip is a stand-in saying several times more than the recording that replaces it, so the figure is a report today and not a threshold. It becomes one the day R1 clears, against whatever the real recordings measure | R1 | Phase 2 |
 
-| R9 | **Money is spoken, not only written.** The storage verdict is the first figure in the product that a farmer decides real money on, and it exists as English text — the domain currently holds that sentence, which is itself borrowed time. `SpokenWeight` solved the same problem for kilograms with a closed scale of whole recorded sentences; naira needs the same treatment and a wider scale | A decision on the naira scale, and 5× recordings of it | Phase 3 |
 
 ## How a gate leaves this list
 

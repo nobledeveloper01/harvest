@@ -4,6 +4,7 @@ import 'package:harvest/domain/crops/crop.dart';
 import 'package:harvest/domain/diagnosis/ailment.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/speech/phrase.dart';
+import 'package:harvest/domain/speech/spoken_naira.dart';
 import 'package:integration_test/integration_test.dart';
 
 /// Does the device actually decode what we bundled?
@@ -51,6 +52,9 @@ void main() {
           const Duration(seconds: 10),
         );
     await speaker.sayAilment(Ailment.earlyBlight, Speech.english).timeout(
+          const Duration(seconds: 10),
+        );
+    await speaker.sayNaira(SpokenNaira.n70k, Speech.english).timeout(
           const Duration(seconds: 10),
         );
   });

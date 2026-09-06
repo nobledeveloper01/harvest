@@ -7,6 +7,7 @@ import '../../domain/lots/lot.dart';
 import '../../domain/lots/outcome.dart';
 import '../../domain/lots/quantity.dart';
 import '../../domain/speech/phrase.dart';
+import '../../domain/speech/spoken_naira.dart';
 import '../../domain/speech/spoken_weight.dart';
 
 /// Plays a bundled clip. Tier 1 of the three-tier speech strategy.
@@ -54,6 +55,14 @@ class Speaker {
   /// Say a storage condition, in one language.
   Future<void> sayStorage(StorageCondition storage, Speech language) =>
       _play('${language.code}/storage/${storage.id}');
+
+  /// Say an amount of money, as a whole sentence.
+  ///
+  /// A **magnitude**. Whether it is coming or going is a [Phrase] the caller
+  /// plays first, so a translator shortening a sentence cannot take the
+  /// direction with it. See [SpokenNaira].
+  Future<void> sayNaira(SpokenNaira money, Speech language) =>
+      _play('${language.code}/naira/${money.id}');
 
   /// Say a weight, as a whole sentence.
   ///
