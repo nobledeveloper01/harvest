@@ -1672,3 +1672,29 @@ every row announce in one language instead of its own, and shrink the rows to
 Material's 48 dp. Each failed on exactly the assertion meant to catch it. The
 audio gate was watched to fail twice — once with no clips at all, once with an
 empty one.
+
+## The 200% walk was checking twenty screens and standing on two
+
+The scaling suite stopped at an empty price pad, so the money screens — the ones
+carrying the longest strings the product can produce — were outside it. Extending
+the walk found two things, and the second is the interesting one.
+
+The first: the decision screen is a `ListView`, and a `ListView` does not build
+what is off screen. `ensureVisible` throws `Bad state: No element` on a widget
+that does not exist yet, which is exactly what it did — at 200% the transport
+line sits below two option cards that are each three lines tall. `scrollUntilVisible`
+is the right tool and `ensureVisible` was never going to work here.
+
+The second: `clean(where)` asserted `takeException() == null` and nothing else.
+That assertion is satisfied by a walk that never moves. A tap on an off-screen
+widget **warns**; a warning is not a failure; so a suite could print twenty
+reassuring screen names while sitting on the second one the whole time. This is
+the same shape the project keeps meeting — a gate that passes for a reason
+unrelated to what it checks — and it was in a gate written to catch that shape.
+
+`clean` now takes a witness: a string only on the screen it claims to be on.
+Proved both halves by breaking them. Removing the `Expanded` from the costs
+screen's commission row: *"overflowed on the costs screen"*, naming the screen
+rather than one three steps later. Deleting the "Remember this offer" tap:
+*"never arrived at the decision screen, with money on it"* — which under the old
+one-assertion `clean` would have been green.

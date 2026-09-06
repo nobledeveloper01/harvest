@@ -8,6 +8,13 @@ Entries say *why*, not just what.
 
 ## [Unreleased]
 
+### Changed
+
+- The 200% text-scaling walk continues past the price pad through the decision,
+  costs and storage-offer screens and the two closing sheets, and every step now
+  names a witness — a string only on the screen it claims to be on — because
+  "nothing overflowed" is also true of a walk that never moved.
+
 ### Added
 
 - **Phase 4 opens with the half of its gate that needs no model: the confidence

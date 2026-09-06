@@ -89,6 +89,23 @@ moved for the same reason and the precedent held.
 both platforms, and the engine's predictions are checked against recorded
 outcomes rather than against itself.*
 
+**"Less what needs a handset" was wrong about which half was missing**, and it
+said so for two phases. It reads as though iOS was done and Android was waiting
+on hardware. Android was waiting on nothing: it had never been compiled, and
+when it finally was — in Phase 4 — the build **failed**, because
+`flutter_local_notifications` needs core library desugaring and without it the
+alerts cannot be built at all. Not delayed by a missing device. Impossible.
+
+That is fixed and Android now builds, so the sentence is true today in a way it
+was not when it was written. What remains on this gate is genuinely a device: an
+alert arriving three days later, on each platform, is a person with a phone.
+
+The second clause is narrower than it looks and is met. Phase 2 owed the
+*record* — the window, its confidence and the table version stored on the lot at
+the moment the prediction was made, so that it cannot be reconstructed
+afterwards from a table that has since changed. Publishing the comparison is
+Phase 6's exit gate, not this one.
+
 ## Phase 3 — Prices and storage · *cleared, less what needs data nobody has*
 
 Price reporting and ingest, outlier filtering, reputation weighting, net

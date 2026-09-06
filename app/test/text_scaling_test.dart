@@ -126,8 +126,20 @@ void main() {
 
     /// Every step ends here. The screen that overflowed is named by the step
     /// that had just finished, which is the point of checking after each one.
-    void clean(String where) {
+    /*
+      Two assertions, and the second is the one that took a defect to learn.
+
+      `takeException` alone says *nothing overflowed*, which a walk standing
+      still also satisfies. A tap that lands on nothing warns rather than
+      fails, so a suite of overflow checks can march through twenty screen
+      names while never leaving the second one — every step green, nothing
+      checked. So each step also names something that is only on the screen it
+      claims to be on.
+    */
+    void clean(String where, Finder showing) {
       expect(tester.takeException(), isNull, reason: 'overflowed on $where');
+      expect(showing, findsAtLeastNWidgets(1),
+          reason: 'never arrived at $where');
     }
 
     await tester.pumpWidget(
@@ -140,19 +152,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    clean('the language picker');
+    clean('the language picker', find.text('Choose the language you want to hear.'));
 
     await tester.tap(find.text('English'));
     await tester.pumpAndSettle();
-    clean('the crop grid');
+    clean('the crop grid', find.text('What did you harvest?'));
 
     await tester.tap(find.text('Tomato'));
     await tester.pumpAndSettle();
-    clean('the quantity screen, empty');
+    clean('the quantity screen, empty', find.text('Choose a measure and type how many.'));
 
     await tester.tap(find.bySemanticsLabel('4'));
     await tester.pumpAndSettle();
-    clean('the quantity screen, before a measure');
+    clean('the quantity screen, before a measure', find.text('Choose a measure and type how many.'));
 
     // The measures scroll sideways, and at 200% fewer of them fit — so the one
     // this test wants is off the right edge until it is brought in. A finger
@@ -168,10 +180,10 @@ void main() {
     );
     await tester.ensureVisible(basket);
     await tester.pumpAndSettle();
-    clean('the measures, scrolled');
+    clean('the measures, scrolled', find.text('mudu'));
     await tester.tap(basket);
     await tester.pumpAndSettle();
-    clean('the quantity screen, with the assumption showing');
+    clean('the quantity screen, with the assumption showing', find.textContaining('national average for a big basket'));
 
     // The correction, which swaps the card for a differently shaped one. At
     // 200% on the floor it is below the fold — reachable, behind the faded
@@ -179,30 +191,30 @@ void main() {
     final correct = find.text('I weighed it myself');
     await tester.ensureVisible(correct);
     await tester.pumpAndSettle();
-    clean('the assumption card, scrolled to the correction');
+    clean('the assumption card, scrolled to the correction', find.text('I weighed it myself'));
     await tester.tap(correct);
     await tester.pumpAndSettle();
-    clean('the correction');
+    clean('the correction', find.text('Tell me what it really weighs, in kilograms.'));
 
     await tester.tap(find.bySemanticsLabel('back'));
     await tester.pumpAndSettle();
-    clean('backing out of the correction');
+    clean('backing out of the correction', find.textContaining('national average for a big basket'));
 
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    clean('the storage screen');
+    clean('the storage screen', find.text('Where are you keeping it?'));
 
     await tester.tap(find.bySemanticsLabel('In the shade'));
     await tester.pumpAndSettle();
-    clean('the storage screen, with a condition chosen');
+    clean('the storage screen, with a condition chosen', find.text('When did you pick it?'));
 
     await tester.tap(find.text('Save this lot'));
     await tester.pumpAndSettle();
-    clean('the harvest list');
+    clean('the harvest list', find.text('Your harvest'));
 
     await tester.tap(find.text('Tomato'));
     await tester.pumpAndSettle();
-    clean('the decision screen with no price');
+    clean('the decision screen with no price', find.text('I do not know what this is worth'));
 
     /*
       `ensureVisible` and then an assertion that we actually arrived.
@@ -216,13 +228,99 @@ void main() {
     final offered = find.textContaining('offered me a price');
     await tester.ensureVisible(offered);
     await tester.pumpAndSettle();
-    clean('the decision screen, scrolled to the offer');
+    clean('the decision screen, scrolled to the offer', find.text('Somebody offered me a price'));
     await tester.tap(offered);
     await tester.pumpAndSettle();
-    clean('the price screen');
+    clean('the price screen', find.text('What did they offer you?'));
 
     expect(find.byType(Keypad), findsOneWidget,
         reason: 'the price screen was never reached, so nothing was checked');
+
+    /*
+      And on, into the money.
+
+      The walk used to stop here, which left the screens carrying the longest
+      strings and the largest type outside it — "You end up with about ₦180,000"
+      at 200% is the widest line in the product, and the decision screen renders
+      three of them plus a headline. Stopping at an empty price pad checked the
+      keypad and nothing that keypad leads to.
+    */
+    /*
+      Each key is scrolled to before it is pressed.
+
+      At 200% on a 360x640 screen the pad does not fit under the display, so a
+      bare `tap` lands on nothing and warns — and a warning is not a failure, so
+      the walk would have carried on past an empty pad and "checked" screens it
+      never reached. That is the same shape as the off-screen tap this suite
+      already caught once at its final step.
+    */
+    Future<void> press(String key) async {
+      final digit = find.bySemanticsLabel(key);
+      await tester.ensureVisible(digit);
+      await tester.pumpAndSettle();
+      await tester.tap(digit);
+      await tester.pump();
+    }
+
+    /*
+      Scrolled to, then tapped — and `scrollUntilVisible` rather than
+      `ensureVisible`, because the decision screen is a `ListView` and a
+      `ListView` does not build what is off screen. `ensureVisible` throws
+      `Bad state: No element` on a widget that does not exist yet, which is
+      what it did here: at 200% the transport line sits below the fold behind
+      two option cards that are each three lines tall.
+    */
+    Future<void> reachAndTap(Finder target) async {
+      if (target.evaluate().isEmpty) {
+        await tester.scrollUntilVisible(
+          target,
+          100,
+          scrollable: find.byType(Scrollable).last,
+        );
+      }
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+
+    for (final digit in ['1', '8', '0', '0', '0', '0']) {
+      await press(digit);
+    }
+    clean('the price screen, with a figure typed', find.textContaining('a kilogram'));
+
+    await reachAndTap(find.text('Remember this offer'));
+    clean('the decision screen, with money on it', find.text('If you wait, you could lose'));
+
+    // What comes off the top.
+    await reachAndTap(find.textContaining('taken off yet for transport'));
+    clean('the costs screen', find.text('What does the lorry cost?'));
+
+    await tester.tap(find.bySemanticsLabel('back'));
+    await tester.pumpAndSettle();
+
+    // A store's quote, and the verdict it produces.
+    await reachAndTap(find.textContaining('store quoted me a price'));
+    clean('the storage offer screen', find.text('What does the store charge a day?'));
+
+    for (final digit in ['2', '0', '0', '0']) {
+      await press(digit);
+    }
+    await reachAndTap(find.text('Work it out'));
+    clean('the decision screen, with a storage course', find.text('Wait and sell later'));
+
+    // And the two sheets that close a lot out.
+    await tester.tap(find.bySemanticsLabel('back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('say what happened to this lot'));
+    await tester.pumpAndSettle();
+    clean('the outcome sheet', find.text('What happened to it?'));
+
+    // The fourth of four outcomes, which at 200% is below the fold of the
+    // sheet — and a loss is the only one that leads anywhere, so the reasons
+    // list is reachable through no other answer.
+    await reachAndTap(find.text('Lost it'));
+    clean('the loss reasons', find.text('It went bad'));
   });
 
   testWidgets('the diagnosis result at 200% type, in all three states',
