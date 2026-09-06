@@ -110,8 +110,10 @@ speech would mean the primary persona's language works on some devices and not o
 That was checked rather than assumed: `say -v '?'` on the build machine offers **forty-three
 English voices and not one** for Hausa, Yoruba, Igbo or Pidgin. So every fixed prompt is a
 bundled recording, and `make audio-check` fails the build when one is missing in any of the five
-languages — reading the language, phrase, crop, unit and storage lists out of the Dart enums
-rather than a manifest that goes stale. See [ADR-0001](docs/adr/0001-speech-is-bundled-not-synthesised.md).
+languages — reading every list it checks out of the Dart enums rather than out of a manifest
+that goes stale, and out of *one* table of those enums rather than a copy per gate, because
+three copies is how it once reported a complete set while a hundred and fifty-five clips were
+outside its knowledge. See [ADR-0001](docs/adr/0001-speech-is-bundled-not-synthesised.md).
 
 ### "It did not throw" is not "it fires"
 
