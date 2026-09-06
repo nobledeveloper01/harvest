@@ -7,6 +7,7 @@ import '../../domain/lots/lot.dart';
 import '../../domain/money/decision.dart';
 import '../../domain/money/net_price.dart';
 import '../../domain/money/sourced.dart';
+import '../../domain/money/storing.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_naira.dart';
 import '../../domain/spoilage/shelf_life.dart';
@@ -103,6 +104,23 @@ class _DecisionScreenState extends State<DecisionScreen> {
     );
   }
 
+  /// The losing storage verdict, on demand.
+  ///
+  /// On demand rather than on arrival: the screen already announces what
+  /// waiting costs when it opens, and a second sentence queued behind it is
+  /// one a farmer has stopped listening to. This is the same contract as the
+  /// treatment steps and the kilogram figure — a tap, a speaker icon, and the
+  /// sentence.
+  Future<void> _sayVerdict(StorageVerdict? verdict) async {
+    if (verdict == null || verdict.worthIt) return;
+    await widget.speaker.say(Phrase.doNotStore, widget.language);
+    if (!mounted) return;
+    await widget.speaker.sayNaira(
+      SpokenNaira.nearest(verdict.net.value.abs()),
+      widget.language,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -151,6 +169,7 @@ class _DecisionScreenState extends State<DecisionScreen> {
                     option: option,
                     best: option.course == decision.best,
                     now: widget.now,
+                    onSayVerdict: () => _sayVerdict(option.verdict),
                   ),
                 const SizedBox(height: Gap.m),
                 _Another(
@@ -193,6 +212,62 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   ),
                 ],
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// *"Do not store this."* — in those words, tappable, and unsigned.
+///
+/// The copy lived in the domain until R9, where five languages could not reach
+/// it. The figure is the **magnitude**: `net` is negative when storing loses
+/// and the words already carry the sign, so printing it straight produced *"it
+/// would cost you about -₦180 more than it is worth"*. The test that was meant
+/// to catch that asserted the sentence contained a naira sign, which "-₦180"
+/// does.
+class _DoNotStore extends StatelessWidget {
+  const _DoNotStore({
+    required this.verdict,
+    required this.now,
+    required this.onSay,
+  });
+
+  final StorageVerdict verdict;
+  final DateTime now;
+  final VoidCallback onSay;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
+
+    final sentence = 'Do not store this. It would cost you about '
+        '${naira(verdict.net.value.abs())} more than it is worth. '
+        'Based on prices from ${verdict.net.ageInWordsAt(now)}.';
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: '$sentence Tap to hear it.',
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.chip,
+          onTap: onSay,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  sentence,
+                  key: const ValueKey('do-not-store'),
+                  style: text.bodyMedium?.copyWith(color: freshness.atRisk),
+                ),
+              ),
+              const SizedBox(width: Gap.s),
+              Icon(Icons.volume_up_rounded, size: 20, color: freshness.atRisk),
             ],
           ),
         ),
@@ -294,12 +369,17 @@ class _OptionCard extends StatelessWidget {
     required this.option,
     required this.best,
     required this.now,
+    required this.onSayVerdict,
     super.key,
   });
 
   final Option option;
   final bool best;
   final DateTime now;
+
+  /// Say the storage verdict out loud. Only the losing one has anything to
+  /// say that the figure above it does not already carry.
+  final VoidCallback onSayVerdict;
 
   static const _labels = {
     Course.sellNow: 'Sell it today',
@@ -382,12 +462,9 @@ class _OptionCard extends StatelessWidget {
               const SizedBox(height: Gap.xs),
               _Provenance(figure: worth, now: now),
             ],
-            if (option.verdict != null && !option.verdict!.worthIt) ...[
+            if (option.verdict case final verdict? when !verdict.worthIt) ...[
               const SizedBox(height: Gap.s),
-              Text(
-                option.verdict!.sentence(now),
-                style: text.bodyMedium?.copyWith(color: freshness.atRisk),
-              ),
+              _DoNotStore(verdict: verdict, now: now, onSay: onSayVerdict),
             ],
           ],
         ),

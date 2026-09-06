@@ -302,6 +302,74 @@ void main() {
       expect(find.text('Put it in storage'), findsOneWidget);
       expect(find.textContaining('Do not store this'), findsOneWidget);
     });
+
+    testWidgets('the figure is unsigned, because the words carry the sign',
+        (tester) async {
+      /*
+        Moved here from the domain with R9, and it is the assertion that
+        matters: `net` is negative when storing loses, so printing it straight
+        produced *"it would cost you about -₦180 more than it is worth"* — a
+        double negative on the one sentence Phase 3's exit gate is written
+        about.
+
+        The version that let that through asserted the sentence contained a
+        naira sign. "-₦180" contains a naira sign. An assertion that a symbol
+        appears is not an assertion that a sentence is true.
+      */
+      await pump(
+        tester,
+        decision(
+          ago: const Duration(days: 3),
+          storage: const StorageOffer(
+            nairaPerKgPerDay: 200,
+            days: 4,
+            spoilageAvoided: 0.5,
+          ),
+        ),
+      );
+
+      final sentence =
+          tester.widget<Text>(find.byKey(const ValueKey('do-not-store'))).data!;
+      expect(sentence, startsWith('Do not store this.'));
+      expect(sentence, isNot(contains('-')),
+          reason: 'the words carry the sign; the figure must not carry it too');
+      expect(sentence, contains('₦'));
+      expect(sentence, contains('days ago'),
+          reason: 'no figure on screen without how old its prices are');
+    });
+
+    testWidgets('and it can be heard, on the figure money is decided on',
+        (tester) async {
+      /*
+        R9's other half. While this sentence lived in the domain it was English
+        text and nothing else — a farmer who cannot read could not get at the
+        verdict on the one screen where real money is decided.
+
+        Direction then amount, two clips, in that order. On a tap rather than on
+        arrival: the screen already announces what waiting costs when it opens,
+        and a second sentence queued behind that is one nobody is still
+        listening to.
+      */
+      final speaker = await pump(
+        tester,
+        decision(
+          storage: const StorageOffer(
+            nairaPerKgPerDay: 200,
+            days: 4,
+            spoilageAvoided: 0.5,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      speaker.said.clear();
+
+      await tester.tap(find.byKey(const ValueKey('do-not-store')));
+      await tester.pumpAndSettle();
+
+      expect(speaker.said.first, 'phrase:do-not-store');
+      expect(speaker.said.length, 2);
+      expect(speaker.said.last, startsWith('naira:'));
+    });
   });
 
   group('quoting a store', () {

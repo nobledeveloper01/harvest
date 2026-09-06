@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:harvest/core/numbers.dart';
 import 'package:harvest/domain/lots/quantity.dart';
 import 'package:harvest/domain/money/sourced.dart';
 import 'package:harvest/domain/money/storing.dart';
@@ -59,36 +58,28 @@ void main() {
         spoilageAvoided: 0.02,
       )!;
 
+      /*
+        Numbers only. The sentence moved to the screen with R9 — English copy
+        in a domain that serves five languages was on borrowed time from the
+        day it was written, and what a farmer who cannot read could do with it
+        there was nothing. The assertions about how it *reads* moved with it,
+        to `test/decision_screen_test.dart`.
+      */
       expect(answer.worthIt, isFalse);
       expect(answer.net.value, lessThan(0));
-      expect(answer.sentence(noon), startsWith('Do not store this.'));
-
-      /*
-        The figure, unsigned, and the sentence free of a minus.
-
-        `contains('₦')` was the first version of this and it passed for
-        "-₦180" — which reads *"it would cost you about minus one hundred and
-        eighty naira more than it is worth"*, a double negative, on the one
-        sentence Phase 3's exit gate is written about. An assertion that a
-        currency symbol appears is not an assertion that a sentence is true.
-      */
-      expect(answer.sentence(noon), contains(naira(answer.net.value.abs())));
-      expect(answer.sentence(noon), isNot(contains('-')),
-          reason: 'the words carry the sign; the figure must not carry it too');
     });
 
-    test('and says how much better off, when it does pay', () {
+    test('and a positive net when it does pay', () {
       final answer = verdict(now: 400, later: 500, perKgPerDay: 0.2, days: 7)!;
 
       expect(answer.worthIt, isTrue);
       expect(answer.net.value, greaterThan(0));
-      expect(answer.sentence(noon), contains('better off'));
     });
 
-    test('every sentence names how old its prices are', () {
+    test('every figure carries how old its prices are', () {
       // The other half of the same gate: no figure on screen without its age.
       final answer = verdict(nowAgo: const Duration(days: 3))!;
-      expect(answer.sentence(noon), contains('3 days ago'));
+      expect(answer.net.ageInWordsAt(noon), '3 days ago');
     });
 
     test('breaking even is not a reason to store', () {

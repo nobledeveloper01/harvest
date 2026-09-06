@@ -394,6 +394,15 @@ Entries say *why*, not just what.
   assembled from separately recorded words has the wrong intonation on all of
   them.
 
+  **The storage verdict came with it.** *"Do not store this — it would cost you
+  about ₦60,000 more than it is worth"* was English copy living in the domain,
+  where five languages could not reach it, with a doc comment admitting it was
+  on borrowed time. The screen it was waiting for has existed since Phase 3.
+  The verdict now carries only numbers; the sentence is built on the screen,
+  tappable, and spoken as direction-then-amount. On a tap rather than on
+  arrival — the screen already announces what waiting costs when it opens, and
+  a second sentence queued behind that is one nobody is still listening to.
+
   **Both ends are bounds, not clamps.** *More than two million* above, *less
   than five hundred* below: rounding a fortune down is a lie, and rounding a
   ₦120 loss up to ₦500 is an alarm about nothing. And it carries **magnitudes

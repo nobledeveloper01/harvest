@@ -59,6 +59,28 @@ It was recorded as outstanding rather than as passed, and re-run once the
 machine's audio came back: three tests, thirty-seven seconds, green. **The clips
 play on the device**, including the naira scale.
 
+### The copy that was on borrowed time for two phases
+
+`StorageVerdict.sentence()` built *"Do not store this. It would cost you about
+₦60,000 more than it is worth"* in the domain, in English, and its own doc
+comment said so:
+
+> **This English belongs in the UI and is here on borrowed time.** […] it is
+> here because the decision screen does not exist yet.
+
+The decision screen has existed since Phase 3. The comment was still true about
+where the copy belonged and had stopped being true about why it was there, which
+is what borrowed time looks like when nobody comes to collect.
+
+It matters more than tidiness. While it lived in the domain it was text and
+nothing else — a farmer who cannot read could not get at the verdict on the one
+screen where real money is decided. Moving it out is what let it be spoken.
+
+The assertions moved with it rather than being dropped: the domain test now
+checks numbers, and the *"the figure is unsigned, because the words carry the
+sign"* assertion lives on the screen, where the sentence is. That one is not
+optional — it is the assertion that catches *"-₦180 more than it is worth"*.
+
 ### What surprised us
 
 **A test bent to fit its data, and I nearly let it.** The scale asserts that

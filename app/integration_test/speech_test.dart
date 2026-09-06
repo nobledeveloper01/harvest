@@ -57,6 +57,9 @@ void main() {
     await speaker.sayNaira(SpokenNaira.n70k, Speech.english).timeout(
           const Duration(seconds: 10),
         );
+    await speaker.say(Phrase.doNotStore, Speech.english).timeout(
+          const Duration(seconds: 10),
+        );
   });
 
   testWidgets('in every language, because four of five are the point',

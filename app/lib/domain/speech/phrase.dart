@@ -169,7 +169,11 @@ enum Phrase {
   */
   fairlySure('fairly-sure'),
   mightBe('might-be'),
-  doNotRecognise('do-not-recognise');
+  doNotRecognise('do-not-recognise'),
+
+  /// The storage verdict's direction, so the amount can follow it as its own
+  /// clip — the same split as [youCouldLose] and the diagnosis hedge.
+  doNotStore('do-not-store');
 
   const Phrase(this.id);
 
