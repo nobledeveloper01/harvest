@@ -86,15 +86,8 @@ analyze: ## Static analysis, plus the domain-purity check
 	@$(MAKE) --no-print-directory domain-purity
 
 .PHONY: domain-purity
-domain-purity: ## Fail if the domain layer imports Flutter
-	@if grep -rl "package:flutter/" $(APP)/lib/domain 2>/dev/null | grep -q .; then \
-	  echo "\033[0;31m✗\033[0m the domain layer imports Flutter:"; \
-	  grep -rl "package:flutter/" $(APP)/lib/domain; \
-	  echo "  The engines must stay pure Dart — testable without a device,"; \
-	  echo "  identical on every platform. See ADR-0002."; \
-	  exit 1; \
-	fi
-	@echo "\033[0;32m✓\033[0m domain layer is pure Dart"
+domain-purity: ## Fail if the domain touches the platform, the clock or randomness
+	@python3 scripts/domain-purity.py
 
 .PHONY: test
 test: ## Run the test suite

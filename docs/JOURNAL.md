@@ -1732,3 +1732,28 @@ lists* rots the first time somebody adds a token. Proved both halves — a wrong
 hex in the table, and a `_lightWarning`/`_darkWarning` pair the table never heard
 about. It caught the stale amber and an undocumented gradient on its first run,
 before either break was staged.
+
+## Three quarters of the domain-purity rule was never enforced
+
+`CLAUDE.md` says the domain imports nothing from the platform — *no Flutter, no
+plugins, no clock, no randomness* — and that `make domain-purity` enforces it.
+It was one `grep` for `package:flutter/`. `dart:io`, a plugin import,
+`DateTime.now()` and `Random()` would all have walked through a gate this
+repository describes as covering them.
+
+The two it missed hardest are the two that make a pure function stop being one,
+and `DateTime.now()` in a rules file is a far likelier slip than a Flutter
+import — nobody types `import 'package:flutter/material.dart'` into a spoilage
+model by accident. ADR-0005 exists precisely because a lot's harvest instant was
+mishandled; `now` is an argument everywhere in this layer, and that stays true
+only while nothing can reach for it.
+
+The gate now reads every file: `dart:` imports against a pure allowlist,
+`package:` imports that are not another domain file, and calls to `DateTime.now`,
+`DateTime.timestamp`, `Stopwatch` and `Random`. Comments are stripped first, so
+a paragraph explaining the rule is not a breach of it. All five probes turn it
+red. The domain was already clean — eighteen files, every import relative — so
+this cost nothing to adopt and would have cost a season to discover.
+
+ADR-0002 had *named this hole itself* and said it was not closed. It is three
+quarters closed now; the transitive one is still open and still written down.

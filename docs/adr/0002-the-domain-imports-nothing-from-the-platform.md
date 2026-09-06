@@ -33,13 +33,16 @@ no ambient clock, no randomness, no filesystem, no network.
   fixed instant and get the same answer on every machine and in every year.
 - The domain owns the rules and the vocabulary — `Quantity`, `UnitTable`,
   `Crop`, `Phrase` — and knows nothing about how any of it is drawn or stored.
-- `make domain-purity` greps the directory for `package:flutter/` and fails the
-  build. It runs inside `make analyze`, so it cannot be skipped by running the
+- `make domain-purity` reads every file under `app/lib/domain/` and fails the
+  build on any of the four: a `dart:` import outside a pure allowlist, a
+  `package:` import that is not another domain file, a call to the clock
+  (`DateTime.now`, `DateTime.timestamp`, `Stopwatch`), or a call to `Random`.
+  It runs inside `make analyze`, so it cannot be skipped by running the
   analyzer alone.
 
-**The gate is proved by breaking it.** Adding a Flutter import to a domain file
-must turn it red, and that is checked rather than assumed — a lint nobody has
-watched fail is a lint nobody knows the configuration of.
+**The gate is proved by breaking it.** Each of the four must turn it red, and
+that is checked rather than assumed — a lint nobody has watched fail is a lint
+nobody knows the configuration of.
 
 ## Consequences
 
@@ -52,12 +55,17 @@ edge where a test can supply it.
 `app/lib/domain/` to 95% because pure functions with no ambient state are cheap
 to cover; the same figure over widget code would be theatre.
 
-**A grep is a coarse instrument.** It catches `package:flutter/` and would not
-catch a transitive dependency that pulls Flutter in through a package import.
-That is a real hole and it is not closed today: the honest position is that this
-gate catches the mistake people actually make — reaching for `Colors` or
-`BuildContext` in a rules file — and does not pretend to be a dependency
-analysis.
+**It reads imports and call sites, not the dependency graph.** For a long time
+it read only one of those: a single grep for `package:flutter/`, while this
+document and `CLAUDE.md` both described it as covering plugins, the clock and
+randomness as well. Three quarters of the stated rule was unenforced, and the
+two unenforced halves that matter most are the clock and the dice — those are
+what stop a function being a function, and `DateTime.now()` in a rules file is
+a far likelier slip than `import 'package:flutter/material.dart'`.
+
+What is still open is transitive: a pure-looking package import that pulls
+Flutter in behind it. The honest position is unchanged in kind — this gate
+catches the mistakes people actually make, and is not a dependency analysis.
 
 **Portability was never the argument.** The domain is not pure so it can be
 lifted to a server one day. It is pure so that the arithmetic which decides

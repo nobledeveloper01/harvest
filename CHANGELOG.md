@@ -10,6 +10,11 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- `make domain-purity` enforces the whole rule it is documented as enforcing:
+  platform imports, plugin imports, the clock and randomness. It had been a
+  single grep for `package:flutter/` while `CLAUDE.md` and ADR-0002 both claimed
+  all four.
+
 - The contrast assertions measure the canvas gradient the page is actually
   painted with, not the surface underneath it — which in the dark theme was the
   darker of the two stops, so the top of every screen went unchecked. The light
