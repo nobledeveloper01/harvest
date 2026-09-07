@@ -173,7 +173,34 @@ enum Phrase {
 
   /// The storage verdict's direction, so the amount can follow it as its own
   /// clip — the same split as [youCouldLose] and the diagnosis hedge.
-  doNotStore('do-not-store');
+  doNotStore('do-not-store'),
+
+  /*
+    Signing in, which is the first thing in this app a farmer does *for* the
+    product rather than for their crop.
+
+    Everything before Phase 5 works with no account at all, and that stays true:
+    logging, the window, the alerts, the calculator and the prices in hand ask
+    for nothing. An account is needed only to put a lot in front of a stranger,
+    and these four sentences exist so that the one screen which asks for
+    something can be finished without reading.
+  */
+
+  /// *"What is your phone number? I will send you a code."*
+  yourNumber('your-number'),
+
+  /// *"I have sent a code to your phone. Type it here."*
+  codeSent('code-sent'),
+
+  /// *"You are signed in."*
+  signedIn('signed-in'),
+
+  /// *"That code is not right. You can ask for another one."*
+  ///
+  /// The second sentence is the point. A farmer who mistypes a code and is told
+  /// only that they are wrong has no idea whether to wait, retype, or start
+  /// again — and the server has already spent the code by then.
+  wrongCode('wrong-code');
 
   const Phrase(this.id);
 

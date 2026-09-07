@@ -61,6 +61,10 @@ Entries say *why*, not just what.
 
 ### Added
 
+- Signing in by phone: the same keypad as every other number in the app, four
+  new spoken phrases, tokens held in memory behind a `TokenStore` port whose
+  stand-in forgets them on purpose, and a refresh that treats "no signal" as
+  different from "signed out".
 - The client's outbox: every mutation is a local row with an idempotency key
   chosen once and kept, drained in batches when there is a signal, with a
   backoff that doubles and refusals that come out of the queue rather than

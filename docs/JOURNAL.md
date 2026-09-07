@@ -2315,3 +2315,44 @@ Which is the failure mode this whole layer is built around, arriving from the
 test harness rather than from the code under test. It cost ten minutes and it is
 worth writing down: **a stand-in that fails the way production fails is a
 stand-in that hides in the results.**
+
+## Signing in, on the pad that never moves
+
+The first screen in this product that asks a farmer for something rather than
+telling them something — and the only one an account is needed for. Everything
+the app is actually for still works with none: logging, the window, the alerts,
+the calculator, the prices in hand. An account buys one thing, which is putting
+a lot in front of a stranger.
+
+It uses **the same keypad as the quantity and price screens**, without the
+decimal point. A phone number is a number, and a second layout would be a second
+layout for a thumb to learn on a screen somebody reaches once. The pad is pinned
+below the scroll like every other pad here, for the reason found by using the
+app: keys that move between digits record the wrong lot.
+
+Four new spoken phrases, because this screen is the one place a farmer is asked
+to produce something and *reading is optional* does not get an exemption for
+being inconvenient. Nine hundred and sixty clips now, and `make counts-check`
+caught both documents still saying nine hundred and forty before I did.
+
+Three things the tests settled:
+
+**"No network" is not "wrong number".** A farmer four days from a signal who is
+told their number is wrong will retype a number that was right, three times, and
+then stop trying. They are different sentences with different things to do next.
+
+**A wrong code names the way out.** Three wrong guesses spend the code on the
+server whatever the app does, so *"that is not right"* alone leaves somebody
+retyping a code that can no longer work. It says to ask for another one.
+
+**And the typed digits collide with the keypad.** The display's accessibility
+label was the value itself, so a screen reader — and the test — found two things
+labelled "0" and could not tell the box from the key. It reads *"you typed
+08031234567"* now, which is also the better announcement: a bare "0" read aloud
+tells nobody what it is.
+
+The screen-coverage gate did its job on arrival: adding `SignInScreen` failed
+`test/screen_coverage_test.dart` within a second, naming a screen that no suite
+built on the walk could see. It is in `pumpTheUnreachable` now — not part of the
+flow, because it is not part of the flow — and the type-scaling, touch-target
+and primary-action suites all cover it.

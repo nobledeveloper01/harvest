@@ -17,6 +17,9 @@ import 'package:harvest/domain/diagnosis/certainty.dart';
 import 'package:harvest/domain/diagnosis/guidance.dart';
 import 'package:harvest/data/diagnosis/viewfinder.dart';
 import 'package:harvest/domain/diagnosis/framing.dart';
+import 'package:harvest/data/net/account_store.dart';
+import 'package:harvest/data/net/api.dart';
+import 'package:harvest/features/account/sign_in_screen.dart';
 import 'package:harvest/features/diagnosis/capture_screen.dart';
 import 'package:harvest/features/diagnosis/diagnosis_result_screen.dart';
 import 'package:harvest/domain/lots/lot.dart';
@@ -351,6 +354,37 @@ Future<void> pumpTheUnreachable(
   required AtEachStep at,
 }) async {
   /*
+    Signing in, in both of its states — the number, and the code.
+
+    Not part of the walk because it is not part of the flow: everything this app
+    is for works with no account, and the account is only needed to put a lot in
+    front of a stranger. It is here so the suites that check type scaling, touch
+    targets and the primary action see it, which they otherwise would not.
+  */
+  final accounts = AccountStore(
+    api: _NoServer(),
+    tokens: ForgetfulTokenStore(),
+  );
+  for (final code in [false, true]) {
+    if (code) accounts.pendingPhone = '+2348031234567';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: SignInScreen(
+          accounts: accounts,
+          speaker: SilentSpeaker(),
+          language: Speech.english,
+          onSignedIn: () {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('signing in, ${code ? 'the code' : 'the number'}',
+        find.byType(SignInScreen));
+  }
+
+  /*
     The capture screen, in the two states that differ: nothing worth
     photographing, and something. The shutter appears in one and not the other,
     so a suite that only saw one of them would be checking half a screen.
@@ -426,4 +460,25 @@ class _OneFrame implements Viewfinder {
 
   @override
   Future<void> dispose() async {}
+}
+
+
+/// An API that never reaches anybody, for screens pumped outside the flow.
+class _NoServer implements Api {
+  @override
+  String? bearer;
+
+  @override
+  String get baseUrl => '';
+
+  @override
+  Dio get http => throw UnimplementedError();
+
+  @override
+  Future<Answer> post(String path, Map<String, dynamic> body) async =>
+      const Answer(status: 0, body: {});
+
+  @override
+  Future<Answer> get(String path, {Map<String, dynamic>? query}) async =>
+      const Answer(status: 0, body: {});
 }
