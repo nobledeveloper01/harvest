@@ -8,12 +8,17 @@ import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 import { priceRoutes } from './routes/prices.js';
+import { trustRoutes } from './routes/trust.js';
+import type { IdentityCheck } from './verification.js';
+import { noIdentityCheck } from './verification.js';
 
 export type BuildOptions = {
   readonly db: Db;
   readonly signingKey: string;
   readonly otpSalt: string;
   readonly sms: Sms;
+  readonly identity?: IdentityCheck;
+  readonly callbackSecret?: string;
   readonly logLevel?: string;
 };
 
@@ -30,6 +35,8 @@ export function build({
   signingKey,
   otpSalt,
   sms,
+  identity = noIdentityCheck(),
+  callbackSecret = signingKey,
   logLevel = 'info',
 }: BuildOptions): FastifyInstance {
   const app = Fastify({ logger: { level: logLevel } });
@@ -61,6 +68,7 @@ export function build({
   enquiryRoutes(app, { signingKey });
   dealRoutes(app, { signingKey });
   priceRoutes(app, { signingKey });
+  trustRoutes(app, { signingKey, identity, callbackSecret });
 
   return app;
 }
