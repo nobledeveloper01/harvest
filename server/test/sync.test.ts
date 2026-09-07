@@ -39,7 +39,7 @@ async function signInAs(
 const listingOp = (key: string, lotRef = 'lot-1') => ({
   key,
   kind: 'listing.put' as const,
-  body: { lotRef, crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+  body: { lotRef, crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
 });
 
 describe('draining an outbox', () => {
@@ -161,7 +161,7 @@ describe('draining an outbox', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${farmer.access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     const buyer = await signInAs(app, sms, '08099999999', 'unverified');
 
@@ -244,7 +244,7 @@ describe('catching up', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${farmer.access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     const asked = await app.inject({
       method: 'POST',

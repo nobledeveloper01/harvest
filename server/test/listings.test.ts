@@ -17,7 +17,6 @@ beforeEach(async () => {
 
 /** Ibadan, and a place about 30 km from it. */
 const ibadan = { lat: 7.3775, lng: 3.947 };
-const nearby = { lat: 7.62, lng: 3.99 };
 const kano = { lat: 12.0022, lng: 8.5919 };
 
 const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -32,7 +31,16 @@ async function signIn(app: FastifyInstance, sms: Outbox, phone: string) {
   return verified.json() as { access: string; accountId: string };
 }
 
-describe('where a lot is', () => {
+/*
+  The geometry is still here, and nothing uses it yet.
+
+  ADR-0011 measured the radius query and `migrations/0009` explains why a
+  listing does not carry a coordinate: the app has none to give. A **buyer** may
+  well give one, and the day a listing carries one this is what it goes back to
+  — so the module and its tests stay, and the honest note is that they guard a
+  road not currently driven on.
+*/
+describe('the geometry, kept for the day a coordinate arrives', () => {
   it('is truncated to the precision the farmer chose', () => {
     const exact = { lat: 7.377512, lng: 3.947431 };
     expect(truncate(exact, 'lga')).toEqual({ lat: 7.4, lng: 3.9 });
@@ -85,13 +93,21 @@ describe('listing a lot', () => {
     const refused = await app.inject({
       method: 'POST',
       url: '/listings',
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     expect(refused.statusCode).toBe(401);
     await app.close();
   });
 
-  it('stores the lot, at the precision that was asked for', async () => {
+  /*
+    A region, and no coordinate — asserted against the schema.
+
+    The app never asks for a location and holds no gazetteer, so a latitude
+    here would be one somebody invented and this server would be laundering it
+    into a position a buyer drives to. Checked against the columns rather than
+    the API, because the promise is about what is *stored*.
+  */
+  it('keeps a region, and has nowhere to put a coordinate', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
     const { access } = await signIn(app, sms, '08031234567');
@@ -105,26 +121,41 @@ describe('listing a lot', () => {
         crop: 'tomato',
         quantityKg: 200,
         askingPriceKobo: 18_000_000,
-        lat: 7.377512,
-        lng: 3.947431,
-        precision: 'village',
+        region: 'south-west',
         expiresAt: tomorrow,
       },
     });
     expect(made.statusCode).toBe(200);
 
-    /*
-      Asserted against the row, not against the response.
+    const { rows } = await db.query<{ region: string }>('select region from listings');
+    expect(rows[0]!.region).toBe('south-west');
 
-      The promise is that the server does not *store* a precision the farmer
-      did not consent to. A response that rounds while the table keeps the
-      original would satisfy every test written against the API and none of the
-      promise.
-    */
-    const { rows } = await db.query<{ lat: number; lng: number }>(
-      'select lat, lng from listings',
+    const columns = await db.query<{ column_name: string }>(
+      `select column_name from information_schema.columns where table_name = 'listings'`,
     );
-    expect(rows[0]).toEqual({ lat: 7.38, lng: 3.95 });
+    const names = columns.rows.map((r) => r.column_name);
+    expect(names).not.toContain('lat');
+    expect(names).not.toContain('lng');
+    await app.close();
+  });
+
+  it('refuses a place it was not told about', async () => {
+    const sms = new Outbox();
+    const app = testServer(db, sms);
+    const { access } = await signIn(app, sms, '08031234567');
+    const invented = await app.inject({
+      method: 'POST',
+      url: '/listings',
+      headers: { authorization: `Bearer ${access}` },
+      payload: {
+        lotRef: 'lot-1',
+        crop: 'tomato',
+        quantityKg: 200,
+        region: 'Bodija, Ibadan',
+        expiresAt: tomorrow,
+      },
+    });
+    expect(invented.statusCode).toBe(400);
     await app.close();
   });
 
@@ -137,7 +168,7 @@ describe('listing a lot', () => {
       lotRef: 'lot-1',
       crop: 'tomato',
       quantityKg: 200,
-      ...ibadan,
+      region: 'south-west',
       expiresAt: tomorrow,
     };
     const first = await app.inject({
@@ -170,7 +201,7 @@ describe('listing a lot', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${farmer.access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     const id = made.json().id;
 
@@ -197,18 +228,18 @@ describe('listing a lot', () => {
 describe('finding a lot', () => {
   async function seed(app: FastifyInstance, sms: Outbox) {
     const { access } = await signIn(app, sms, '08031234567');
-    const put = (lotRef: string, crop: string, at: typeof ibadan, quantityKg = 200) =>
+    const put = (lotRef: string, crop: string, region: string, quantityKg = 200) =>
       app.inject({
         method: 'POST',
         url: '/listings',
         headers: { authorization: `Bearer ${access}` },
-        payload: { lotRef, crop, quantityKg, ...at, precision: 'exact', expiresAt: tomorrow },
+        payload: { lotRef, crop, quantityKg, region, expiresAt: tomorrow },
       });
 
-    await put('near', 'tomato', ibadan);
-    await put('nearish', 'tomato', nearby);
-    await put('far', 'tomato', kano);
-    await put('other-crop', 'yam', ibadan, 900);
+    await put('here', 'tomato', 'south-west');
+    await put('also-here', 'tomato', 'south-west');
+    await put('far', 'tomato', 'north-west');
+    await put('other-crop', 'yam', 'south-west', 900);
   }
 
   it('browsing needs no account', async () => {
@@ -218,34 +249,17 @@ describe('finding a lot', () => {
     await app.close();
   });
 
-  it('finds what is within the radius and leaves out what is not', async () => {
+  it('finds what is in a region and leaves out what is not', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
     await seed(app, sms);
 
     const search = await app.inject({
       method: 'GET',
-      url: `/listings/search?crop=tomato&lat=${ibadan.lat}&lng=${ibadan.lng}&radiusKm=50`,
+      url: '/listings/search?crop=tomato&region=south-west',
     });
-    const found = search.json().listings;
-    expect(found).toHaveLength(2);
-    expect(found.map((l: { km: number }) => l.km)).toEqual([0, expect.any(Number)]);
-    expect(found[1].km).toBeGreaterThan(20);
-    expect(found[1].km).toBeLessThan(50);
-    await app.close();
-  });
-
-  it('sorts by distance, nearest first', async () => {
-    const sms = new Outbox();
-    const app = testServer(db, sms);
-    await seed(app, sms);
-
-    const search = await app.inject({
-      method: 'GET',
-      url: `/listings/search?lat=${nearby.lat}&lng=${nearby.lng}&radiusKm=500`,
-    });
-    const kms = search.json().listings.map((l: { km: number }) => l.km);
-    expect(kms).toEqual([...kms].sort((a, b) => a - b));
+    expect(search.json().listings).toHaveLength(2);
+    expect(search.json().listings[0].region).toBe('south-west');
     await app.close();
   });
 
@@ -259,6 +273,37 @@ describe('finding a lot', () => {
 
     const big = await app.inject({ method: 'GET', url: '/listings/search?minKg=500' });
     expect(big.json().listings).toHaveLength(1);
+    await app.close();
+  });
+
+  /*
+    Soonest first, which is what a buyer needs and a farmer needs more.
+
+    With no distance to sort by, the useful order is urgency: the lot that has
+    to move today is the one whose farmer loses money if nobody comes.
+  */
+  it('puts what runs out first at the top', async () => {
+    const sms = new Outbox();
+    const app = testServer(db, sms);
+    const { access } = await signIn(app, sms, '08031234567');
+    for (const [ref, hours] of [['later', 48], ['sooner', 6]] as const) {
+      await app.inject({
+        method: 'POST',
+        url: '/listings',
+        headers: { authorization: `Bearer ${access}` },
+        payload: {
+          lotRef: ref,
+          crop: 'tomato',
+          quantityKg: 200,
+          region: 'south-west',
+          expiresAt: new Date(Date.now() + hours * 3_600_000).toISOString(),
+        },
+      });
+    }
+
+    const search = await app.inject({ method: 'GET', url: '/listings/search?crop=tomato' });
+    const expiries = search.json().listings.map((l: { expiresAt: string }) => l.expiresAt);
+    expect(expiries).toEqual([...expiries].sort());
     await app.close();
   });
 
@@ -284,7 +329,7 @@ describe('finding a lot', () => {
         lotRef: 'gone',
         crop: 'tomato',
         quantityKg: 200,
-        ...ibadan,
+        region: 'south-west',
         expiresAt: new Date(Date.now() - 60_000).toISOString(),
       },
     });
@@ -302,7 +347,7 @@ describe('finding a lot', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     const id = made.json().id;
     await app.inject({
@@ -324,7 +369,7 @@ describe('finding a lot', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
 
     await app.inject({ method: 'GET', url: '/listings/search?crop=tomato' });

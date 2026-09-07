@@ -50,7 +50,7 @@ async function anAcceptedEnquiry(lotRef = 'lot-1') {
     method: 'POST',
     url: '/listings',
     headers: { authorization: `Bearer ${farmer.access}` },
-    payload: { lotRef, crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+    payload: { lotRef, crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
   });
   const asked = await app.inject({
     method: 'POST',
@@ -79,7 +79,7 @@ describe('recording a deal', () => {
       method: 'POST',
       url: '/listings',
       headers: { authorization: `Bearer ${farmer.access}` },
-      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+      payload: { lotRef: 'lot-1', crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
     });
     const asked = await app.inject({
       method: 'POST',
@@ -353,8 +353,8 @@ describe('becoming trusted', () => {
   ) {
     for (let i = 0; i < deals; i++) {
       const listing = await db.query<{ id: string }>(
-        `insert into listings (account_id, lot_ref, crop, quantity_kg, lat, lng, expires_at)
-         values ($1, $2, 'tomato', 100, 7.4, 3.9, now() + interval '1 day') returning id`,
+        `insert into listings (account_id, lot_ref, crop, quantity_kg, region, expires_at)
+         values ($1, $2, 'tomato', 100, 'south-west', now() + interval '1 day') returning id`,
         [accountId, `earned-${randomUUID()}-${i}`],
       );
       const enquiry = await db.query<{ id: string }>(

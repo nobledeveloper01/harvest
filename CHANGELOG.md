@@ -10,6 +10,11 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- A lot whose spoilage window had closed could still be put on the market. The
+  server would accept it, expire it on the next sweep, and show it to nobody.
+- Two back arrows on the sign-in and capture screens: they drew the app's own
+  and did not turn off Material's implicit one.
+
 - **Three release gates that block v1.0 were filed under "Cleared".** R6, R7 and
   R8 are four-column blocking rows that had drifted into the three-column
   cleared table, each behind a blank line that ends the table above it — so they
@@ -61,6 +66,10 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The marketplace is reachable.** "Let buyers see this lot" on the decision
+  screen signs the farmer in if they are not, queues the listing in the outbox,
+  and returns without waiting for a network. Proved end to end against a local
+  server: code issued, account created, outbox drained, listing stored.
 - Signing in by phone: the same keypad as every other number in the app, four
   new spoken phrases, tokens held in memory behind a `TokenStore` port whose
   stand-in forgets them on purpose, and a refresh that treats "no signal" as

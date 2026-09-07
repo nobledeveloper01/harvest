@@ -283,8 +283,7 @@ describe('being reported', () => {
         lotRef: 'lot-1',
         crop: 'tomato',
         quantityKg: 200,
-        lat: 7.4,
-        lng: 3.9,
+        region: 'south-west',
         expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
       },
     });

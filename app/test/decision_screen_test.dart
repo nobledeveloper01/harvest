@@ -75,17 +75,20 @@ void main() {
   late int reports;
   late int quotes;
   late int costEntries;
+  late int listings;
   late Deductions deductions;
 
   Future<_Recording> pump(
     WidgetTester tester,
     Decision? given, {
     Deductions costs = const Deductions(),
+    Lot? about,
   }) async {
     deductions = costs;
     reports = 0;
     quotes = 0;
     costEntries = 0;
+    listings = 0;
     final speaker = _Recording();
     await tester.binding.setSurfaceSize(const Size(360, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -96,13 +99,17 @@ void main() {
         home: DecisionScreen(
           speaker: speaker,
           language: Speech.hausa,
-          lot: lot,
-          life: window,
+          lot: about ?? lot,
+          life: about == null
+              ? window
+              : ShelfLifeEngine.predict(lot: about),
           decision: given,
           now: noon,
           onReportPrice: () => reports++,
           onQuoteStorage: () => quotes++,
           onEnterCosts: () => costEntries++,
+          onList: () => listings++,
+          listed: false,
           deductions: deductions,
         ),
       ),
@@ -458,5 +465,33 @@ void main() {
       await tester.pump();
       expect(costEntries, 1);
     });
+  });
+
+  /*
+    A lot that has run out of time is not offered to buyers.
+
+    Found by using the app: a lot whose window closed yesterday could still be
+    put on the market. The server accepts it, the next expiry sweep closes it,
+    and it is shown to nobody — a row that looks like it worked and did nothing.
+  */
+  testWidgets('the market row is gone once the window has closed',
+      (tester) async {
+    await pump(
+      tester,
+      decision(),
+      // Picked long enough ago that even the optimistic end is past.
+      about: Lot.restore(
+        crop: Crop.tomato,
+        quantity: Quantity.weighed(200),
+        storage: StorageCondition.openAir,
+        harvestedAt: noon.subtract(const Duration(days: 30)),
+        loggedAt: noon.subtract(const Duration(days: 30)),
+      ),
+    );
+
+    expect(find.text('Let buyers see this lot'), findsNothing);
+    expect(find.text('Buyers can see this lot'), findsNothing);
+    // And the rest of the screen is still there, saying what it can.
+    expect(find.textContaining('Somebody offered me a price'), findsOneWidget);
   });
 }

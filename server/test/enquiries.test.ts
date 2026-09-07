@@ -44,7 +44,7 @@ async function aLotForSale(app: FastifyInstance, access: string, lotRef = 'lot-1
     method: 'POST',
     url: '/listings',
     headers: { authorization: `Bearer ${access}` },
-    payload: { lotRef, crop: 'tomato', quantityKg: 200, ...ibadan, expiresAt: tomorrow },
+    payload: { lotRef, crop: 'tomato', quantityKg: 200, region: 'south-west', expiresAt: tomorrow },
   });
   return made.json().id as string;
 }
@@ -207,7 +207,7 @@ describe('enquiring', () => {
         lotRef: 'gone',
         crop: 'tomato',
         quantityKg: 200,
-        ...ibadan,
+        region: 'south-west',
         expiresAt: new Date(Date.now() - 1000).toISOString(),
       },
     });

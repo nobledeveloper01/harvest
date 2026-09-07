@@ -315,7 +315,16 @@ Future<void> walkTheFlow(
     await press(digit);
   }
   await reachAndTap(find.text('Work it out'));
-  await at('the decision screen, with a storage course', find.text('Wait and sell later'));
+  /*
+    The witness is the storage card, not the headline.
+
+    The list is a `ListView` and it is left where the tap scrolled it, so the
+    headline above is not built — and a witness that is off screen is a witness
+    that reports a screen never reached. The card this step exists to produce is
+    both visible and the actual claim.
+  */
+  await at('the decision screen, with a storage course',
+      find.text('Put it in storage'));
 
   // And the two sheets that close a lot out.
   await tester.tap(find.bySemanticsLabel('back'));

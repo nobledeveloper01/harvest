@@ -2356,3 +2356,60 @@ The screen-coverage gate did its job on arrival: adding `SignInScreen` failed
 built on the walk could see. It is in `pumpTheUnreachable` now — not part of the
 flow, because it is not part of the flow — and the type-scaling, touch-target
 and primary-action suites all cover it.
+
+## Everything built for Phase 5 was unreachable, and the app looked identical
+
+Four sessions of marketplace work — the server, the outbox, the account store,
+the sign-in screen — and running the app showed exactly what it showed before
+any of it. Nothing was wired to a route. The tests were green, the gates were
+green, and a person opening the app could not tell the difference between all of
+that work and none of it.
+
+That is worth writing down as its own failure, because every check in this
+repository was satisfied by it. `screen_coverage_test` even *asked* the right
+question — does the walk build every screen — and the answer was yes, because
+`pumpTheUnreachable` builds the ones with no route. A screen covered by every
+suite and reachable by nobody passes everything.
+
+So: **"Let buyers see this lot"**, on the decision screen, under the offer row.
+That is the screen where a farmer has just been told what waiting costs them,
+which is the moment *who else could buy this* means anything. Tapping it signs
+them in if they are not, queues a `listing.put` in the outbox, and returns. No
+screen waits for a network.
+
+Run against a real server on localhost, the whole loop works: the code is issued
+and logged rather than sent (the SMS driver announcing itself, as designed), the
+account is created, the outbox drains through `/sync/push`, and the batch is
+dispatched **through the real `/listings` route** — which the server log shows
+as a second request, because that is what `app.inject` does and why batching
+cannot become a way around a check.
+
+### Two things running it found that no test had
+
+**A lot with no time left could still be listed.** The Tomato lot's window had
+closed the day before; the app queued it, the server accepted it, the next
+expiry sweep would close it, and it would be shown to nobody. A row that looks
+like it worked and did nothing is worse than a row that is not there — so the
+row is gone once the window is, judged on the **near** end of the range, because
+a buyer who arrives on the last optimistic day finds a lot that turned two days
+ago.
+
+**Two back arrows.** The new screens set a `BackButtonRow` in the app bar's
+title, like the rest of the app, but did not turn off the implicit leading — so
+Material drew its own chevron beside it. Every other screen in the app had
+`automaticallyImplyLeading: false` and I had not copied it. Visible in the first
+screenshot, invisible to four suites.
+
+### And a listing has no coordinate
+
+Wiring it up produced a compile error worth more than the feature: `Region` has
+no centre, and the code wanted `lat` and `lng` because the server's listing
+table had them. Adding a centroid would have been inventing the farmer's
+position — the exact thing ADR-0006 refuses, arriving from the other direction
+now that a real client had to supply one. A region centroid is a point up to a
+hundred kilometres from the lot, dressed as somewhere somebody said they were.
+
+Listings are regional, like prices. `migrations/0009` drops the columns and says
+why, and the geometry module stays with a note that it guards a road not
+currently driven on: a **buyer** may well give a coordinate, and that is where
+it goes back.

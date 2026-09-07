@@ -132,6 +132,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        // The app draws its own, at the touch size this product needs. The
+        // implicit one is a second back arrow beside it — which is what it was,
+        // until somebody opened the screen.
+        automaticallyImplyLeading: false,
         titleSpacing: Gap.l,
         title: BackButtonRow(onBack: widget.onBack, child: const SizedBox()),
       ),

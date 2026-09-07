@@ -2,26 +2,30 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { require as requireCaller } from '../auth/guard.js';
-import { boundingBox, truncate } from '../listings/geo.js';
 
-const precision = z.enum(['exact', 'village', 'lga']);
+/**
+ * The five the app knows, and no others.
+ *
+ * A listing is in a region rather than at a point, for the reason
+ * `migrations/0009` gives: the client has no coordinates to offer. It never
+ * asks for a location and holds no gazetteer, so a latitude here would be one
+ * somebody invented — and this server's job is not to launder that into a
+ * position a buyer will drive to.
+ */
+const regions = ['north-west', 'middle-belt', 'south-west', 'south-east', 'elsewhere'] as const;
 
 const listingBody = z.object({
   lotRef: z.string().min(1).max(64),
   crop: z.string().min(1).max(32),
   quantityKg: z.number().positive().max(1_000_000),
   askingPriceKobo: z.number().int().positive().max(10 ** 15).optional(),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  precision: precision.default('lga'),
+  region: z.enum(regions),
   expiresAt: z.string().datetime(),
 });
 
 const searchQuery = z.object({
   crop: z.string().min(1).max(32).optional(),
-  lat: z.coerce.number().min(-90).max(90).optional(),
-  lng: z.coerce.number().min(-180).max(180).optional(),
-  radiusKm: z.coerce.number().positive().max(500).default(50),
+  region: z.enum(regions).optional(),
   minKg: z.coerce.number().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
@@ -46,23 +50,16 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
       return reply.code(400).send({ error: 'listing is not well formed' });
     }
 
-    const at = truncate(
-      { lat: body.data.lat, lng: body.data.lng },
-      body.data.precision,
-    );
-
     const { rows } = await app.db.query<{ id: string }>(
       `insert into listings
          (account_id, lot_ref, crop, quantity_kg, asking_price_kobo,
-          lat, lng, precision, expires_at, status, updated_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', now())
+          region, expires_at, status, updated_at)
+       values ($1, $2, $3, $4, $5, $6, $7, 'active', now())
        on conflict (account_id, lot_ref) do update set
          crop = excluded.crop,
          quantity_kg = excluded.quantity_kg,
          asking_price_kobo = excluded.asking_price_kobo,
-         lat = excluded.lat,
-         lng = excluded.lng,
-         precision = excluded.precision,
+         region = excluded.region,
          expires_at = excluded.expires_at,
          status = 'active',
          updated_at = now()
@@ -73,14 +70,12 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
         body.data.crop,
         body.data.quantityKg,
         body.data.askingPriceKobo ?? null,
-        at.lat,
-        at.lng,
-        body.data.precision,
+        body.data.region,
         body.data.expiresAt,
       ],
     );
 
-    return reply.code(200).send({ id: rows[0]!.id, lat: at.lat, lng: at.lng });
+    return reply.code(200).send({ id: rows[0]!.id });
   });
 
   app.post('/listings/:id/withdraw', async (request, reply) => {
@@ -109,7 +104,7 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
     const query = searchQuery.safeParse(request.query);
     if (!query.success) return reply.code(400).send({ error: 'bad search' });
 
-    const { crop, lat, lng, radiusKm, minKg, limit } = query.data;
+    const { crop, region, minKg, limit } = query.data;
     const where: string[] = [`status = 'active'`, 'expires_at > now()'];
     const values: unknown[] = [];
 
@@ -117,43 +112,21 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
       values.push(crop);
       where.push(`crop = $${values.length}`);
     }
+    if (region) {
+      values.push(region);
+      where.push(`region = $${values.length}`);
+    }
     if (minKg !== undefined) {
       values.push(minKg);
       where.push(`quantity_kg >= $${values.length}`);
     }
 
-    let distance = 'null::double precision';
-    let order = 'expires_at asc';
-
-    if (lat !== undefined && lng !== undefined) {
-      const box = boundingBox({ lat, lng }, radiusKm);
-      values.push(box.minLat, box.maxLat, box.minLng, box.maxLng);
-      const [a, b, c, d] = [
-        values.length - 3,
-        values.length - 2,
-        values.length - 1,
-        values.length,
-      ];
-      where.push(`lat between $${a} and $${b}`, `lng between $${c} and $${d}`);
-
-      values.push(lat, lng);
-      const [p, q] = [values.length - 1, values.length];
-      distance = `6371 * acos(least(1, greatest(-1,
-          sin(radians($${p})) * sin(radians(lat)) +
-          cos(radians($${p})) * cos(radians(lat)) * cos(radians(lng - $${q})))))`;
-
-      values.push(radiusKm);
-      where.push(`${distance} <= $${values.length}`);
-      order = 'km asc';
-    }
-
     values.push(limit);
     const { rows } = await app.db.query(
-      `select id, crop, quantity_kg, asking_price_kobo, lat, lng, precision,
-              expires_at, ${distance} as km
+      `select id, crop, quantity_kg, asking_price_kobo, region, expires_at
        from listings
        where ${where.join(' and ')}
-       order by ${order}
+       order by expires_at asc
        limit $${values.length}`,
       values,
     );
@@ -164,11 +137,8 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
         crop: row.crop,
         quantityKg: Number(row.quantity_kg),
         askingPriceKobo: row.asking_price_kobo === null ? null : Number(row.asking_price_kobo),
-        lat: row.lat,
-        lng: row.lng,
-        precision: row.precision,
+        region: row.region,
         expiresAt: row.expires_at,
-        km: row.km === null ? null : Math.round(row.km * 10) / 10,
       })),
     });
   });
@@ -176,8 +146,7 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
   app.get('/listings/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const { rows } = await app.db.query(
-      `select id, crop, quantity_kg, asking_price_kobo, lat, lng, precision,
-              expires_at, status
+      `select id, crop, quantity_kg, asking_price_kobo, region, expires_at, status
        from listings where id = $1`,
       [id],
     );
@@ -197,9 +166,7 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
       quantityKg: Number(listing.quantity_kg),
       askingPriceKobo:
         listing.asking_price_kobo === null ? null : Number(listing.asking_price_kobo),
-      lat: listing.lat,
-      lng: listing.lng,
-      precision: listing.precision,
+      region: listing.region,
       expiresAt: listing.expires_at,
     });
   });

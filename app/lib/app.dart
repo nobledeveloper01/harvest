@@ -25,6 +25,12 @@ import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
+import 'package:dio/dio.dart';
+
+import 'data/net/account_store.dart';
+import 'data/net/api.dart';
+import 'data/net/outbox_store.dart';
+import 'features/account/sign_in_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/costs_screen.dart';
 import 'features/money/price_screen.dart';
@@ -35,6 +41,17 @@ import 'features/lots/storage_screen.dart';
 ///
 /// **Dark by default, not `ThemeMode.system`** — the portfolio's standing
 /// choice. Both themes are authored; neither is derived from the other.
+/// Where the server is.
+///
+/// A compile-time value with a placeholder default, because there is no
+/// deployment yet and a URL invented at runtime is a URL nobody chose. Every
+/// call against it fails as *no signal*, which is a state this app is built to
+/// be correct in — the outbox keeps what it could not send.
+const _serverUrl = String.fromEnvironment(
+  'HARVEST_SERVER',
+  defaultValue: 'https://harvest.invalid',
+);
+
 class HarvestApp extends StatefulWidget {
   /// [speaker], [languages] and [lots] are injectable so the whole flow —
   /// picker, grid, quantity, storage, and a lot surviving a relaunch — can be
@@ -84,6 +101,21 @@ class _HarvestAppState extends State<HarvestApp> {
   /// reading is still current, and asking it once a launch is enough for a
   /// model whose readings are good for twelve hours.
   Weather? _weather;
+
+  /*
+    The marketplace half, and everything about it is offline-first.
+
+    `docs/07-BACKEND-SPEC.md`: *no screen awaits the network to render.* Listing
+    a lot writes a row in the outbox and returns; the server hears about it when
+    there is a signal, and the farmer's screen has already said so.
+  */
+  late final Api _api = Api(http: Dio(), baseUrl: _serverUrl);
+  late final AccountStore _accounts =
+      AccountStore(api: _api, tokens: ForgetfulTokenStore());
+  late final Outbox _outbox = Outbox(database: _database, api: _api);
+
+  /// The lots this session has put on the market.
+  final _listed = <String>{};
 
   /// Watches for the farmer tapping a warning while the app is running.
   StreamSubscription<int>? _taps;
@@ -278,6 +310,8 @@ class _HarvestAppState extends State<HarvestApp> {
           lot: lot,
           weather: _weather,
           decide: decide,
+          onList: (context) => _listOnTheMarket(context, lot),
+          listedNow: () => _listed.contains(_lotRef(lot)),
           onQuoted: (quote) async => quoted = quote,
           onCosts: (costs) async => deductions = costs,
           deductionsNow: () => deductions,
@@ -291,6 +325,69 @@ class _HarvestAppState extends State<HarvestApp> {
         ),
       ),
     );
+  }
+
+  /// A lot's identity to the server: stable, and not a database row number.
+  ///
+  /// The row id would be simpler and is wrong — it is a number this phone
+  /// invented, so two phones would send `4` for two different lots. Crop and
+  /// the instant it was picked are what a lot *is*.
+  String _lotRef(Lot lot) =>
+      '${lot.crop.id}-${lot.harvestedAt.millisecondsSinceEpoch}';
+
+  /// Puts a lot in front of buyers, signing the farmer in first if need be.
+  Future<bool> _listOnTheMarket(BuildContext context, Lot lot) async {
+    final language = _language;
+    if (language == null) return false;
+
+    if (_accounts.account == null) {
+      final navigator = Navigator.of(context);
+      final signedIn = await navigator.push<bool>(
+        MaterialPageRoute(
+          builder: (_) => SignInScreen(
+            accounts: _accounts,
+            speaker: _speaker,
+            language: language,
+            onSignedIn: () => navigator.pop(true),
+            onBack: () => navigator.pop(false),
+          ),
+        ),
+      );
+      if (signedIn != true) return false;
+    }
+
+    final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
+    if (life == null) return false;
+
+    await _outbox.add('listing.put', {
+      'lotRef': _lotRef(lot),
+      'crop': lot.crop.id,
+      'quantityKg': lot.quantity.grams / 1000,
+      /*
+        The region, because that is the only place this app knows.
+
+        It never asks for a location (`CLAUDE.md`) and holds no gazetteer
+        (ADR-0006), so a coordinate here would be one the app invented — a
+        region centroid is a point up to a hundred kilometres from the lot,
+        dressed as a position somebody gave. The five regions are what the
+        farmer actually told us.
+      */
+      'region': (_region ?? Region.unknown).id,
+      /*
+        The window's near end, not its far one.
+
+        A listing cannot outlive its crop (FR-5.1), and the honest end of a
+        range is the early one: a buyer who arrives on the last optimistic day
+        finds a lot that turned two days ago.
+      */
+      'expiresAt': lot.harvestedAt.add(life.shortest).toUtc().toIso8601String(),
+    });
+    _listed.add(_lotRef(lot));
+
+    // Best effort, and the screen does not wait for it. The row is written; a
+    // drain that fails changes nothing a farmer can see.
+    unawaited(_outbox.drain());
+    return true;
   }
 
   Future<void> _refreshWeather() async {
@@ -469,6 +566,8 @@ class _DecisionHost extends StatefulWidget {
     required this.lot,
     required this.weather,
     required this.decide,
+    required this.onList,
+    required this.listedNow,
     required this.onReported,
     required this.onQuoted,
     required this.onCosts,
@@ -484,6 +583,12 @@ class _DecisionHost extends StatefulWidget {
   final Future<void> Function(Quote quote) onQuoted;
   final Future<void> Function(Deductions costs) onCosts;
   final Deductions Function() deductionsNow;
+
+  /// Puts the lot on the market. Returns whether it is on it afterwards.
+  final Future<bool> Function(BuildContext context) onList;
+
+  /// Whether it already is.
+  final bool Function() listedNow;
 
   @override
   State<_DecisionHost> createState() => _DecisionHostState();
@@ -554,6 +659,11 @@ class _DecisionHostState extends State<_DecisionHost> {
     await _reload();
   }
 
+  Future<void> _list() async {
+    final listed = await widget.onList(context);
+    if (listed && mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     // Nothing until the numbers are in. A screen that renders "I do not know
@@ -571,6 +681,8 @@ class _DecisionHostState extends State<_DecisionHost> {
       onReportPrice: _reportPrice,
       onQuoteStorage: _quoteStorage,
       onEnterCosts: _enterCosts,
+      onList: _list,
+      listed: widget.listedNow(),
       deductions: widget.deductionsNow(),
     );
   }

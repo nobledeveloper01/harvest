@@ -34,6 +34,8 @@ class DecisionScreen extends StatefulWidget {
     required this.onReportPrice,
     required this.onQuoteStorage,
     required this.onEnterCosts,
+    required this.onList,
+    required this.listed,
     required this.deductions,
     super.key,
   });
@@ -53,6 +55,16 @@ class DecisionScreen extends StatefulWidget {
 
   /// Ask what it costs to get the lot to market.
   final VoidCallback onEnterCosts;
+
+  /// Put this lot in front of buyers. Phase 5.
+  ///
+  /// Offered here rather than on the harvest list because this is the screen
+  /// where a farmer has just been told what waiting costs them — which is the
+  /// moment the question *who else could buy this* means anything.
+  final VoidCallback onList;
+
+  /// Whether it is already on the market, so the row can say so.
+  final bool listed;
 
   /// What is already coming off the top, if anything.
   final Deductions deductions;
@@ -121,6 +133,17 @@ class _DecisionScreenState extends State<DecisionScreen> {
     );
   }
 
+  /// Whether there is any of the window left to sell into.
+  ///
+  /// The **near** end of the range, not the far one: a buyer who arrives on the
+  /// last optimistic day finds a lot that turned two days ago, and this app's
+  /// habit with a range is to act on the honest end of it.
+  bool get _stillHasTime {
+    final life = widget.life;
+    if (life == null) return false;
+    return widget.lot.harvestedAt.add(life.shortest).isAfter(widget.now);
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -180,6 +203,29 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   label: 'Somebody offered me a price',
                   onTap: widget.onReportPrice,
                 ),
+                /*
+                  Offered only while there is something to sell.
+
+                  Found by using it: a lot whose window closed yesterday could
+                  still be put on the market, and the server would accept it,
+                  expire it on the next sweep, and show it to nobody. A row that
+                  looks like it worked and did nothing is worse than one that is
+                  not there — so when the time is gone the row says so and does
+                  nothing, which is the same answer the app gives everywhere
+                  else it cannot help.
+                */
+                if (_stillHasTime) ...[
+                  const SizedBox(height: Gap.m),
+                  _Another(
+                    icon: widget.listed
+                        ? Icons.storefront_rounded
+                        : Icons.storefront_outlined,
+                    label: widget.listed
+                        ? 'Buyers can see this lot'
+                        : 'Let buyers see this lot',
+                    onTap: widget.onList,
+                  ),
+                ],
                 const SizedBox(height: Gap.m),
                 /*
                   Says what it is currently assuming, which is usually nothing.

@@ -31,8 +31,8 @@ async function aFarmerWithALot(expiresIn: number, lotRef = 'lot-1') {
   );
   const id = account.rows[0]!.id;
   await db.query(
-    `insert into listings (account_id, lot_ref, crop, quantity_kg, lat, lng, expires_at)
-     values ($1, $2, 'tomato', 200, 7.4, 3.9, now() + ($3 || ' milliseconds')::interval)`,
+    `insert into listings (account_id, lot_ref, crop, quantity_kg, region, expires_at)
+     values ($1, $2, 'tomato', 200, 'south-west', now() + ($3 || ' milliseconds')::interval)`,
     [id, lotRef, String(expiresIn)],
   );
   return id;
