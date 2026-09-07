@@ -61,6 +61,10 @@ Entries say *why*, not just what.
 
 ### Added
 
+- The client's outbox: every mutation is a local row with an idempotency key
+  chosen once and kept, drained in batches when there is a signal, with a
+  backoff that doubles and refusals that come out of the queue rather than
+  blocking it. No screen waits for a network.
 - The scheduled half: one `jobs` table, `for update skip locked`, and listing
   expiry that warns a farmer six hours before a lot comes off the market —
   once, not every fifteen minutes.

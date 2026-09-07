@@ -2272,3 +2272,46 @@ table between tests, which wiped the job schedule a migration had seeded — so
 the schedule moved into `src/jobs.ts` beside the functions that do the work. A
 schedule split between a migration and a map is two lists to keep in step, and
 this repository has spent a session deleting those.
+
+## The outbox, and a fake that made every drain look like a field
+
+The client's half of Phase 5 starts where `docs/07-BACKEND-SPEC.md` says it
+must: *the outbox exists from day one … including during the phases where there
+is nothing to drain to.* That last clause is the whole design. A product that
+adds an outbox once the server arrives has spent every screen until then
+learning to await a network, and unlearning that is a rewrite.
+
+So a mutation in this app is a **row**, and nothing else. A farmer who lists a
+lot with no signal has listed it: the local database has it, the screen says so,
+and the only open question is when the server hears. `Outbox.add` returns
+without touching a network.
+
+Three decisions in the pure part worth keeping:
+
+**The key is chosen once and kept.** Regenerating it on retry is the bug the
+mechanism exists to prevent — a connection that lasts thirty seconds means the
+server has very likely already done the thing whose reply was lost, and a fresh
+key asks it to do that thing again. Two enquiries, two price reports, two
+ratings.
+
+**A 4xx comes *out* of the queue**, with the reason kept. These are sent in
+order and the order matters — a message before its enquiry is a message the
+server refuses — so one permanently impossible item at the front is a queue that
+never drains again. And a farmer whose listing never appeared is entitled to be
+told why, which the kept row is for.
+
+**A short reply is not permission to forget anything.** An operation the server
+did not mention is unanswered, not fine.
+
+### And the fake server was wrong in a way that looked like the code
+
+Four tests failed at once, all of them reading as *the phone had no signal*. The
+fake `HttpClientAdapter` read the request body from `options.data`, which by the
+time a request reaches an adapter is not where Dio has put it — the body is in
+`requestStream`. Reading the wrong one threw, Dio wrapped that as a
+`DioException`, and the outbox correctly read it as no connection.
+
+Which is the failure mode this whole layer is built around, arriving from the
+test harness rather than from the code under test. It cost ten minutes and it is
+worth writing down: **a stand-in that fails the way production fails is a
+stand-in that hides in the results.**
