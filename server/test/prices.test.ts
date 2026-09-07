@@ -160,14 +160,6 @@ describe('what a reporter is worth', () => {
 });
 
 describe('reporting and reading a price', () => {
-  async function aMarket() {
-    const { rows } = await db.query<{ id: string }>(
-      `insert into markets (name, state, lat, lng) values ('Bodija', 'Oyo', 7.43, 3.91)
-       returning id`,
-    );
-    return rows[0]!.id;
-  }
-
   async function signIn(app: FastifyInstance, sms: Outbox, phone: string) {
     await app.inject({ method: 'POST', url: '/auth/otp/request', payload: { phone } });
     const verified = await app.inject({
@@ -181,12 +173,11 @@ describe('reporting and reading a price', () => {
   it('needs an account to report, and none to read', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
-    const market = await aMarket();
 
     const anonymous = await app.inject({
       method: 'POST',
       url: '/prices/report',
-      payload: { crop: 'tomato', marketId: market, koboPerKg: 90_000 },
+      payload: { crop: 'tomato', region: 'south-west', koboPerKg: 90_000 },
     });
     expect(anonymous.statusCode).toBe(401);
 
@@ -195,10 +186,9 @@ describe('reporting and reading a price', () => {
     await app.close();
   });
 
-  it('gives back a figure with its market, its age and its sources', async () => {
+  it('gives back a figure with its region, its age and its sources', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
-    const market = await aMarket();
     const who = await signIn(app, sms, '08031234567');
 
     for (const kobo of [88_000, 90_000, 92_000]) {
@@ -206,13 +196,13 @@ describe('reporting and reading a price', () => {
         method: 'POST',
         url: '/prices/report',
         headers: { authorization: `Bearer ${who.access}` },
-        payload: { crop: 'tomato', marketId: market, koboPerKg: kobo },
+        payload: { crop: 'tomato', region: 'south-west', koboPerKg: kobo },
       });
     }
 
     const read = await app.inject({ method: 'GET', url: '/prices?crop=tomato' });
     const price = read.json().prices[0];
-    expect(price.market).toBe('Bodija');
+    expect(price.region).toBe('south-west');
     expect(price.koboPerKg).toBe(90_000);
     expect(price.reports).toBe(3);
     expect(price.sources).toEqual(['farmer']);
@@ -223,7 +213,6 @@ describe('reporting and reading a price', () => {
   it('does not tell a reporter whether their report counted', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
-    const market = await aMarket();
     const who = await signIn(app, sms, '08031234567');
 
     for (const kobo of [88_000, 90_000, 92_000, 91_000]) {
@@ -231,14 +220,14 @@ describe('reporting and reading a price', () => {
         method: 'POST',
         url: '/prices/report',
         headers: { authorization: `Bearer ${who.access}` },
-        payload: { crop: 'tomato', marketId: market, koboPerKg: kobo },
+        payload: { crop: 'tomato', region: 'south-west', koboPerKg: kobo },
       });
     }
     const silly = await app.inject({
       method: 'POST',
       url: '/prices/report',
       headers: { authorization: `Bearer ${who.access}` },
-      payload: { crop: 'tomato', marketId: market, koboPerKg: 9_000_000 },
+      payload: { crop: 'tomato', region: 'south-west', koboPerKg: 9_000_000 },
     });
     expect(silly.statusCode).toBe(201);
     expect(silly.body).not.toContain('outlier');
@@ -257,14 +246,13 @@ describe('reporting and reading a price', () => {
   it('freezes the reporter’s weight into the row', async () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
-    const market = await aMarket();
     const who = await signIn(app, sms, '08031234567');
 
     await app.inject({
       method: 'POST',
       url: '/prices/report',
       headers: { authorization: `Bearer ${who.access}` },
-      payload: { crop: 'tomato', marketId: market, koboPerKg: 90_000 },
+      payload: { crop: 'tomato', region: 'south-west', koboPerKg: 90_000 },
     });
 
     const { rows } = await db.query<{ weight: string }>('select weight from price_reports');
@@ -272,19 +260,69 @@ describe('reporting and reading a price', () => {
     await app.close();
   });
 
-  it('finds markets near a place', async () => {
+  /*
+    There is no gazetteer, and this is what says so.
+
+    ADR-0006 refuses a market list — a claim about the physical world nobody has
+    collected — and the first version of this server built one anyway: a
+    `markets` table with names, states and coordinates, and a `/markets`
+    endpoint to search it by radius. It went in because the backend spec's
+    endpoint list has one, and the ADR that forbids it is in another document.
+
+    Prices are regional now. This asserts the refusal, because an absence with
+    a specification arguing for it is an absence that comes back.
+  */
+  it('has no market directory to search', async () => {
     const app = testServer(db);
-    await aMarket();
-    await db.query(
-      `insert into markets (name, state, lat, lng) values ('Dawanau', 'Kano', 12.0, 8.5)`,
+    const gone = await app.inject({ method: 'GET', url: '/markets' });
+    expect(gone.statusCode).toBe(404);
+
+    const { rows } = await db.query<{ table_name: string }>(
+      `select table_name from information_schema.tables where table_schema = 'public'`,
     );
+    expect(rows.map((r) => r.table_name)).not.toContain('markets');
+    await app.close();
+  });
 
-    const near = await app.inject({ method: 'GET', url: '/markets?lat=7.4&lng=3.9&radiusKm=50' });
-    expect(near.json().markets).toHaveLength(1);
-    expect(near.json().markets[0].name).toBe('Bodija');
+  it('refuses a place it was not told about', async () => {
+    const sms = new Outbox();
+    const app = testServer(db, sms);
+    const who = await signIn(app, sms, '08031234567');
+    const invented = await app.inject({
+      method: 'POST',
+      url: '/prices/report',
+      headers: { authorization: `Bearer ${who.access}` },
+      payload: { crop: 'tomato', region: 'Bodija market, Ibadan', koboPerKg: 90_000 },
+    });
+    expect(invented.statusCode).toBe(400);
+    await app.close();
+  });
 
-    const all = await app.inject({ method: 'GET', url: '/markets' });
-    expect(all.json().markets).toHaveLength(2);
+  it('answers for one region when asked for one', async () => {
+    const sms = new Outbox();
+    const app = testServer(db, sms);
+    const who = await signIn(app, sms, '08031234567');
+    for (const [region, kobo] of [
+      ['south-west', 90_000],
+      ['north-west', 60_000],
+    ] as const) {
+      await app.inject({
+        method: 'POST',
+        url: '/prices/report',
+        headers: { authorization: `Bearer ${who.access}` },
+        payload: { crop: 'tomato', region, koboPerKg: kobo },
+      });
+    }
+
+    const all = await app.inject({ method: 'GET', url: '/prices?crop=tomato' });
+    expect(all.json().prices).toHaveLength(2);
+
+    const one = await app.inject({
+      method: 'GET',
+      url: '/prices?crop=tomato&region=north-west',
+    });
+    expect(one.json().prices).toHaveLength(1);
+    expect(one.json().prices[0].koboPerKg).toBe(60_000);
     await app.close();
   });
 });

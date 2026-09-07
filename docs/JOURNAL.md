@@ -2146,3 +2146,48 @@ with a hundred SIM cards, and a per-report cap has nothing to say about that.
 Two gates in one session that passed for a reason unrelated to what they
 checked, both written by somebody who spent the morning finding exactly that.
 The habit is not that you stop writing them. It is that you break every one.
+
+## I built the gazetteer ADR-0006 exists to refuse
+
+Yesterday's price work created a `markets` table — name, LGA, state, latitude,
+longitude — and a `/markets?near=` endpoint to search it by radius. Every price
+report was keyed to a row in it.
+
+ADR-0006, accepted two days earlier:
+
+> The same rule governs market prices. **The app holds no market gazetteer**; it
+> holds what farmers have told it, filtered for outliers, each figure carrying
+> its source and its age.
+
+It went in because `docs/07-BACKEND-SPEC.md`'s endpoint list has `GET /facilities`
+and a `markets` table in the data model, and the ADR that forbids both is in a
+different document. **The specification and the decision disagreed, and I
+implemented the specification** — which is the ordinary way an ADR stops being
+worth writing.
+
+The reasoning that rules it out is the same one that rules out the facility
+directory, and it is about a farmer rather than about data hygiene: a market
+list is a claim about the physical world that nobody has collected, and one that
+is 20% wrong is worse than none, because the 80% teaches somebody to trust it
+before the 20% costs them a day and the fare.
+
+Prices are keyed to the five **regions** now — the ones already bundled in
+`domain/lots/quantity.dart`, already asked for, chosen because a basket weighs
+differently in each. No gazetteer, no coordinate the farmer did not offer.
+Coarser than a market and honest about being coarse.
+
+Migration `0005` drops and rebuilds rather than editing `0004`, because a
+migration that changes after it has run means different things in different
+databases. The mistake stays in the history, which is where it belongs.
+
+There is a test asserting `/markets` returns 404 and that no `markets` table
+exists. An absence with a specification arguing for it is an absence that comes
+back.
+
+**And the facility directory is not being built.** ADR-0006 places it in Phase 5
+"with the backend", and says plainly what blocks it: *what unblocks it is a
+person or an organisation who has visited the facilities … until one exists, no
+amount of engineering produces the data.* An empty directory is the thing the
+ADR refuses, so Phase 5 ships without one and the decision screen keeps saying
+*"A store quoted me a price"* — a sentence that presumes the farmer found the
+store, rather than one that presumes the app did.

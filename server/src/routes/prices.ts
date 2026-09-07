@@ -2,56 +2,34 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { require as requireCaller } from '../auth/guard.js';
-import { boundingBox } from '../listings/geo.js';
 import { aggregate, isOutlier, weightOf, type Report } from '../prices/aggregate.js';
+
+/**
+ * The five the app already knows, and no others.
+ *
+ * ADR-0006: *the app holds no market gazetteer.* A price belongs to a region —
+ * the same five bundled in `domain/lots/quantity.dart`, which the farmer has
+ * already been asked for because a basket weighs differently in each. Coarser
+ * than a market, and honest about being coarse; a market list is a claim about
+ * the physical world that nobody has collected.
+ */
+const regions = ['north-west', 'middle-belt', 'south-west', 'south-east', 'elsewhere'] as const;
 
 const reportBody = z.object({
   crop: z.string().min(1).max(32),
-  marketId: z.string().uuid(),
+  region: z.enum(regions),
   koboPerKg: z.number().int().positive().max(10 ** 12),
   source: z.enum(['farmer', 'buyer', 'partner']).default('farmer'),
 });
 
 const priceQuery = z.object({
   crop: z.string().min(1).max(32),
-  lat: z.coerce.number().min(-90).max(90).optional(),
-  lng: z.coerce.number().min(-180).max(180).optional(),
-  radiusKm: z.coerce.number().positive().max(500).default(100),
+  region: z.enum(regions).optional(),
 });
 
 export type PriceOptions = { readonly signingKey: string };
 
 export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
-  app.get('/markets', async (request, reply) => {
-    const query = z
-      .object({
-        lat: z.coerce.number().optional(),
-        lng: z.coerce.number().optional(),
-        radiusKm: z.coerce.number().positive().max(500).default(100),
-      })
-      .safeParse(request.query);
-    if (!query.success) return reply.code(400).send({ error: 'bad query' });
-
-    if (query.data.lat === undefined || query.data.lng === undefined) {
-      const { rows } = await app.db.query(
-        'select id, name, lga, state, lat, lng, kind from markets order by name limit 200',
-      );
-      return reply.send({ markets: rows });
-    }
-
-    const box = boundingBox(
-      { lat: query.data.lat, lng: query.data.lng },
-      query.data.radiusKm,
-    );
-    const { rows } = await app.db.query(
-      `select id, name, lga, state, lat, lng, kind from markets
-       where lat between $1 and $2 and lng between $3 and $4
-       order by name limit 200`,
-      [box.minLat, box.maxLat, box.minLng, box.maxLng],
-    );
-    return reply.send({ markets: rows });
-  });
-
   /*
     Anybody signed in may report a price, and what their word is worth is
     decided here.
@@ -79,8 +57,8 @@ export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
     // Judged against what is already there, at the moment it lands.
     const { rows: recent } = await app.db.query<{ kobo_per_kg: string }>(
       `select kobo_per_kg from price_reports
-       where crop = $1 and market_id = $2 and reported_at > now() - interval '7 days'`,
-      [body.data.crop, body.data.marketId],
+       where crop = $1 and region = $2 and reported_at > now() - interval '7 days'`,
+      [body.data.crop, body.data.region],
     );
     const outlier = isOutlier(
       body.data.koboPerKg,
@@ -88,11 +66,11 @@ export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
     );
 
     const { rows } = await app.db.query<{ id: string }>(
-      `insert into price_reports (crop, market_id, kobo_per_kg, reported_by, source, weight, is_outlier)
+      `insert into price_reports (crop, region, kobo_per_kg, reported_by, source, weight, is_outlier)
        values ($1, $2, $3, $4, $5, $6, $7) returning id`,
       [
         body.data.crop,
-        body.data.marketId,
+        body.data.region,
         body.data.koboPerKg,
         who.accountId,
         body.data.source,
@@ -124,45 +102,36 @@ export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
     if (!query.success) return reply.code(400).send({ error: 'bad query' });
 
     const values: unknown[] = [query.data.crop];
-    let near = '';
-    if (query.data.lat !== undefined && query.data.lng !== undefined) {
-      const box = boundingBox(
-        { lat: query.data.lat, lng: query.data.lng },
-        query.data.radiusKm,
-      );
-      values.push(box.minLat, box.maxLat, box.minLng, box.maxLng);
-      near = `and m.lat between $2 and $3 and m.lng between $4 and $5`;
+    let only = '';
+    if (query.data.region) {
+      values.push(query.data.region);
+      only = 'and region = $2';
     }
 
     const { rows } = await app.db.query<{
-      market_id: string;
-      name: string;
-      state: string;
+      region: string;
       kobo_per_kg: string;
       weight: string;
       source: string;
       reported_by: string | null;
       reported_at: Date;
     }>(
-      `select p.market_id, m.name, m.state, p.kobo_per_kg, p.weight, p.source,
-              p.reported_by, p.reported_at
-       from price_reports p join markets m on m.id = p.market_id
-       where p.crop = $1 ${near}
-         and p.is_outlier = false
-         and p.reported_at > now() - interval '30 days'
-       order by p.reported_at desc`,
+      `select region, kobo_per_kg, weight, source, reported_by, reported_at
+       from price_reports
+       where crop = $1 ${only}
+         and is_outlier = false
+         and reported_at > now() - interval '30 days'
+       order by reported_at desc`,
       values,
     );
 
-    const byMarket = new Map<string, { name: string; state: string; reports: Report[]; sources: Set<string> }>();
+    const byRegion = new Map<string, { reports: Report[]; sources: Set<string> }>();
     for (const row of rows) {
-      const market = byMarket.get(row.market_id) ?? {
-        name: row.name,
-        state: row.state,
+      const region = byRegion.get(row.region) ?? {
         reports: [],
         sources: new Set<string>(),
       };
-      market.reports.push({
+      region.reports.push({
         kobo: Number(row.kobo_per_kg),
         weight: Number(row.weight),
         at: row.reported_at,
@@ -170,20 +139,18 @@ export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
         // hundred reports from one person is the attack it exists for.
         ...(row.reported_by ? { by: row.reported_by } : {}),
       });
-      market.sources.add(row.source);
-      byMarket.set(row.market_id, market);
+      region.sources.add(row.source);
+      byRegion.set(row.region, region);
     }
 
-    const prices = [...byMarket.entries()]
-      .map(([id, market]) => {
-        const figure = aggregate(market.reports);
+    const prices = [...byRegion.entries()]
+      .map(([region, held]) => {
+        const figure = aggregate(held.reports);
         return figure && {
-          marketId: id,
-          market: market.name,
-          state: market.state,
+          region,
           koboPerKg: figure.kobo,
           reports: figure.reports,
-          sources: [...market.sources].sort(),
+          sources: [...held.sources].sort(),
           newest: figure.newest,
           stale: figure.stale,
         };
