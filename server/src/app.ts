@@ -8,6 +8,7 @@ import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 import { priceRoutes } from './routes/prices.js';
+import { syncRoutes } from './routes/sync.js';
 import { trustRoutes } from './routes/trust.js';
 import type { IdentityCheck } from './verification.js';
 import { noIdentityCheck } from './verification.js';
@@ -69,6 +70,7 @@ export function build({
   dealRoutes(app, { signingKey });
   priceRoutes(app, { signingKey });
   trustRoutes(app, { signingKey, identity, callbackSecret });
+  syncRoutes(app, { signingKey });
 
   return app;
 }

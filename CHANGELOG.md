@@ -61,6 +61,10 @@ Entries say *why*, not just what.
 
 ### Added
 
+- Verification against a third-party check with a stand-in that announces
+  itself, moderation that suspends on three *separate* reporters and writes down
+  why, and the sync pair: a batched outbox drain keyed by the client's own uuid,
+  and a pull cursor that is a sequence rather than a clock.
 - Listings and radius search, enquiries with voice as a first-class message
   kind, deals that count only when both parties confirm, illustrated ratings,
   and the price surface: reports weighted by reputation, outliers rejected by

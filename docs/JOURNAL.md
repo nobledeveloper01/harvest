@@ -2191,3 +2191,45 @@ amount of engineering produces the data.* An empty directory is the thing the
 ADR refuses, so Phase 5 ships without one and the decision screen keeps saying
 *"A store quoted me a price"* — a sentence that presumes the farmer found the
 store, rather than one that presumes the app did.
+
+## A timestamp is the wrong cursor, and it fails quietly
+
+`/sync/pull` answers *what has happened to me since I last looked*, and the
+first version answered it with a timestamp watermark. It handed the client the
+same enquiry every single time.
+
+`pg` parses `timestamptz` into a JavaScript `Date`, which is **millisecond**
+precision. Postgres stores microseconds. So a watermark taken from a row at
+`…123456` comes back as `…123`, and `updated_at > watermark` is still true of
+the row the watermark came from — for ever. The test caught it in a second; a
+production client would have re-synced its whole history on every poll and
+nobody would have called it a bug, because everything *works*, just repeatedly.
+
+The two failures it does not catch are worse. Two rows written in the same
+microsecond are ordered arbitrarily, so one of them is skipped and never
+returned again. And a clock that steps backwards — NTP, a container restart —
+hides every row written until it catches up.
+
+So the cursor is a **sequence**, shared by enquiries, messages and deals: one
+counter that orders everything a client has to catch up on, assigned on insert
+and bumped on update by a trigger rather than by every writer remembering. The
+watermark is the highest row actually returned, never the sequence's current
+value — reading `currval` would skip anything committed between the queries and
+the read, and the worst case has to be sending something twice rather than
+never.
+
+`/sync/push` drains the outbox in one call, keyed by a uuid the client chose,
+because a connection that lasts thirty seconds means **every request is sent
+twice**. Two things about it worth keeping:
+
+Operations are a **closed set**, each naming the endpoint it stands for, and
+each is dispatched through the real route with the caller's own authorization.
+The generic version — a batch of method-and-path pairs — is less code and hands
+anybody with a token a way to make this server issue requests to paths of their
+choosing. It also means batching cannot become a way around a check: there is a
+test that an unverified account still cannot enquire by putting it in a batch.
+
+And a batch that half worked returns **200 with the results**, not an error. The
+phone has already written all of it down locally; what it needs back is which
+ones landed, and a 4xx sends a client that half-succeeded round to retry the
+half that worked.
