@@ -2233,3 +2233,42 @@ And a batch that half worked returns **200 with the results**, not an error. The
 phone has already written all of it down locally; what it needs back is which
 ones landed, and a 4xx sends a client that half-succeeded round to retry the
 half that worked.
+
+## Three clock bugs in one small job runner
+
+The scheduled work is one table and `for update skip locked`, which is what
+ADR-0011 promised in place of Redis. Twenty lines of loop, and it took three
+attempts, all of them about time.
+
+**A database default made a brand-new job due in the future.** `ensureJobs`
+inserted with `due_at default now()`, and the run loop asked `due_at <= $1` with
+a JavaScript `now` read a few milliseconds *earlier*. So the row created by a
+run was not due on that run. Every job test passed with nothing to run — the
+same green as a suite that cannot see the thing it is checking. `due_at` comes
+from the caller's clock now, so the two clocks are one clock.
+
+**Registering inside the run loop deadlocked against the test that proves the
+loop works.** `insert … on conflict do update` has to lock the row, and the row
+is exactly what a second server holding it with `for update` is holding — so the
+loop that exists to *skip* a locked row waited for it instead. Registration
+happens at boot now. The test for `skip locked` is what found it, which is the
+argument for testing a database guarantee against a real database rather than a
+stub: a stub would have skipped politely and told me nothing.
+
+**And a failing assertion inside a transaction became a timeout in the next
+test.** The holder's `rollback` was after the `expect`, so a red assertion threw
+past it, the client went back to the pool still holding an open transaction, and
+everything after it waited for a lock nobody would release. One red test became
+a cascade of timeouts, which is exactly the shape that gets diagnosed as
+flakiness. It rolls back in `finally`.
+
+The job itself is small and its two rules are both about a phone in a field:
+warned **once** rather than every fifteen minutes for six hours, and a schedule
+that fell behind catches up by running **once** rather than a weekend's worth of
+notifications at eight in the morning.
+
+There is also a fourth thing this stretch deleted. The test helper empties every
+table between tests, which wiped the job schedule a migration had seeded — so
+the schedule moved into `src/jobs.ts` beside the functions that do the work. A
+schedule split between a migration and a map is two lists to keep in step, and
+this repository has spent a session deleting those.

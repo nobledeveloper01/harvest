@@ -61,6 +61,9 @@ Entries say *why*, not just what.
 
 ### Added
 
+- The scheduled half: one `jobs` table, `for update skip locked`, and listing
+  expiry that warns a farmer six hours before a lot comes off the market —
+  once, not every fifteen minutes.
 - Verification against a third-party check with a stand-in that announces
   itself, moderation that suspends on three *separate* reporters and writes down
   why, and the sync pair: a batched outbox drain keyed by the client's own uuid,
