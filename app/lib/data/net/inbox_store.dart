@@ -153,12 +153,44 @@ class InboxStore {
     return enquiries.length + messages.length + deals.length;
   }
 
-  static double? _asDouble(dynamic value) =>
-      value == null ? null : (value as num).toDouble();
+  /*
+    Numbers off the wire arrive as strings, and this cost the whole inbox.
 
-  static int? _asInt(dynamic value) =>
-      value == null ? null : (value as num).toInt();
+    Postgres `numeric` and `bigint` come back from `pg` as **strings** — 250.00
+    is `"250.00"` and 22500000 is `"22500000"` — because a bigint does not fit
+    a JavaScript number safely and the driver refuses to lose the difference
+    quietly. The first version of this cast straight to `num`, which threw, took
+    the whole transaction down with it, and was swallowed by the `unawaited`
+    call that starts the pull.
 
-  static DateTime? _asTime(dynamic value) =>
-      value == null ? null : DateTime.parse(value as String);
+    So the inbox stayed empty for ever, on a screen that says *nobody has asked
+    yet* — a failure that reads as the honest empty state. Nothing here was
+    tested against a real server; the only fixtures were hand-written JSON with
+    real numbers in it, which is an assumption about a wire format rather than a
+    reading of one.
+
+    Parsing something that came off a network means accepting what was actually
+    sent.
+  */
+  static double? _asDouble(dynamic value) => switch (value) {
+        null => null,
+        final num number => number.toDouble(),
+        final String text => double.tryParse(text),
+        _ => null,
+      };
+
+  static int? _asInt(dynamic value) => switch (value) {
+        null => null,
+        final num number => number.toInt(),
+        // `int.tryParse` on "250.00" is null, and a quantity is the one place
+        // that matters — so it goes through a double first.
+        final String text => double.tryParse(text)?.toInt(),
+        _ => null,
+      };
+
+  static DateTime? _asTime(dynamic value) => switch (value) {
+        null => null,
+        final String text => DateTime.tryParse(text),
+        _ => null,
+      };
 }

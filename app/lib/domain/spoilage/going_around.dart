@@ -103,4 +103,12 @@ class GoingAround {
   }
 
   bool get isQuiet => rising.isEmpty;
+
+  /// How many distinct weeks the report covers.
+  ///
+  /// Not `weeks.length`, which counts **rows** — one per reason per week — so
+  /// five weeks of two reasons read as ten. Caught by looking at the screen: it
+  /// said *from 10 weeks of reports* under five weeks of data, which is the
+  /// kind of number a reader has no way to check and every reason to believe.
+  int get howManyWeeks => weeks.map((row) => row.week).toSet().length;
 }

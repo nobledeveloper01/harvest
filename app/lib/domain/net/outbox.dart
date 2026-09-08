@@ -78,18 +78,38 @@ enum Settled {
 
   /// The server refused it, and will refuse it again.
   ///
-  /// A 4xx is the phone having asked for something impossible — a lot that is
-  /// gone, an enquiry on a withdrawn listing, a tier that is not high enough.
-  /// Retrying it for ever is a queue that never drains and never says why, so
-  /// it comes out and is reported.
+  /// A 4xx is usually the phone having asked for something impossible — a lot
+  /// that is gone, an enquiry on a withdrawn listing, a tier that is not high
+  /// enough. Retrying it for ever is a queue that never drains and never says
+  /// why, so it comes out and is reported.
+  ///
+  /// Usually, not always: see [notYet].
   refused,
 
   /// Something went wrong that might not next time.
   retry,
 }
 
+/// The 4xx codes that mean *not now* rather than *not ever*.
+///
+/// **Found by using the app.** A price watch set before signing in was pushed,
+/// answered `401`, and thrown away — permanently, because every 4xx was a
+/// refusal. The local row stayed, so the screen said the watch was set and the
+/// server had never heard of it. A failure that looks exactly like success is
+/// the worst shape this queue can produce, and it is the ordinary case: the
+/// app works signed out on purpose, and signing in comes later.
+///
+///   * `401` — no token, or an expired one. The next drain carries a fresh one.
+///   * `408`, `429` — the server saying *slower* or *again*, in as many words.
+///
+/// `403` is deliberately not here. It is the tier check, and a farmer who is
+/// not verified is not going to become verified by this queue retrying — that
+/// is a thing they have to go and do, and it is reported to them.
+const notYet = {401, 408, 429};
+
 Settled settle(int status) {
   if (status >= 200 && status < 300) return Settled.done;
+  if (notYet.contains(status)) return Settled.retry;
   if (status >= 400 && status < 500) return Settled.refused;
   return Settled.retry;
 }

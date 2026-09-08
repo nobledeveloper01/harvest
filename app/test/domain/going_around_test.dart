@@ -116,6 +116,23 @@ void main() {
         reason: 'water has no history to rise against');
   });
 
+  test('counts weeks, not rows', () {
+    /*
+      `weeks` holds one row per reason per week, so five weeks of two reasons
+      is ten rows. The screen said *from 10 weeks of reports* under five weeks
+      of data — a number a reader has no way to check and every reason to
+      believe. Caught by looking at it on a phone.
+    */
+    final report = GoingAround.from([
+      for (var week = 0; week < 5; week++) ...[
+        _losses(week, LossReason.pests, 9),
+        _losses(week, LossReason.rotted, 7),
+      ],
+    ]);
+    expect(report.weeks, hasLength(10));
+    expect(report.howManyWeeks, 5);
+  });
+
   test('hands back every week it was given, newest first', () {
     // The screen shows the picture as well as the warning, and a farmer looking
     // at four quiet weeks learns something a bare "nothing to report" does not

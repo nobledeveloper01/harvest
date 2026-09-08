@@ -157,6 +157,24 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The inbox never populated, and nothing said so.** Postgres returns `numeric`
+  and `bigint` as *strings* — `"250.00"`, `"22500000"` — because a bigint does
+  not fit a JavaScript number safely. The client cast them straight to `num`,
+  which threw, took the whole write transaction with it, and was swallowed by
+  the `unawaited` call that starts the pull. So the inbox stayed empty on a
+  screen that says *nobody has asked yet*, which is exactly what an empty inbox
+  looks like. Nothing had ever tested `pull` against a real server; the fixtures
+  were hand-written JSON with tidy numbers in it. There is a test now built from
+  a running server's actual bytes.
+- **Anything queued before signing in was thrown away.** `settle` treated every
+  4xx as a permanent refusal, so a price watch, a listing or an outcome report
+  made before sign-in was answered `401` and dropped — while the local row
+  stayed, so the screen said it had worked. `401`, `408` and `429` mean *not
+  now* and are retried; `403` is still a refusal, because a farmer who is not
+  verified will not become verified by a queue retrying.
+- *"From 10 weeks of reports"* under five weeks of data: the provenance line
+  counted rows, and a row is one reason in one week.
+
 - Three tests were asserting that the language picker is short enough to fit on
   a test surface. Written as `for (final language in Speech.values)` against a
   lazy `ListView`, they passed only while the enum was short: the sixth row is

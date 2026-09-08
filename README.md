@@ -152,6 +152,7 @@ consequence of not knowing.
 <p align="center">
   <img src="docs/screenshots/03-quantity.png" width="250" alt="Quantity: a number pad, the nine measures as pictures, and the kilogram equivalent always on screen" />
   <img src="docs/screenshots/04-storage.png" width="250" alt="Storage: five conditions as pictures, and a day row that offers exactly the fifteen days the domain accepts" />
+  <img src="docs/screenshots/16-region.png" width="250" alt="Where do you farm: five regions, asked because a basket weighs differently in each — and the app never asks for a location" />
 </p>
 
 The obvious way to say *"about forty-five kilograms"* is a clip per number word and a template
@@ -207,6 +208,7 @@ not know what this is worth"* and asks, because a number with nothing behind it
 is the most alarming thing it could put on that screen.
 
 <p align="center">
+  <img src="docs/screenshots/15-price-watch.png" width="250" alt="Tell me when it reaches: the keypad opens on what the crop is worth today, so the question is how much better it would have to be" />
   <img src="docs/screenshots/11-costs.png" width="250" alt="Costs: what the lorry costs and what share the agent takes, entered by the farmer" />
   <img src="docs/screenshots/12-storage-offer.png" width="250" alt="A store's quote as a third course, worked out against selling today and against waiting" />
 </p>
@@ -244,6 +246,26 @@ The loss reasons are a **fixed list with no "other"**. A sixth answer meaning
 *none of these* would absorb every case the list is missing and hide exactly the
 pattern worth finding; a missing reason shows up instead as a category that
 stops making sense, which is a signal rather than a shrug.
+
+<p align="center">
+  <img src="docs/screenshots/14-calibration.png" width="250" alt="How often is it right: the app declines to state a figure until thirty finished lots say something about the guess" />
+  <img src="docs/screenshots/17-going-around.png" width="250" alt="What is going around: pests reported by 31 farmers this week, about three times the usual, with a note saying it is not a diagnosis" />
+</p>
+
+That comparison is on the home screen, under the countdowns, rather than in a
+report somebody else reads. It refuses to count two things: a lot **sold**
+before its window closed says nothing — nobody knows how much longer it would
+have kept, and counting it as a success is how a model is made to look right by
+a product whose whole purpose is to make people sell sooner — and a lot lost to
+goats or to nobody turning up is not a shelf-life failure. Below thirty
+judgeable endings it states no figure at all and says why.
+
+The same rows, anonymised, answer a different question: **what other farmers
+near you have been losing crops to.** Not a map of diagnoses — there is no
+trained classifier, so that would be a map of no data — but what people
+reported, by region and week, and the screen says as much in as many words. The
+rows carry no account id and there is no column for one; a week under five
+separate reporters is absent from the answer rather than reported as zero.
 
 ### The app is allowed to say it does not know
 
@@ -284,6 +306,29 @@ revision of it. Their weight is stored detached from the table: four baskets, ni
 kilograms, marked as **corrected**, and nothing recomputes it. An app that quietly overrode
 somebody who had weighed their own basket would be teaching them not to bother correcting
 anything.
+
+### A phone number is not a login
+
+<p align="center">
+  <img src="docs/screenshots/19-sign-in.png" width="250" alt="What is your number: the only account this app has, with a note saying it is never shown to anybody until both sides agree" />
+  <img src="docs/screenshots/18-inbox.png" width="250" alt="Who is asking: the inbox, empty, explaining that a lot has to be on the market before a buyer can see it" />
+</p>
+
+Nothing is asked for until it is needed. There is no account until a farmer
+wants a buyer to see a lot — everything before that point works with no server
+at all, which is the state the product is designed to be used in. And the number
+is not shown to the other party until **both** sides have accepted: the column
+that holds it comes back empty from the server until then, so the promise is a
+row rather than a rule somebody remembered.
+
+The inbox is read from the phone's own copy. A farmer four days from a signal
+opens it and sees every enquiry that had arrived by the time they last had one —
+which is the truth, and useful.
+
+**It does not survive a restart yet.** The refresh token is held in memory by a
+placeholder that announces itself by forgetting, so the second launch signs you
+out and the marketplace is unreachable. That is gate R14, and it needs the
+platform's own secure store and a handset to prove it on.
 
 ### Speech input is not yet claimed
 

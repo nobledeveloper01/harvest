@@ -66,9 +66,32 @@ void main() {
       order.
     */
     test('a 4xx is refused rather than retried for ever', () {
-      for (final status in [400, 401, 403, 404, 409]) {
+      for (final status in [400, 403, 404, 409]) {
         expect(settle(status), Settled.refused, reason: '$status');
       }
+    });
+
+    test('except the ones that mean not now', () {
+      /*
+        Found by using the app, not by reading it.
+
+        A price watch set before signing in was pushed, answered 401, and thrown
+        away — permanently, because every 4xx was a refusal. The local row
+        stayed, so the screen said the watch was set and the server had never
+        heard of it. A failure shaped exactly like success, in the ordinary
+        case: this app works signed out on purpose, and signing in comes later.
+      */
+      for (final status in notYet) {
+        expect(settle(status), Settled.retry, reason: '$status');
+      }
+      expect(notYet, {401, 408, 429});
+    });
+
+    test('but a tier that is not high enough still is refused', () {
+      // 403 is the tier check, and a farmer who is not verified will not become
+      // verified by this queue retrying. That is a thing they have to go and
+      // do, and it is reported to them.
+      expect(settle(403), Settled.refused);
     });
 
     test('a 5xx is worth another go', () {

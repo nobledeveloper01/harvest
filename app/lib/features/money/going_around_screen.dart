@@ -70,7 +70,7 @@ class GoingAroundScreen extends StatelessWidget {
                       ),
                     ),
                 const SizedBox(height: Gap.m),
-                _WhatThisIs(weeks: here.weeks.length),
+                _WhatThisIs(weeks: here.howManyWeeks),
               ],
             ],
           ),

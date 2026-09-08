@@ -2954,3 +2954,68 @@ The console tests refuse `localStorage` and `innerHTML` anywhere in the served
 page, and the first thing they caught was the comments explaining why those are
 not used. Reworded rather than the tests loosened: a test that has to know the
 difference between a mention and a use is a test that will one day get it wrong.
+
+## 2026-09-08 (the end of it) — Running the whole thing, for the first time
+
+The screenshots were ten commits behind and the README showed less than half the
+app. Retaking them meant running the product properly: a real server on a real
+Postgres, seeded with prices and a few hundred anonymised loss reports, and the
+app built against it on a simulator.
+
+Six screens came out of it. Two defects came with them, and both were invisible
+to a suite that is otherwise thorough.
+
+### The inbox never worked
+
+Postgres returns `numeric` and `bigint` as **strings** — `"250.00"`,
+`"22500000"` — because a bigint does not fit a JavaScript number safely and the
+driver will not lose the difference quietly. The client cast them straight to
+`num`. That throws, takes the write transaction with it, and the error is
+swallowed by the `unawaited` call that starts the pull.
+
+So the inbox stayed empty. On a screen that says **"Nobody has asked yet."**
+
+That is the worst shape a bug can have: the failure renders as the honest empty
+state, on the one screen where empty is the expected answer. A buyer had asked;
+the server was serving the enquiry correctly; the phone threw it away and drew
+the reassuring thing.
+
+Nothing had ever tested `pull` — not once. The client's fixtures were
+hand-written JSON with tidy numbers in them, which is **an assumption about a
+wire format rather than a reading of one**. The new test is copied out of a
+running server, character for character, and six of its eight cases fail against
+the old code.
+
+### Anything queued before signing in was thrown away
+
+`settle` treated every 4xx as a permanent refusal — *the phone asked for
+something impossible*. A `401` is not that. This app works signed out on
+purpose, and signing in comes later, so a price watch, a listing or an outcome
+report made before that moment was pushed, answered `401`, and dropped. The
+local row stayed, so the screen said it had worked.
+
+`401`, `408` and `429` mean *not now*. `403` stays a refusal: a farmer who is
+not verified will not become verified by a queue retrying, and that is something
+they have to go and do.
+
+Proved on the device rather than only in a test — a price watch and an outcome
+report both set before sign-in, both landing in the database the moment the
+account existed.
+
+### And two smaller ones
+
+*"From 10 weeks of reports"* over five weeks of data: the line counted rows, and
+a row is one reason in one week. Caught by reading the screen.
+
+And `ForgetfulTokenStore` — the placeholder that holds the refresh token in
+memory — means the second launch signs a farmer out and the marketplace becomes
+unreachable. Honest placeholder, unusable feature, and it was not in the gate
+ledger. It is R14 now.
+
+### The pattern, one more time
+
+Every one of these was found by using the product. The suite is 540 tests and
+none of them could have found any of them, because each was an assumption the
+tests shared with the code: that the wire sends numbers, that a 4xx is a
+refusal, that a row is a week. A test written from the same belief as the code
+is a test that agrees with it.
