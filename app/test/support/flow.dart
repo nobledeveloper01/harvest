@@ -21,7 +21,10 @@ import 'package:harvest/domain/diagnosis/framing.dart';
 import 'package:harvest/data/net/account_store.dart';
 import 'package:harvest/data/net/api.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
+import 'package:harvest/domain/market/deal.dart';
+import 'package:harvest/features/market/deal_screen.dart';
 import 'package:harvest/features/market/inbox_screen.dart';
+import 'package:harvest/features/market/rating_screen.dart';
 import 'package:harvest/features/market/thread_screen.dart';
 import 'package:harvest/features/diagnosis/capture_screen.dart';
 import 'package:harvest/features/diagnosis/diagnosis_result_screen.dart';
@@ -78,6 +81,8 @@ class SilentSpeaker implements Speaker {
   Future<void> sayStep(Step step, Speech language) async {}
   @override
   Future<void> sayFraming(Framing framing, Speech language) async {}
+  @override
+  Future<void> sayJudgement(Judgement judgement, Speech language) async {}
   @override
   Future<void> dispose() async {}
   @override
@@ -479,6 +484,8 @@ Future<void> pumpTheUnreachable(
           onAccept: () {},
           onDecline: () {},
           onSpeak: () {},
+          onDeal: () {},
+          onRate: () {},
           onBack: () {},
         ),
       ),
@@ -487,6 +494,47 @@ Future<void> pumpTheUnreachable(
     await at('a thread, ${agreed ? 'agreed' : 'waiting on an answer'}',
         find.byType(ThreadScreen));
   }
+
+  /*
+    The deal screen in the two states that read differently, and the rating.
+
+    `waitingForThem` is the one that carries the hourglass line, and
+    `waitingForYou` is the one whose button says *yes, that is what we agreed*
+    rather than *this is what we agreed* — two different sentences on the same
+    control, and a walk that saw one of them would be checking half of it.
+  */
+  for (final agreement in [Agreement.waitingForYou, Agreement.waitingForThem]) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: DealScreen(
+          quantityKg: 150,
+          agreement: agreement,
+          existing: const Terms(quantityKg: 140, kobo: 12_600_000),
+          onAgree: (_) {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('the deal, ${agreement.name}', find.byType(DealScreen));
+  }
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: Palette.theme(brightness: Brightness.dark),
+      home: RatingScreen(
+        speaker: SilentSpeaker(),
+        language: Speech.english,
+        aboutWhom: 'the buyer',
+        onRate: (_) {},
+        onBack: () {},
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await at('the three questions about a buyer', find.byType(RatingScreen));
 
   /*
     The capture screen, in the two states that differ: nothing worth

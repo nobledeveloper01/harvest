@@ -89,6 +89,15 @@ ASSET_SETS = {
         'source': DOMAIN / 'diagnosis/guidance.dart',
         'enum': 'Step',
     },
+    # The three questions a deal ends with. Illustrated, because FR-5.4 asks
+    # for a fixed illustrated list rather than free text — free text cannot be
+    # counted and cannot be answered by somebody who does not read.
+    'judgement': {
+        'speech': 'judgement',
+        'pictures': 'judgements',
+        'source': DOMAIN / 'market/deal.dart',
+        'enum': 'Judgement',
+    },
     # Spoken only, and said to somebody who is not looking at the screen — they
     # are holding the phone over a plant at arm's length. A picture of "hold
     # still" would be shown to nobody.

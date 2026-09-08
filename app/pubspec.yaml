@@ -99,6 +99,7 @@ flutter:
     - assets/speech/en/ailment/
     - assets/speech/en/step/
     - assets/speech/en/framing/
+    - assets/speech/en/judgement/
     - assets/speech/en/naira/
     - assets/speech/pcm/
     - assets/speech/pcm/crop/
@@ -111,6 +112,7 @@ flutter:
     - assets/speech/pcm/ailment/
     - assets/speech/pcm/step/
     - assets/speech/pcm/framing/
+    - assets/speech/pcm/judgement/
     - assets/speech/pcm/naira/
     - assets/speech/ha/
     - assets/speech/ha/crop/
@@ -123,6 +125,7 @@ flutter:
     - assets/speech/ha/ailment/
     - assets/speech/ha/step/
     - assets/speech/ha/framing/
+    - assets/speech/ha/judgement/
     - assets/speech/ha/naira/
     - assets/speech/yo/
     - assets/speech/yo/crop/
@@ -135,6 +138,7 @@ flutter:
     - assets/speech/yo/ailment/
     - assets/speech/yo/step/
     - assets/speech/yo/framing/
+    - assets/speech/yo/judgement/
     - assets/speech/yo/naira/
     - assets/speech/ig/
     - assets/speech/ig/crop/
@@ -147,6 +151,7 @@ flutter:
     - assets/speech/ig/ailment/
     - assets/speech/ig/step/
     - assets/speech/ig/framing/
+    - assets/speech/ig/judgement/
     - assets/speech/ig/naira/
     - assets/crops/
     - assets/units/
@@ -154,6 +159,7 @@ flutter:
     - assets/regions/
     - assets/outcomes/
     - assets/losses/
+    - assets/judgements/
     - assets/ailments/
     - assets/steps/
 

@@ -132,6 +132,14 @@ enum Phrase {
   /// on Tuesday and never said.
   whatHappened('what-happened'),
 
+  /// *"How did it go?"* — asked once, about the person, after a finished deal.
+  ///
+  /// Not *rate this buyer*. A rating is a piece of app vocabulary; what a
+  /// farmer has just done is a morning's business with somebody, and the
+  /// question that gets an honest answer is the one they would be asked about
+  /// it by a neighbour.
+  howDidItGo('how-did-it-go'),
+
   /// *"Why was it lost?"*
   ///
   /// The one answer in the product that can tell Phase 6 whether the engine

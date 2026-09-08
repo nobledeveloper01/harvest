@@ -1485,6 +1485,81 @@ def step_sell_soon():
     return im
 
 
+
+# ── The three questions a deal ends with ─────────────────────────────────────
+#
+# FR-5.4 wants a fixed **illustrated** list rather than free text, and the
+# reason is the persona: free text cannot be counted and cannot be answered by
+# somebody who does not read. Each of these has to be recognisable at 40 dp and
+# distinct from the other two at a glance, which is the whole difficulty — three
+# abstract questions about a person's conduct, drawn without words.
+
+
+def judgement_showed_up():
+    """A person who has arrived, with the lorry they came in.
+
+    The first version was a figure beside a gatepost and crossbar, and a
+    crossbar over a standing person **reads as a gallows** — which is a drawing
+    this app absolutely cannot ship, and was obvious the moment it was rendered
+    rather than imagined. A lorry is what arriving actually looks like in this
+    product, and the costs screen already uses one, so the vocabulary is shared.
+    """
+    im, d = canvas('thing')
+
+    # The lorry: a box body and a cab, low in the frame.
+    d.rounded_rectangle([px(84), px(84), px(154), px(136)],
+                        radius=px(6), fill=(150, 128, 100))
+    d.polygon([px(154, 104), px(176, 104), px(176, 136), px(154, 136)],
+              fill=(176, 148, 120))
+    for cx in (102, 164):
+        d.ellipse(box(cx, 142, 13, 13), fill=(64, 66, 62))
+        d.ellipse(box(cx, 142, 5, 5), fill=(140, 142, 136))
+
+    # The person, standing beside it and clearly a person.
+    d.ellipse(box(44, 92, 17, 17), fill=(176, 148, 120))
+    d.pieslice(box(44, 146, 28, 38), start=180, end=360, fill=(96, 122, 158))
+    return im
+
+
+def judgement_paid_as_agreed():
+    """A hand giving notes to another hand.
+
+    Notes, not coins and not a wallet: this product never touches the money, and
+    the only thing it can know is that it passed between two people. Two hands
+    say that; a purse would say the app was holding something.
+    """
+    im, d = canvas('thing')
+    # The notes, fanned so they read as more than one.
+    for i, (x, y) in enumerate(((58, 84), (66, 96), (74, 108))):
+        d.rounded_rectangle([px(x), px(y), px(x + 64), px(y + 26)],
+                            radius=px(4),
+                            fill=(126, 176, 118) if i % 2 == 0 else (108, 158, 102),
+                            outline=(72, 118, 70), width=int(px(2)))
+    _hand(im, 44, 150, angle=-20)
+    _hand(im, 150, 150, angle=200)
+    return im
+
+
+def judgement_quality_as_described():
+    """A crop beside a tick, which is the only honest way to draw a promise.
+
+    *Was it what they said it was* is a comparison, and a comparison needs two
+    things. A basket and a mark: the thing, and the judgement about it.
+    """
+    # `_basket` returns its own canvas rather than drawing onto one — the first
+    # version called it for effect and got three tomatoes floating in space,
+    # which is what happens when a drawing helper is used without reading it.
+    im = _basket(58, 40, (196, 152, 96), (168, 124, 72), y=140)
+    d = ImageDraw.Draw(im, 'RGBA')
+    # Three tomatoes above the rim, so the basket is full of something.
+    for cx, cy in ((72, 96), (96, 88), (120, 96)):
+        d.ellipse(box(cx, cy, 17, 16), fill=(198, 62, 52))
+        d.ellipse(box(cx - 5, cy - 5, 5, 4), fill=(226, 116, 104))
+    # The mark, in the corner and unmistakably a tick.
+    d.line([px(126, 44), px(142, 62)], fill=(72, 152, 84), width=int(px(11)))
+    d.line([px(142, 62), px(172, 24)], fill=(72, 152, 84), width=int(px(11)))
+    return im
+
 DRAWINGS = {
     'crops': {
         'tomato': tomato, 'ugu': ugu, 'spinach': spinach, 'bitterleaf': bitterleaf,
@@ -1538,6 +1613,11 @@ DRAWINGS = {
         'show-somebody': step_show_somebody,
         'sell-soon': step_sell_soon,
     },
+    'judgements': {
+        'showed-up': judgement_showed_up,
+        'paid-as-agreed': judgement_paid_as_agreed,
+        'quality-as-described': judgement_quality_as_described,
+    },
     'ailments': {
         'early-blight': early_blight, 'late-blight': late_blight,
         'leaf-curl': leaf_curl, 'anthracnose': anthracnose,
@@ -1571,6 +1651,8 @@ def main() -> int:
             ROOT / 'app/lib/domain/diagnosis/guidance.dart', 'Step'),
         'ailments': enum_values(
             ROOT / 'app/lib/domain/diagnosis/ailment.dart', 'Ailment'),
+        'judgements': enum_values(
+            ROOT / 'app/lib/domain/market/deal.dart', 'Judgement'),
     }
 
     for folder, drawings in DRAWINGS.items():

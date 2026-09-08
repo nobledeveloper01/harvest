@@ -33,7 +33,10 @@ import 'data/net/api.dart';
 import 'data/net/outbox_store.dart';
 import 'data/net/inbox_store.dart';
 import 'features/account/sign_in_screen.dart';
+import 'domain/market/deal.dart';
+import 'features/market/deal_screen.dart';
 import 'features/market/inbox_screen.dart';
+import 'features/market/rating_screen.dart';
 import 'features/market/thread_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/costs_screen.dart';
@@ -530,25 +533,168 @@ class _HarvestAppState extends State<HarvestApp> {
                     .where((e) => e.id == enquiry.id)
                     .firstOrNull ??
                 enquiry;
-            return StreamBuilder<List<MessageRow>>(
-              stream: _inbox.watchThread(enquiry.id),
-              builder: (context, messages) => ThreadScreen(
-                enquiry: current,
-                messages: messages.data ?? const [],
-                me: _accounts.account?.id ?? '',
-                onBack: navigator.pop,
-                onAccept: () => _answer(current, 'enquiry.accept'),
-                onDecline: () => _answer(current, 'enquiry.decline'),
-                // No recorder is wired yet, and a button that did nothing
-                // would be worse than one that is plainly not ready.
-                onSpeak: null,
-              ),
+            return StreamBuilder<DealRow?>(
+              stream: _inbox.watchDeal(enquiry.id),
+              builder: (context, dealRow) {
+                final deal = dealRow.data;
+                return StreamBuilder<List<MessageRow>>(
+                  stream: _inbox.watchThread(enquiry.id),
+                  builder: (context, messages) => ThreadScreen(
+                    enquiry: current,
+                    messages: messages.data ?? const [],
+                    deal: deal,
+                    me: _accounts.account?.id ?? '',
+                    onBack: navigator.pop,
+                    onAccept: () => _answer(current, 'enquiry.accept'),
+                    onDecline: () => _answer(current, 'enquiry.decline'),
+                    onDeal: () => _openDeal(context, current, deal),
+                    onRate: () => _openRating(context, current, deal),
+                    // No recorder is wired yet, and a button that did nothing
+                    // would be worse than one that is plainly not ready.
+                    onSpeak: null,
+                  ),
+                );
+              },
             );
           },
         ),
       ),
     );
   }
+
+  /// The figures, written down or agreed to.
+  ///
+  /// Both sides of FR-5.4's dual confirmation are this one screen: writing
+  /// something down is `deal.record`, and saying the other person's figures are
+  /// right is `deal.confirm`. Which one it turns out to be depends on whether
+  /// the numbers changed, and the farmer is not asked to know that.
+  void _openDeal(BuildContext context, EnquiryRow enquiry, DealRow? deal) {
+    final navigator = Navigator.of(context);
+    final mine = enquiry.sellerId == (_accounts.account?.id ?? '');
+    navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => DealScreen(
+          quantityKg: deal?.quantityKg ?? enquiry.quantityWantedKg ?? 0,
+          existing: deal == null
+              ? null
+              : Terms(quantityKg: deal.quantityKg, kobo: deal.priceKobo),
+          agreement: deal == null
+              ? Agreement.none
+              : readAgreement(
+                  youConfirmed: (mine
+                          ? deal.sellerConfirmedAt
+                          : deal.buyerConfirmedAt) !=
+                      null,
+                  theyConfirmed: (mine
+                          ? deal.buyerConfirmedAt
+                          : deal.sellerConfirmedAt) !=
+                      null,
+                ),
+          onAgree: (terms) async {
+            navigator.pop();
+            await _agree(enquiry, deal, terms, mine: mine);
+          },
+          onBack: navigator.pop,
+        ),
+      ),
+    );
+  }
+
+  /// Writes the agreement down locally and queues it.
+  ///
+  /// Agreeing to figures that are already there is a confirmation. Typing
+  /// different ones is a new record, and — as the server does — it takes the
+  /// other side's confirmation away, because they agreed to a different number.
+  Future<void> _agree(
+    EnquiryRow enquiry,
+    DealRow? deal,
+    Terms terms, {
+    required bool mine,
+  }) async {
+    final now = DateTime.now();
+    final same = deal != null &&
+        Terms(quantityKg: deal.quantityKg, kobo: deal.priceKobo) == terms;
+
+    if (same) {
+      await (_database.update(_database.deals)
+            ..where((row) => row.id.equals(deal.id)))
+          .write(mine
+              ? DealsCompanion(sellerConfirmedAt: Value(now))
+              : DealsCompanion(buyerConfirmedAt: Value(now)));
+      await _outbox.add('deal.confirm', {'id': deal.id});
+    } else {
+      /*
+        A local id until the server sends its own.
+
+        The row has to exist now — the farmer is looking at the screen with no
+        signal — and `deal.record` is keyed by enquiry on the server, so the
+        real row arrives at the next pull under the server's id. Keyed by
+        enquiry here too, so that arrival replaces this one rather than sitting
+        beside it as a second deal on the same conversation.
+      */
+      await _database.into(_database.deals).insertOnConflictUpdate(
+            DealsCompanion.insert(
+              id: deal?.id ?? 'local-${enquiry.id}',
+              enquiryId: enquiry.id,
+              cropId: enquiry.cropId,
+              quantityKg: terms.quantityKg,
+              priceKobo: terms.kobo,
+              sellerConfirmedAt: Value(mine ? now : null),
+              buyerConfirmedAt: Value(mine ? null : now),
+              seq: 0,
+            ),
+          );
+      await _outbox.add('deal.record', {
+        'enquiryId': enquiry.id,
+        'quantityKg': terms.quantityKg,
+        'priceKobo': terms.kobo,
+      });
+    }
+    unawaited(_outbox.drain());
+  }
+
+  /// The three questions, once both sides have agreed.
+  void _openRating(BuildContext context, EnquiryRow enquiry, DealRow? deal) {
+    if (deal == null) return;
+    final navigator = Navigator.of(context);
+    final mine = enquiry.sellerId == (_accounts.account?.id ?? '');
+    navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => RatingScreen(
+          speaker: _speaker,
+          language: _language ?? Speech.values.first,
+          aboutWhom: mine ? 'the buyer' : 'the farmer',
+          onRate: (yes) async {
+            navigator.pop();
+            await _rate(deal, yes);
+          },
+          onBack: navigator.pop,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _rate(DealRow deal, Set<Judgement> yes) async {
+    await _inbox.markRated(deal.id, DateTime.now());
+    await _outbox.add('deal.rate', {
+      'id': deal.id,
+      for (final judgement in Judgement.values)
+        _rateField[judgement]!: yes.contains(judgement),
+      'overall': overallFor(yes),
+    });
+    unawaited(_outbox.drain());
+  }
+
+  /// What each question is called in the request body.
+  ///
+  /// A map rather than three literals at the call site, so that adding a fourth
+  /// [Judgement] is a compile error here instead of a field the server silently
+  /// never receives.
+  static const _rateField = {
+    Judgement.showedUp: 'showedUp',
+    Judgement.paidAsAgreed: 'paidAsAgreed',
+    Judgement.qualityAsDescribed: 'qualityAsDescribed',
+  };
 
   /// Says yes or no to an enquiry, locally first.
   ///

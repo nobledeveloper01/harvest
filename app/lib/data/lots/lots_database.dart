@@ -202,13 +202,54 @@ class Messages extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Lots, Prices, OutboxItems, Enquiries, Messages])
+/// A deal on an enquiry, as the server last told us.
+///
+/// Mirrored for the same reason as [Enquiries]: the screen that asks whether
+/// these are the figures you agreed has to open with no signal, and a farmer
+/// standing in front of the buyer cannot be told to come back when the network
+/// does.
+///
+/// **There is no payment column, here or on the server.** Harvest never holds
+/// or transfers funds, and the shortest route to that promise quietly ending is
+/// a `paid` boolean that seemed harmless in a mirror table.
+@DataClassName('DealRow')
+class Deals extends Table {
+  TextColumn get id => text()();
+  TextColumn get enquiryId => text()();
+  TextColumn get cropId => text()();
+
+  RealColumn get quantityKg => real()();
+  IntColumn get priceKobo => integer()();
+
+  /// When each side said yes, or null.
+  ///
+  /// Times rather than flags because the server sends times, and because
+  /// *changing the figures un-confirms the other side* — a null that used to
+  /// be a time is a thing somebody did, and the two are worth telling apart in
+  /// a support conversation.
+  DateTimeColumn get buyerConfirmedAt => dateTime().nullable()();
+  DateTimeColumn get sellerConfirmedAt => dateTime().nullable()();
+
+  /// Set locally when this phone queues its rating, so the screen stops asking.
+  ///
+  /// Local, not mirrored: the server does not tell you what you said about
+  /// somebody, and a rating queued in the outbox with no signal still has to
+  /// stop the app asking again on the walk home.
+  DateTimeColumn get ratedAt => dateTime().nullable()();
+
+  IntColumn get seq => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Lots, Prices, OutboxItems, Enquiries, Messages, Deals])
 class LotsDatabase extends _$LotsDatabase {
   LotsDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'harvest'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -246,6 +287,9 @@ class LotsDatabase extends _$LotsDatabase {
           if (from < 5) {
             await m.createTable(enquiries);
             await m.createTable(messages);
+          }
+          if (from < 6) {
+            await m.createTable(deals);
           }
         },
       );

@@ -19,11 +19,11 @@ See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full 
   <img src="docs/screenshots/05-home.png" width="240" alt="Home: the lots logged so far, newest harvest first" />
 </p>
 
-> **The pictures are drawn; the voices are not.** All 86 crop, unit, storage,
+> **The pictures are drawn; the voices are not.** All 89 crop, unit, storage,
 > outcome, loss and ailment tiles are illustrations now — flat shapes, silhouettes
 > chosen so the three greens and the three peppers are told apart by shape and not
 > only by colour. What R4 still wants is the judgement of somebody who has seen the
-> crops in an actual market. The audio has not moved: all 960 clips say, in English,
+> crops in an actual market. The audio has not moved: all 980 clips say, in English,
 > that they are placeholders and which language belongs there, because a stand-in
 > that sounded like the product is how a missing feature ships.
 

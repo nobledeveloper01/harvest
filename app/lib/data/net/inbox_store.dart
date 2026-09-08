@@ -48,6 +48,17 @@ class InboxStore {
     return rows.length;
   }
 
+  /// The deal on this enquiry, or null while there is not one.
+  Stream<DealRow?> watchDeal(String enquiryId) => (_db.select(_db.deals)
+        ..where((row) => row.enquiryId.equals(enquiryId))
+        ..limit(1))
+      .watchSingleOrNull();
+
+  /// Remembers that this phone has rated the deal, so it stops asking.
+  Future<void> markRated(String dealId, DateTime at) =>
+      (_db.update(_db.deals)..where((row) => row.id.equals(dealId)))
+          .write(DealsCompanion(ratedAt: Value(at)));
+
   Stream<List<MessageRow>> watchThread(String enquiryId) =>
       (_db.select(_db.messages)
             ..where((row) => row.enquiryId.equals(enquiryId))
@@ -68,6 +79,7 @@ class InboxStore {
 
     final enquiries = (answer.body['enquiries'] as List? ?? []).cast<Map>();
     final messages = (answer.body['messages'] as List? ?? []).cast<Map>();
+    final deals = (answer.body['deals'] as List? ?? []).cast<Map>();
 
     await _db.transaction(() async {
       for (final row in enquiries) {
@@ -103,6 +115,28 @@ class InboxStore {
               ),
             );
       }
+      for (final row in deals) {
+        /*
+          `ratedAt` is absent from the companion on purpose.
+
+          It is this phone's own memory of having rated, and the server never
+          sends it. Naming it here with a null would make every sync erase the
+          fact — the app would ask a farmer to rate the same buyer once a day
+          for ever, and each ask would look like the app had forgotten them.
+        */
+        await _db.into(_db.deals).insertOnConflictUpdate(
+              DealsCompanion.insert(
+                id: row['id'] as String,
+                enquiryId: row['enquiry_id'] as String,
+                cropId: row['crop'] as String? ?? '',
+                quantityKg: _asDouble(row['quantity_kg']) ?? 0,
+                priceKobo: _asInt(row['price_kobo']) ?? 0,
+                buyerConfirmedAt: Value(_asTime(row['buyer_confirmed'])),
+                sellerConfirmedAt: Value(_asTime(row['seller_confirmed'])),
+                seq: _asInt(row['seq']) ?? 0,
+              ),
+            );
+      }
     });
 
     /*
@@ -116,7 +150,7 @@ class InboxStore {
     final watermark = _asInt(answer.body['watermark']) ?? since;
     if (watermark > since) await settings.setInt(_cursorKey, watermark);
 
-    return enquiries.length + messages.length;
+    return enquiries.length + messages.length + deals.length;
   }
 
   static double? _asDouble(dynamic value) =>
@@ -124,4 +158,7 @@ class InboxStore {
 
   static int? _asInt(dynamic value) =>
       value == null ? null : (value as num).toInt();
+
+  static DateTime? _asTime(dynamic value) =>
+      value == null ? null : DateTime.parse(value as String);
 }

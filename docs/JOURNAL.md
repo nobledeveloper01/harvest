@@ -2474,3 +2474,70 @@ and that is not fully explained by the four extra screens. Two of the long runs
 had a debug app on the simulator and a Node server competing for the machine, and
 the runs since are between two and four minutes with no single file over eight
 seconds. Worth watching rather than declared solved.
+
+## 2026-09-08 — Deals and ratings, and a gate that measured the wrong rectangle
+
+FR-5.4 is now on the phone: two people agree a quantity and a price, and each
+says what the other was like. The server side of this has been done since
+Saturday; what was missing was every screen that reaches it.
+
+### The rating has no stars, and that was the decision worth writing down
+
+`docs/05-DATA-MODEL.md` gives `ratings` an `overall (1-5)` column, which reads as
+an instruction to draw five stars under the three illustrated questions. It is
+not. A star row is a scale with no units whose meaning you learn from other
+software — and the first thing this repository never trades is that reading is
+optional. There is no picture that says "three out of five".
+
+So the three questions are the rating and the number is an encoding of them,
+worked out by `overallFor`. ADR-0012 has the argument and the table. The mapping
+is not linear on purpose: two out of three is not average, and the step that
+matters is between one answer and two. The test asserts the *gaps* rather than
+the values, so what is protected is the shape.
+
+The screen still distinguishes a **no** from a **silence**, which is why the
+answers are a map and not a set. With a set the Send button would light up the
+moment somebody said no to the first question, and it would send two answers
+nobody gave, about somebody's livelihood. Breaking that on purpose — swapping
+the completeness check for `isNotEmpty` — fails the test that says so.
+
+### A gate that passed while the screen was wrong
+
+The deal screen has to say plainly that Harvest does not handle the money — an
+absence of a payment integration is the real guarantee, and an absence is
+invisible. So there is a test that the sentence is on screen on the 5" floor.
+
+It passed. The sentence was a hundred pixels below the keypad.
+
+`tester.getRect` reports where a widget was **painted**, and a widget laid out
+past the end of a `SingleChildScrollView` is painted at a coordinate inside the
+screen bounds that nobody can see. Comparing that to `640` is comparing against
+the wrong rectangle. The fix is to intersect with every `Scrollable` above the
+widget, and putting the sentence back under a 400-pixel spacer now fails it.
+
+What found this was not the test. It was rendering the screen to a PNG and
+looking at it — the same thing that found the gallows illustration last week and
+the two back arrows before that. Four screenshots cost about ninety seconds.
+
+### Then the fix for that was wrong, and the type-scale gate said so
+
+The obvious repair was to pin the sentence above the keypad, out of the scroll
+entirely. That fitted at 100% and overflowed by 92 pixels at 200%: pinned text
+grows with the type scale against a keypad whose height comes from its own
+width and does not. Both lines went back into the scroll, and the scroll was
+given room by laying the two figures side by side instead of stacked.
+
+Side by side needed 26 sp rather than 34, and `make design-check` refused it —
+*the app uses 26 and DESIGN.md does not say so*. Correct, and the paragraph it
+was pointing at said "three readouts sit above the scale, and only three". It
+says four now, with the reason. Deleting the new clause fails the gate again.
+
+One more from the same afternoon: `₦126,000` wrapped over two lines inside its
+card, which is not a price, it is two numbers. `FittedBox(scaleDown)` rather
+than `Flexible`, because the figure that grows as somebody types is the one
+thing on that screen that must not reflow.
+
+### What is still deliberately dead
+
+The compose button in a thread. There is no recorder plugin wired, and a button
+that did nothing would be worse than one that plainly is not ready.

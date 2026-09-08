@@ -7,6 +7,7 @@ import '../../domain/diagnosis/guidance.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/lots/outcome.dart';
 import '../../domain/lots/quantity.dart';
+import '../../domain/market/deal.dart';
 import '../../domain/speech/phrase.dart';
 import '../../domain/speech/spoken_naira.dart';
 import '../../domain/speech/spoken_weight.dart';
@@ -104,6 +105,15 @@ class Speaker {
   /// no better; it has to be a voice.
   Future<void> sayFraming(Framing framing, Speech language) =>
       _play('${language.code}/framing/${framing.id}');
+
+  /// Ask one of the three questions about the person on the other side.
+  ///
+  /// Spoken because a rating is the last thing anybody does, standing beside a
+  /// lorry that is leaving — and because a question somebody cannot read is a
+  /// question they answer at random, which is worse for the person being rated
+  /// than not being rated at all.
+  Future<void> sayJudgement(Judgement judgement, Speech language) =>
+      _play('${language.code}/judgement/${judgement.id}');
 
   /// One place that knows the asset layout.
   Future<void> _play(String stem) async {

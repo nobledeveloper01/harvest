@@ -8,7 +8,38 @@ Entries say *why*, not just what.
 
 ## [Unreleased]
 
+### Added
+
+- **Deals and ratings on the phone.** Whichever party is holding a phone writes
+  down what the two of them agreed — a quantity and a whole price, on one keypad
+  with a tap to switch between them — and the other side agrees to the same
+  figures. Only then does the deal count toward the price dataset or either
+  reputation, because one party's unopposed word about a sale is a way to
+  manufacture both. Typing different figures un-confirms the other side, as it
+  does on the server: they agreed to a different number.
+- **Three illustrated questions instead of a star rating**, and no star row at
+  all: *did they come*, *did they pay what you agreed*, *was it as described*,
+  each drawn and each spoken. The `overall (1-5)` the server stores is worked
+  out from the answers rather than asked for on top of them — see ADR-0012 for
+  why, and for why the mapping is not linear.
+- The deal and the rating are reachable from the message thread, which now shows
+  the one thing there is to do about a deal next rather than every thing that
+  could ever be done about one.
+- `Deals` in the local database (schema 6), mirrored from `/sync/pull` like
+  enquiries and messages, so both screens open with no signal. `ratedAt` is
+  local and deliberately absent from what sync writes: the server does not know
+  what you said about somebody, and naming that column would make every pull
+  erase it and the app ask again for ever.
+- Five clips for *How did it go?*, bringing the bundle to 980.
+
 ### Fixed
+
+- **A screen that fitted, measured against the wrong rectangle.** The deal
+  screen's assertion that the money sentence is on screen compared it to the
+  phone, and `getRect` reports where a widget was *painted* — which for
+  something laid out past the end of a scroll viewport is a position nobody can
+  see. It passed while the sentence sat a hundred pixels under the keypad. The
+  check now intersects with every scrollable above it.
 
 - A lot whose spoilage window had closed could still be put on the market. The
   server would accept it, expire it on the next sweep, and show it to nobody.

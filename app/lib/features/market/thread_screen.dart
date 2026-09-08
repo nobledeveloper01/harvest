@@ -4,6 +4,7 @@ import '../../core/numbers.dart';
 import '../../core/theme.dart';
 import '../../data/lots/lots_database.dart';
 import '../../domain/crops/crop.dart';
+import '../../domain/market/deal.dart';
 
 /// One conversation about one lot.
 ///
@@ -20,7 +21,10 @@ class ThreadScreen extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onSpeak,
+    required this.onDeal,
+    required this.onRate,
     required this.onBack,
+    this.deal,
     super.key,
   });
 
@@ -34,10 +38,30 @@ class ThreadScreen extends StatelessWidget {
   /// Record and send a voice note. Null while there is nothing to record with.
   final VoidCallback? onSpeak;
 
+  /// The deal on this enquiry, once either side has written one down.
+  final DealRow? deal;
+
+  /// Open the screen that records or confirms the figures.
+  final VoidCallback onDeal;
+
+  /// Open the three questions about the other person.
+  final VoidCallback onRate;
+
   final VoidCallback onBack;
 
   bool get _mine => enquiry.sellerId == me;
   bool get _open => enquiry.status == 'open';
+  bool get _accepted => enquiry.status == 'accepted';
+
+  /// Whose confirmation is mine depends on which side of the deal I am.
+  Agreement get _agreement => deal == null
+      ? Agreement.none
+      : readAgreement(
+          youConfirmed:
+              (_mine ? deal!.sellerConfirmedAt : deal!.buyerConfirmedAt) != null,
+          theyConfirmed:
+              (_mine ? deal!.buyerConfirmedAt : deal!.sellerConfirmedAt) != null,
+        );
   String? get _theirNumber => _mine ? enquiry.buyerPhone : enquiry.sellerPhone;
 
   @override
@@ -75,6 +99,16 @@ class ThreadScreen extends StatelessWidget {
                           fromMe: message.senderId == me,
                         ),
                       ),
+                    if (_accepted) ...[
+                      const SizedBox(height: Gap.m),
+                      _TheDeal(
+                        deal: deal,
+                        agreement: _agreement,
+                        rated: deal?.ratedAt != null,
+                        onDeal: onDeal,
+                        onRate: onRate,
+                      ),
+                    ],
                     if (_theirNumber case final number?) ...[
                       const SizedBox(height: Gap.m),
                       _TheirNumber(number: number),
@@ -94,6 +128,93 @@ class ThreadScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Where the deal has got to, and the one thing to do about it next.
+///
+/// One card with one action rather than a row of buttons: at any moment there
+/// is exactly one thing this person can usefully do about this deal, and
+/// showing the other three greyed out is how a screen becomes unreadable at
+/// arm's length.
+class _TheDeal extends StatelessWidget {
+  const _TheDeal({
+    required this.deal,
+    required this.agreement,
+    required this.rated,
+    required this.onDeal,
+    required this.onRate,
+  });
+
+  final DealRow? deal;
+  final Agreement agreement;
+  final bool rated;
+  final VoidCallback onDeal;
+  final VoidCallback onRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final done = agreement == Agreement.agreed;
+
+    final (label, icon, action) = switch ((agreement, rated)) {
+      (Agreement.agreed, true) => ('Done. You have had your say.', Icons.done_all_rounded, null),
+      (Agreement.agreed, false) => ('How was it? Say how they did.', Icons.star_outline_rounded, onRate),
+      (Agreement.waitingForThem, _) => ('Waiting for them to agree the figures.', Icons.hourglass_empty_rounded, onDeal),
+      (Agreement.waitingForYou, _) => ('They wrote down what you agreed. Have a look.', Icons.fact_check_outlined, onDeal),
+      (Agreement.none, _) => ('Sold it? Write down what you agreed.', Icons.handshake_rounded, onDeal),
+    };
+
+    final body = Container(
+      decoration: BoxDecoration(
+        color: freshness.raised,
+        borderRadius: Radii.card,
+        border: Border.all(
+          color: done && !rated ? freshness.fresh : freshness.outline,
+          width: done && !rated ? 2 : 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(Gap.m),
+      child: Row(
+        children: [
+          Icon(icon, size: 26, color: done ? freshness.fresh : freshness.atRisk),
+          const SizedBox(width: Gap.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: text.titleMedium),
+                if (deal case final deal?) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${tidy(deal.quantityKg)} kg for ${naira(deal.priceKobo / 100)}',
+                    style: text.bodyMedium,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (action != null)
+            Icon(Icons.chevron_right_rounded,
+                size: 26, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ],
+      ),
+    );
+
+    if (action == null) return body;
+    return Semantics(
+      button: true,
+      container: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.card,
+          onTap: action,
+          child: body,
         ),
       ),
     );

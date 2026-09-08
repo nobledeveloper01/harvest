@@ -89,11 +89,12 @@ and ₦. A beautiful typeface that cannot set the product's own languages is not
 Display 22 sp, headline 18, title 17, body 15, secondary 14, with a single 13 for marks that
 only qualify something already legible — a provenance line, a badge, a tile caption.
 
-Three readouts sit **above** the scale, and only three: 34 sp for a money figure being
-typed, 32 for a weight, 20 for a keypad digit. They are the one place where size rather
-than weight carries the hierarchy, because on those screens the figure being entered is
-not part of the screen — it is the screen, read at arm's length by somebody who is also
-holding a crate. Nothing else in the app is allowed above 22.
+Four readouts sit **above** the scale, and only four: 34 sp for a money figure being
+typed, 32 for a weight, 26 for either of the two figures on the deal screen, 20 for a
+keypad digit. They are the one place where size rather than weight carries the hierarchy,
+because on those screens the figure being entered is not part of the screen — it is the
+screen, read at arm's length by somebody who is also holding a crate. Nothing else in the
+app is allowed above 22.
 
 The
 hierarchy is carried by **weight and tracking** rather than by size alone, which is what lets
@@ -101,6 +102,13 @@ the scale stay this moderate and still read at arm's length in bright light. And
 weight: Inter ships as one variable file, so every style names the `wght` axis explicitly —
 `fontWeight` alone gives Skia nothing to instance and it synthesises bold instead, which is a
 smear rather than a hierarchy.
+
+The deal screen is 26 rather than 34 because it is the only one of the four that asks for
+**two** figures at once — the quantity and the whole price, which have to be seen together
+or the price means nothing. Two cards at 34 do not fit side by side on the 5" floor, and
+stacking them pushed the sentence about who handles the money below the fold. Either
+number scales down further rather than wrapping: `₦126,000` broken over two lines is not a
+price, it is two numbers.
 
 **It came down twice from 30/22/18/16, and the reason is worth keeping.** The floor — 5",
 720p, sunlight, dust — sets the *minimum* that can be read. It had been read as an instruction
