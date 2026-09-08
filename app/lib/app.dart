@@ -748,13 +748,21 @@ class _HarvestAppState extends State<HarvestApp> {
   void _openRating(BuildContext context, EnquiryRow enquiry, DealRow? deal) {
     if (deal == null) return;
     final navigator = Navigator.of(context);
-    final mine = enquiry.sellerId == (_accounts.account?.id ?? '');
+    /*
+      Null when there is no account, rather than a guess.
+
+      `sellerId == ''` is false, so the fallback named *the farmer* — to the
+      farmer, about their own lot. Not knowing is a third answer.
+    */
+    final me = _accounts.account?.id;
     navigator.push<void>(
       MaterialPageRoute(
         builder: (_) => RatingScreen(
           speaker: _speaker,
           language: _language ?? Speech.values.first,
-          aboutWhom: mine ? 'the buyer' : 'the farmer',
+          aboutWhom: me == null
+              ? null
+              : (enquiry.sellerId == me ? 'the buyer' : 'the farmer'),
           onRate: (yes) async {
             navigator.pop();
             await _rate(deal, yes);

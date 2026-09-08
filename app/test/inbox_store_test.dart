@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/data/lots/lots_database.dart';
@@ -158,6 +159,62 @@ void main() {
       final row = await database.select(database.enquiries).getSingle();
       expect(row.quantityWantedKg, 250.0);
       expect(row.offerKobo, 22_500_000);
+    });
+  });
+
+  group('the phone\'s own placeholder', () {
+    /*
+      `_openDeal` writes a row under `local-<enquiryId>` so a farmer with no
+      signal sees the figures the moment they type them. The server's copy
+      arrives later under a real uuid, and the primary key is the **id** — so
+      without this the two sit side by side and one enquiry has two deals.
+
+      What that cost, in the app: the thread kept saying *waiting for them to
+      agree* after both sides had, because `watchDeal` took whichever row came
+      first. Found by reading the phone's database after doing the whole flow.
+    */
+    test('is deleted when the real row arrives', () async {
+      await database.into(database.deals).insert(
+            DealsCompanion.insert(
+              id: 'local-b55f577f-b121-4ea0-a722-e69c96a2a1d3',
+              enquiryId: 'b55f577f-b121-4ea0-a722-e69c96a2a1d3',
+              cropId: 'tomato',
+              quantityKg: 240,
+              priceKobo: 21_600_000,
+              sellerConfirmedAt: Value(DateTime(2026, 9, 8, 17)),
+              seq: 0,
+            ),
+          );
+
+      await storeOver(_Server(_asPostgresSendsIt())).pull();
+
+      final rows = await database.select(database.deals).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.id, 'd1c0ffee-0000-4000-8000-000000000001');
+      // And the server's answer is what the screen sees.
+      expect(rows.single.buyerConfirmedAt, isNotNull);
+    });
+
+    test('a placeholder for another enquiry is left alone', () async {
+      // The delete is scoped to the enquiry the arriving row is about. A farmer
+      // with two lots in flight has two placeholders, and one landing must not
+      // take the other with it.
+      await database.into(database.deals).insert(
+            DealsCompanion.insert(
+              id: 'local-another-enquiry',
+              enquiryId: 'another-enquiry',
+              cropId: 'yam',
+              quantityKg: 100,
+              priceKobo: 5_000_000,
+              seq: 0,
+            ),
+          );
+
+      await storeOver(_Server(_asPostgresSendsIt())).pull();
+
+      final rows = await database.select(database.deals).get();
+      expect(rows.map((r) => r.id), contains('local-another-enquiry'));
+      expect(rows, hasLength(2));
     });
   });
 

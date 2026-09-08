@@ -51,6 +51,27 @@ void main() {
       expect(naira(0), '₦$hairSpace' '0');
     });
 
+    test('the gap after the sign cannot start a new line', () {
+      /*
+        It was U+200A HAIR SPACE, which is a **breaking** space — so every naira
+        figure in the app could split between the sign and its digits, and on
+        the inbox row it did: `₦` at the end of one line and `243,000` on the
+        next. A currency symbol orphaned from its amount is two things where
+        there was one number.
+
+        Asserted against the character rather than against `hairSpace`, because
+        every other test in this file compares `naira` output to a string built
+        from that same constant — which would agree with any character at all,
+        including the one that caused this.
+      */
+      expect(hairSpace, '\u202F', reason: 'NARROW NO-BREAK SPACE');
+      for (final breaking in ['\u0020', '\u2009', '\u200A', '\u2006']) {
+        expect(hairSpace, isNot(breaking),
+            reason: 'a breaking space lets the figure wrap');
+      }
+      expect(naira(243000), contains('\u202F'));
+    });
+
     test('the sign is held off the first digit', () {
       /*
         Inter draws ₦ with crossbars that overhang its advance, so `₦180,000`

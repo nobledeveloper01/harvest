@@ -157,6 +157,29 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The rating was unreachable.** The band offering *say how they did* rendered
+  only for an enquiry in `accepted` — and the server moves it to `completed` the
+  moment both sides confirm the figures, which is exactly when a rating becomes
+  possible. It vanished at the instant it had something to offer. No test caught
+  it: every one paired an `accepted` enquiry with a fully-confirmed deal, and
+  the server never produces that pair.
+- **Two deals for one enquiry.** The phone writes a placeholder under
+  `local-<enquiryId>` so a farmer with no signal sees the figures at once. The
+  comment said the server's copy would replace it; the primary key is the id, so
+  it sat beside it. The thread could keep saying *waiting for them to agree*
+  after both sides had, and `deal.confirm` could carry an id the server has
+  never heard of. `pull` deletes the placeholder for that enquiry now.
+- **A currency symbol could be orphaned from its amount.** The gap after `₦` was
+  U+200A HAIR SPACE — a *breaking* space — so every naira figure in the app
+  could split across a line, and on the inbox row it did. It is U+202F NARROW
+  NO-BREAK SPACE now, which looks identical and refuses to break.
+- **Three screens claimed a side they could not know.** With nobody signed in,
+  `sellerId == ''` is false, so *not the seller* came out true: the inbox
+  described a farmer's own incoming enquiries as ones they had sent, the thread
+  would have labelled their own number as the other party's, and the rating
+  screen asked *how was the farmer?* of the farmer. Not knowing is a third
+  answer and all three have one now.
+
 - **The inbox never populated, and nothing said so.** Postgres returns `numeric`
   and `bigint` as *strings* — `"250.00"`, `"22500000"` — because a bigint does
   not fit a JavaScript number safely. The client cast them straight to `num`,

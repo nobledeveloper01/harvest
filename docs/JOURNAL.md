@@ -3019,3 +3019,70 @@ none of them could have found any of them, because each was an assumption the
 tests shared with the code: that the wire sends numbers, that a 4xx is a
 refusal, that a row is a week. A test written from the same belief as the code
 is a test that agrees with it.
+
+## 2026-09-08 (later still) — Walking the marketplace end to end
+
+The deal and rating screens had never rendered against real data. So: a server
+on a real Postgres, the app on a simulator, sign in, list a lot, have a buyer
+enquire, accept, agree figures, confirm from the other side, rate.
+
+Five defects, and the last one is the one worth the whole exercise.
+
+### The rating was unreachable
+
+The thread shows the deal band only when the enquiry is `accepted`. The server
+moves an enquiry to **`completed`** the moment both parties confirm the figures
+— which is precisely when a rating becomes possible. So the band offering *say
+how they did* disappeared at the instant it had something to offer, and the
+whole rating feature could not be reached by any real path through the product.
+
+No test could have found it. Every one of them constructs an `accepted` enquiry
+alongside a fully-confirmed deal, which is a pair the server never produces. The
+fixtures were each individually reasonable and jointly impossible.
+
+### Two deals for one enquiry
+
+`_openDeal` writes a placeholder under `local-<enquiryId>` so a farmer with no
+signal sees the figures immediately. The comment beside it says the server's copy
+will "replace this one". It does not: the primary key is the **id**, so the real
+row lands beside the placeholder. `watchDeal` then takes whichever it likes.
+
+Found by reading the phone's own sqlite after doing the flow — two rows, one
+enquiry. What it cost: a thread that keeps saying *waiting for them to agree*
+after both sides have, and a `deal.confirm` carrying an id the server never
+issued.
+
+### A currency symbol orphaned from its amount
+
+`₦` at the end of one line and `243,000` at the start of the next, on the inbox
+row. The gap after the sign was U+200A HAIR SPACE, which is a **breaking**
+space — so this was possible for every naira figure in the app, and had been
+since the character was introduced for an unrelated typographic reason.
+
+U+202F NARROW NO-BREAK SPACE looks the same and refuses to break. No gate could
+have found it: both characters render identically until a line is exactly the
+wrong length.
+
+### Three screens claiming a side they could not know
+
+With nobody signed in, `me` is empty and `sellerId == ''` is false — so *not the
+seller* came out true. The inbox described a farmer's own incoming enquiries as
+ones they had sent (**"You asked for 270 kg"**, on their own lot). The thread
+would have labelled their own number as the other party's. And the rating screen
+asked *how was the farmer?* of the farmer.
+
+The same shape three times, and I fixed the first two and then wrote the third
+one's fix only after seeing it on the screen. An empty id is not an answer; it
+is the absence of one, and this product has a habit of saying so everywhere
+else.
+
+### And one thing that was not a bug
+
+The thread never says *waiting* forever by accident — but it never refreshes
+either. `pull` runs when the inbox opens and nowhere else, so a farmer sitting
+on a thread watching for the buyer to agree will watch for ever. Worth changing,
+and noted rather than done here.
+
+I also accused `_listOnTheMarket` of dropping the listing after sign-in, and it
+does not — I had mistyped a code. Checking the sessions table settled it in
+thirty seconds; the accusation would have cost an hour.

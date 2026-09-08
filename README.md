@@ -325,6 +325,24 @@ The inbox is read from the phone's own copy. A farmer four days from a signal
 opens it and sees every enquiry that had arrived by the time they last had one —
 which is the truth, and useful.
 
+<p align="center">
+  <img src="docs/screenshots/20-thread.png" width="250" alt="A thread: what the buyer wants, their message, and the two answers — talk to them, or no thanks" />
+  <img src="docs/screenshots/21-deal.png" width="250" alt="What did you agree: quantity and whole price side by side, the per-kilogram figure derived, and a line saying Harvest does not handle the money" />
+  <img src="docs/screenshots/22-rating.png" width="250" alt="Three illustrated questions about the other party — did they come, did they pay what you agreed, was it as described — each spoken, with yes and no as a tick and a cross" />
+</p>
+
+A deal is written down by whichever of them is holding a phone and becomes true
+when **both** confirm the same figures. Only then does it count toward the price
+data or either reputation: one party's unopposed word about a sale is a way to
+manufacture both, and confirmed deals are the highest-weighted source in the
+price aggregation.
+
+The rating is three drawn questions and no star row. The `1-5` the server stores
+is worked out from the answers rather than asked for on top of them — see
+[ADR-0012](docs/adr/0012-the-rating-is-three-questions-and-the-number-is-derived.md).
+A star row is a scale with no units whose meaning you learn from other software;
+*did they come* is a fact about a morning, and it can be drawn.
+
 **It does not survive a restart yet.** The refresh token is held in memory by a
 placeholder that announces itself by forgetting, so the second launch signs you
 out and the marketplace is unreachable. That is gate R14, and it needs the

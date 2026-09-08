@@ -49,8 +49,16 @@ class InboxStore {
   }
 
   /// The deal on this enquiry, or null while there is not one.
+  ///
+  /// Newest first, so that if a placeholder ever outlives the row that should
+  /// have replaced it, the server's copy is the one shown. Belt as well as
+  /// braces: `pull` deletes the placeholder, and this makes the wrong answer
+  /// unreachable rather than merely unlikely.
   Stream<DealRow?> watchDeal(String enquiryId) => (_db.select(_db.deals)
         ..where((row) => row.enquiryId.equals(enquiryId))
+        ..orderBy([
+          (row) => OrderingTerm(expression: row.seq, mode: OrderingMode.desc),
+        ])
         ..limit(1))
       .watchSingleOrNull();
 
@@ -116,6 +124,26 @@ class InboxStore {
             );
       }
       for (final row in deals) {
+        /*
+          The phone's placeholder goes when the real row arrives.
+
+          `_openDeal` writes a row under `local-<enquiryId>` so a farmer with no
+          signal sees the figures immediately. The comment there said the
+          server's copy would "replace this one" — it does not. The primary key
+          is the **id**, so the arriving row sits beside the placeholder, and
+          two deals then exist for one enquiry.
+
+          What that cost: `watchDeal` takes one of them arbitrarily, so the
+          thread could keep saying *waiting for them to agree* after both sides
+          had, and `deal.confirm` could be sent with an id the server has never
+          heard of. Found by reading the phone's own database after doing it.
+        */
+        await (_db.delete(_db.deals)
+              ..where((deal) =>
+                  deal.enquiryId.equals(row['enquiry_id'] as String) &
+                  deal.id.like('local-%')))
+            .go();
+
         /*
           `ratedAt` is absent from the companion on purpose.
 

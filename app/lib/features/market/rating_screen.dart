@@ -29,7 +29,15 @@ class RatingScreen extends StatefulWidget {
   final Speech language;
 
   /// 'the buyer' or 'the farmer' — who is being asked about, in the title.
-  final String aboutWhom;
+  ///
+  /// Null when the app does not know which side of the deal this phone is on,
+  /// which is the ordinary state until R14 clears. The title then asks the
+  /// question without naming anybody: calling the person you are rating *the
+  /// farmer* when you are the farmer is a mislabel a reader cannot correct,
+  /// and it is the same one this screen's siblings had — the inbox claimed you
+  /// had asked for your own lot, and the thread would have called your own
+  /// number theirs.
+  final String? aboutWhom;
 
   final void Function(Set<Judgement> yes) onRate;
   final VoidCallback onBack;
@@ -78,8 +86,13 @@ class _RatingScreenState extends State<RatingScreen> {
           onBack: widget.onBack,
           child: Padding(
             padding: const EdgeInsets.only(left: Gap.s),
-            child: Text('How was ${widget.aboutWhom}?',
-                style: text.titleLarge),
+            child: Text(
+              switch (widget.aboutWhom) {
+                final whom? => 'How was $whom?',
+                null => 'How did it go?',
+              },
+              style: text.titleLarge,
+            ),
           ),
         ),
       ),

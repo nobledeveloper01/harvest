@@ -22,7 +22,7 @@ String tidy(num value) {
 ///
 /// U+200A HAIR SPACE. Exported so that a test can say what it is asserting
 /// about, and so nobody writes a bare `'₦40,000'` literal that will not match.
-const hairSpace = '\u200A';
+const hairSpace = '\u202F';
 
 /// Naira, with the separators a person writes.
 ///
@@ -44,11 +44,23 @@ const hairSpace = '\u200A';
 /// first suspect and was wrong — though chasing it did find that no weight in
 /// the app was reaching the variable axis at all, which was a real bug.)
 ///
-/// [hairSpace] is U+200A: narrower than a word space, ignored by screen
-/// readers, and enough. A full space would be wrong — Nigerian convention
-/// writes ₦180,000 closed up — and changing typeface to fix one glyph would
-/// trade a nick in a crossbar for the tone marks in four languages, which is
-/// the trade `pubspec.yaml` already refuses.
+/// [hairSpace] is U+202F NARROW NO-BREAK SPACE: narrower than a word space,
+/// ignored by screen readers, and enough. A full space would be wrong —
+/// Nigerian convention writes ₦180,000 closed up — and changing typeface to fix
+/// one glyph would trade a nick in a crossbar for the tone marks in four
+/// languages, which is the trade `pubspec.yaml` already refuses.
+///
+/// ## Why it is the no-break one
+///
+/// It was U+200A HAIR SPACE, which is a **breaking** space. Every naira figure
+/// in the app could therefore split between the sign and its digits, and on the
+/// inbox row it did: `₦` at the end of one line and `243,000` on the next.
+///
+/// A currency symbol orphaned from its amount is not a typographic nicety —
+/// it is two things where there was one number, on a screen whose whole job is
+/// telling somebody what a lot is worth. Found by reading it on a phone; no
+/// gate here could have, because both characters render identically until the
+/// line is exactly the wrong length.
 String naira(num amount) {
   final whole = amount.round().abs();
   final digits = whole.toString();

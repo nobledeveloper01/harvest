@@ -49,20 +49,57 @@ class ThreadScreen extends StatelessWidget {
 
   final VoidCallback onBack;
 
-  bool get _mine => enquiry.sellerId == me;
+  /*
+    Which side of this conversation the reader is on, or null.
+
+    Null when nobody is signed in, which is the ordinary state until R14 clears:
+    the token store forgets on every launch. The first version compared
+    `sellerId == me` with `me` empty, so *not the seller* came out true and the
+    screen told a farmer their own lot was one they had enquired about.
+
+    Everything that depends on knowing is withheld rather than guessed — the
+    accept and decline buttons, and whose number is *theirs*. A number labelled
+    as somebody else's when the app does not know which of two people it belongs
+    to is the one mislabel this screen must not make.
+  */
+  bool? get _mine => me.isEmpty ? null : enquiry.sellerId == me;
   bool get _open => enquiry.status == 'open';
-  bool get _accepted => enquiry.status == 'accepted';
+  /*
+    Far enough along for a deal — and `completed` is the half that was missing.
+
+    The server moves an enquiry to `completed` the moment both sides confirm
+    the figures, which is **exactly** when the rating becomes possible. Gated on
+    `accepted` alone, the band that offers *say how they did* disappeared at the
+    instant it had something to offer, and the rating was unreachable in the
+    real flow.
+
+    No test could have caught it: every one of them builds an enquiry that is
+    `accepted` and a deal that is fully confirmed, which is a pair the server
+    never produces. Found by doing it — sign in, list, accept, agree, confirm —
+    and watching the band vanish.
+  */
+  static const _farEnough = {'accepted', 'completed'};
+
+  bool get _accepted => _farEnough.contains(enquiry.status);
 
   /// Whose confirmation is mine depends on which side of the deal I am.
   Agreement get _agreement => deal == null
       ? Agreement.none
       : readAgreement(
-          youConfirmed:
-              (_mine ? deal!.sellerConfirmedAt : deal!.buyerConfirmedAt) != null,
-          theyConfirmed:
-              (_mine ? deal!.buyerConfirmedAt : deal!.sellerConfirmedAt) != null,
+          youConfirmed: (_mine == true
+                  ? deal!.sellerConfirmedAt
+                  : deal!.buyerConfirmedAt) !=
+              null,
+          theyConfirmed: (_mine == true
+                  ? deal!.buyerConfirmedAt
+                  : deal!.sellerConfirmedAt) !=
+              null,
         );
-  String? get _theirNumber => _mine ? enquiry.buyerPhone : enquiry.sellerPhone;
+  String? get _theirNumber => switch (_mine) {
+        true => enquiry.buyerPhone,
+        false => enquiry.sellerPhone,
+        null => null,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +155,7 @@ class ThreadScreen extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
-                child: _open && _mine
+                child: _open && _mine == true
                     ? _YesOrNo(onAccept: onAccept, onDecline: onDecline)
                     : PrimaryButton(
                         label: 'Say something',

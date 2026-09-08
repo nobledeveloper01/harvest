@@ -26,6 +26,23 @@ class InboxScreen extends StatelessWidget {
   /// farmer received or one they sent.
   final String me;
 
+  /*
+    Which side of this enquiry the reader is on, or null.
+
+    Null when there is no account — which is the ordinary state, because the
+    token store forgets on every launch (R14). The first version compared
+    `sellerId == me` with `me` empty, so *not the seller* came out true and
+    every incoming enquiry was described as one the farmer had sent: **"You
+    asked for 270 kg"** on their own lot, on the screen they read to decide
+    whether to answer.
+
+    Not knowing is a third answer, and the app has one everywhere else.
+  */
+  bool? _side(EnquiryRow enquiry) {
+    if (me.isEmpty) return null;
+    return enquiry.sellerId == me;
+  }
+
   final void Function(EnquiryRow enquiry) onOpen;
   final VoidCallback onBack;
 
@@ -55,7 +72,7 @@ class InboxScreen extends StatelessWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.m),
                   itemBuilder: (context, index) => _EnquiryTile(
                     enquiry: enquiries[index],
-                    mine: enquiries[index].sellerId == me,
+                    mine: _side(enquiries[index]),
                     onTap: () => onOpen(enquiries[index]),
                   ),
                 ),
@@ -117,7 +134,8 @@ class _EnquiryTile extends StatelessWidget {
   });
 
   final EnquiryRow enquiry;
-  final bool mine;
+  /// Which side of it the reader is on, or null when nobody is signed in.
+  final bool? mine;
   final VoidCallback onTap;
 
   @override
@@ -190,10 +208,17 @@ class _EnquiryTile extends StatelessWidget {
     );
   }
 
-  static String _line(EnquiryRow enquiry, bool mine) {
+  static String _line(EnquiryRow enquiry, bool? mine) {
     final wants = enquiry.quantityWantedKg;
     final offer = enquiry.offerKobo;
-    final who = mine ? 'Somebody wants' : 'You asked for';
+    // No authorship when there is nobody to compare against. The figures are
+    // still true; who asked for them is a claim, and the app does not make
+    // claims it cannot support.
+    final who = switch (mine) {
+      true => 'Somebody wants',
+      false => 'You asked for',
+      null => 'For',
+    };
     return [
       if (wants != null) '$who ${wants.round()} kg' else '$who some of it',
       if (offer != null) 'at ${naira(offer / 100)}',

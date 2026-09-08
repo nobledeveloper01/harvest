@@ -7,6 +7,7 @@ import 'package:harvest/data/lots/lots_database.dart';
 import 'package:harvest/domain/market/deal.dart';
 import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/features/market/deal_screen.dart';
+import 'package:harvest/features/market/inbox_screen.dart';
 import 'package:harvest/features/market/rating_screen.dart';
 import 'package:harvest/features/market/thread_screen.dart';
 
@@ -357,6 +358,37 @@ void main() {
       expect(overallFor(sent!), 4);
     });
 
+    testWidgets('names nobody when it does not know which side you are on',
+        (tester) async {
+      /*
+        `sellerId == ''` is false, so the fallback named *the farmer* — to the
+        farmer, about their own lot, on the screen where they judge somebody
+        else. Third time this session the same shape: an empty id read as a
+        real answer instead of as *not known*.
+      */
+      await _pump(tester, RatingScreen(
+        speaker: SilentSpeaker(),
+        language: Speech.english,
+        aboutWhom: null,
+        onRate: (_) {},
+        onBack: () {},
+      ));
+      expect(find.text('How did it go?'), findsOneWidget);
+      expect(find.textContaining('the farmer'), findsNothing);
+      expect(find.textContaining('the buyer'), findsNothing);
+    });
+
+    testWidgets('names them when it does know', (tester) async {
+      await _pump(tester, RatingScreen(
+        speaker: SilentSpeaker(),
+        language: Speech.english,
+        aboutWhom: 'the buyer',
+        onRate: (_) {},
+        onBack: () {},
+      ));
+      expect(find.text('How was the buyer?'), findsOneWidget);
+    });
+
     testWidgets('every question is drawn and can be heard', (tester) async {
       // Reading is optional (CLAUDE.md, thing one). A question that exists only
       // as a sentence is a question the primary persona answers at random.
@@ -404,6 +436,92 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(speaker.said, ['judgement:paid-as-agreed']);
+    });
+  });
+
+  group('when nobody is signed in', () {
+    /*
+      The ordinary state until R14 clears: the token store forgets the refresh
+      token on every launch, so the second time a farmer opens the app there is
+      no account and `me` is empty.
+
+      The first version compared `sellerId == me` against that empty string, so
+      *not the seller* came out true — and the inbox described every incoming
+      enquiry as one the farmer had sent. **"You asked for 270 kg"**, on their
+      own lot, on the screen they read to decide whether to answer. Found by
+      restarting the app.
+    */
+    testWidgets('the inbox claims nothing about who asked', (tester) async {
+      await _pump(tester, InboxScreen(
+        enquiries: [_enquiry(status: 'open')],
+        me: '',
+        onOpen: (_) {},
+        onBack: () {},
+      ));
+
+      expect(find.textContaining('You asked for'), findsNothing);
+      expect(find.textContaining('Somebody wants'), findsNothing);
+      // The figures are still true. Only the authorship is withheld.
+      expect(find.textContaining('150 kg'), findsOneWidget);
+    });
+
+    testWidgets('and says who when it does know', (tester) async {
+      await _pump(tester, InboxScreen(
+        enquiries: [_enquiry(status: 'open')],
+        me: 'me',
+        onOpen: (_) {},
+        onBack: () {},
+      ));
+      expect(find.textContaining('Somebody wants'), findsOneWidget);
+    });
+
+    testWidgets('the thread offers no answer it cannot attribute',
+        (tester) async {
+      /*
+        This one held before the change and holds after it, and the difference
+        is why it is written down: it used to hold because an empty string does
+        not equal a real account id, which is luck. It holds now because the
+        screen has a third answer and withholds the buttons under it.
+
+        Breaking the guard on purpose does not fail this test — nothing can
+        reach the private getter — so it is a regression guard rather than a
+        proof. The assertion that does fire is the one below, about the number.
+      */
+      await _pump(tester, ThreadScreen(
+        enquiry: _enquiry(status: 'open'),
+        messages: const [],
+        me: '',
+        onAccept: () => fail('answered on behalf of nobody'),
+        onDecline: () {},
+        onSpeak: () {},
+        onDeal: () {},
+        onRate: () {},
+        onBack: () {},
+      ));
+      expect(find.text('Talk to them'), findsNothing);
+      expect(find.text('No thank you'), findsNothing);
+    });
+
+    testWidgets('and shows nobody a number labelled as somebody else\'s',
+        (tester) async {
+      // The one mislabel this screen must not make: a phone number is behind
+      // mutual acceptance, and calling one *theirs* when the app does not know
+      // which of two people it belongs to is worse than not showing it.
+      await _pump(tester, ThreadScreen(
+        enquiry: _enquiry().copyWith(
+          buyerPhone: const Value('+2348099999999'),
+          sellerPhone: const Value('+2348031234567'),
+        ),
+        messages: const [],
+        me: '',
+        onAccept: () {},
+        onDecline: () {},
+        onSpeak: () {},
+        onDeal: () {},
+        onRate: () {},
+        onBack: () {},
+      ));
+      expect(find.textContaining('+234'), findsNothing);
     });
   });
 
@@ -468,6 +586,49 @@ void main() {
         _deal(seller: DateTime(2026, 9, 8), buyer: DateTime(2026, 9, 8)),
       );
       expect(find.textContaining('Say how they did'), findsOneWidget);
+    });
+
+    testWidgets('still asks once the enquiry has moved to completed',
+        (tester) async {
+      /*
+        The server moves an enquiry to `completed` the moment both sides confirm
+        the figures — which is exactly when the rating becomes possible. Gated
+        on `accepted` alone, the band offering *say how they did* disappeared at
+        the instant it had something to offer, and the rating was unreachable.
+
+        No test caught it because every one of them paired an `accepted`
+        enquiry with a fully-confirmed deal, and the server never produces that
+        pair. Found by doing the whole flow on a phone.
+      */
+      await _pump(tester, ThreadScreen(
+        enquiry: _enquiry(status: 'completed'),
+        messages: const [],
+        deal: _deal(seller: DateTime(2026, 9, 8), buyer: DateTime(2026, 9, 8)),
+        me: 'me',
+        onAccept: () {},
+        onDecline: () {},
+        onSpeak: () {},
+        onDeal: () {},
+        onRate: () {},
+        onBack: () {},
+      ));
+      expect(find.textContaining('Say how they did'), findsOneWidget);
+    });
+
+    testWidgets('says nothing about a deal on an enquiry that was declined',
+        (tester) async {
+      await _pump(tester, ThreadScreen(
+        enquiry: _enquiry(status: 'declined'),
+        messages: const [],
+        me: 'me',
+        onAccept: () {},
+        onDecline: () {},
+        onSpeak: () {},
+        onDeal: () {},
+        onRate: () {},
+        onBack: () {},
+      ));
+      expect(find.textContaining('Write down what you agreed'), findsNothing);
     });
 
     testWidgets('stops asking once this phone has rated', (tester) async {
