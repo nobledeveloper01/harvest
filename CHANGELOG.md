@@ -10,6 +10,27 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **SMS fallback for the messages that cannot wait.** The server now reaches an
+  account by whatever channel it has: push where a token is registered, SMS
+  where the message is urgent enough to be worth paying for. With no push
+  integration at all — today's state — a listing about to expire and a price
+  that has come up still arrive, on the channel the primary persona has.
+- Push and SMS are sent **both**, not one or the other, for an urgent message. A
+  gateway accepts a token for a handset switched off three weeks ago and reports
+  success, so treating a push as proof of arrival would silently drop the
+  messages that matter most, on exactly the phones least likely to be online.
+- One text per account per hour, claimed in the `update`'s own `where` so two
+  jobs finishing together cannot both send. SMS is the largest line in this
+  product's operating cost and arrives on a prepaid handset somebody is paying
+  for; a busy afternoon on the price feed should not become a bill.
+- `POST /devices` records where to reach a phone, and moves a token to whoever
+  registered it last — a handset handed to a relative should not keep delivering
+  the first owner's enquiries. `POST /devices/sms` turns texts off, and on.
+- `src/messages.ts` — the five or six things the server says, in the five
+  languages, with every untranslated line marked `[en]` in front of the English.
+  Same argument as the placeholder clips: a gap that renders silently is a gap
+  nobody finds until a farmer receives it. R12 counts them.
+
 - **Price alerts (F-305)** — *tell me when it reaches this*, from the decision
   screen, with the keypad opening on what the crop is worth now so the question
   a farmer answers is *how much better would it have to be* rather than *what

@@ -184,6 +184,30 @@ somebody has watched each one be true.*
 Buyer aggregation and route planning, storage booking, the operator console,
 SMS fallback alerts, price alerts, model calibration from recorded outcomes.
 
+**Three of the six are done.** Model calibration (above), price alerts, and the
+SMS fallback — which turned out to be the one that changes what the product is.
+The server now reaches an account by whatever channel it has: push where a token
+is registered, and SMS where the message is urgent enough to be worth paying
+for. With **no push integration at all**, which is today's state, a listing about
+to expire and a price that has come up still arrive, on the channel the primary
+persona actually has.
+
+What that cost is honesty about two things, both filed as gates. The server's own
+messages are the only strings in the product not in the app binary, and four of
+the five languages are marked `[en]` rather than translated (R12). And nothing on
+the phone registers a push token, because there is no FCM project and a client
+that pretended to register would make a missing integration look like a working
+one (R13).
+
+Storage booking is **not** in this phase and cannot be, whatever the line above
+says. It needs a facility directory, and
+[ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md) refuses one for
+places nobody has visited — *a directory that is 20% wrong is worse than none,
+because the 80% teaches a farmer to trust it before the 20% costs them a
+harvest.* What ships instead is the arithmetic on a quote the farmer already
+has, which is already on the decision screen. Buyer aggregation, route planning
+and the operator console remain.
+
 **Exit gate**. *A prediction the engine made is compared against what actually
 happened to that lot, and the comparison is published — including where the
 engine was wrong.*

@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth.js';
 import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
+import { deviceRoutes } from './routes/devices.js';
 import { priceRoutes } from './routes/prices.js';
 import { syncRoutes } from './routes/sync.js';
 import { trustRoutes } from './routes/trust.js';
@@ -69,6 +70,7 @@ export function build({
   enquiryRoutes(app, { signingKey });
   dealRoutes(app, { signingKey });
   priceRoutes(app, { signingKey });
+  deviceRoutes(app, { signingKey });
   trustRoutes(app, { signingKey, identity, callbackSecret });
   syncRoutes(app, { signingKey });
 

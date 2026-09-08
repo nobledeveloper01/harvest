@@ -3,6 +3,7 @@ import { readConfig } from './config.js';
 import { connect } from './db.js';
 import { migrate } from './migrate.js';
 import { ensureJobs, runDueJobs } from './jobs.js';
+import { Notifier } from './notify.js';
 import { consolePush } from './push.js';
 import { consoleSms } from './sms.js';
 
@@ -30,8 +31,10 @@ await ensureJobs(db);
   of it is a scaling decision rather than a coordination problem — two servers
   running this loop take different rows and neither waits.
 */
+const notifier = new Notifier(db, consolePush(), consoleSms());
+
 const ticking = setInterval(() => {
-  runDueJobs({ db, push: consolePush() }).catch((error) => {
+  runDueJobs({ db, notify: notifier }).catch((error) => {
     console.error('[jobs]', error);
   });
 }, 60_000);

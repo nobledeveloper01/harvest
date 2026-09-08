@@ -3,7 +3,9 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { firePriceWatches } from '../src/jobs.js';
 import { enoughToWake } from '../src/prices/current.js';
+import { Notifier } from '../src/notify.js';
 import type { Push } from '../src/push.js';
+import type { Sms } from '../src/sms.js';
 import { reset, testDatabase } from './support/database.js';
 import { Outbox, testServer } from './support/server.js';
 
@@ -24,12 +26,31 @@ class Sent implements Push {
   }
 }
 
+class Texts implements Sms {
+  readonly texts: { to: string; message: string }[] = [];
+  async send(to: string, message: string): Promise<void> {
+    this.texts.push({ to, message });
+  }
+}
+
+function reaching(push: Push, sms: Sms = new Texts()) {
+  return new Notifier(db, push, sms);
+}
+
 async function anAccount(): Promise<string> {
   const { rows } = await db.query<{ id: string }>(
     `insert into accounts (phone) values ('+234803' || floor(random() * 9000000 + 1000000)::text)
      returning id`,
   );
-  return rows[0]!.id;
+  const id = rows[0]!.id;
+  // With the app installed. A farmer with no token still gets the message —
+  // by SMS — and that path is `notify.test.ts`.
+  await db.query(
+    `insert into push_tokens (account_id, token, platform)
+     values ($1::uuid, 'token-' || $1, 'android')`,
+    [id],
+  );
+  return id;
 }
 
 /**
@@ -75,7 +96,7 @@ describe('waking somebody when the price comes up', () => {
     await reports(95_000, enoughToWake);
 
     const push = new Sent();
-    const outcome = await firePriceWatches({ db, push }, new Date());
+    const outcome = await firePriceWatches({ db, notify: reaching(push) }, new Date());
 
     expect(outcome).toContain('fired 1');
     expect(push.notifications).toHaveLength(1);
@@ -89,7 +110,7 @@ describe('waking somebody when the price comes up', () => {
     await reports(89_900, enoughToWake);
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(0);
   });
 
@@ -102,7 +123,7 @@ describe('waking somebody when the price comes up', () => {
     await reports(90_000, enoughToWake);
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(1);
   });
 });
@@ -122,7 +143,7 @@ describe('what is not allowed to wake somebody', () => {
     await reports(95_000, enoughToWake, { agedHours: 96 });
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(0);
   });
 
@@ -132,7 +153,7 @@ describe('what is not allowed to wake somebody', () => {
     await reports(95_000, enoughToWake - 1);
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(0);
   });
 
@@ -152,7 +173,7 @@ describe('what is not allowed to wake somebody', () => {
     await reports(95_000, 10, { by: shouter });
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
 
     const { rows } = await db.query<{ n: string }>(
       'select count(*) as n from price_reports',
@@ -167,8 +188,8 @@ describe('what is not allowed to wake somebody', () => {
     await reports(95_000, enoughToWake);
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
 
     expect(push.notifications).toHaveLength(1);
   });
@@ -183,7 +204,7 @@ describe('what is not allowed to wake somebody', () => {
     await reports(95_000, enoughToWake); // south-west
 
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(0);
   });
 });
@@ -278,6 +299,19 @@ describe('setting one and taking it back', () => {
     const sms = new Outbox();
     const app = testServer(db, sms);
     const who = await signIn(app, sms, '08031234502');
+    /*
+      With the app installed, so this test is about re-arming and not about
+      which channel the message went down.
+
+      Without a token it falls back to SMS — and the second alert would then be
+      swallowed by the one-an-hour rate limit, so the test would go red for a
+      reason that has nothing to do with what it is checking.
+    */
+    await db.query(
+      `insert into push_tokens (account_id, token, platform)
+       values ($1::uuid, 'token-' || $1, 'android')`,
+      [who.accountId],
+    );
     await reports(95_000, enoughToWake);
 
     const set = (target: number) =>
@@ -295,11 +329,11 @@ describe('setting one and taking it back', () => {
 
     await set(90_000);
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(1);
 
     await set(94_000);
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(2);
     await app.close();
   });
@@ -330,7 +364,7 @@ describe('setting one and taking it back', () => {
 
     await reports(95_000, enoughToWake);
     const push = new Sent();
-    await firePriceWatches({ db, push }, new Date());
+    await firePriceWatches({ db, notify: reaching(push) }, new Date());
     expect(push.notifications).toHaveLength(0);
     await app.close();
   });
@@ -396,7 +430,7 @@ describe('a watch dies with the lot it was about', () => {
     await reports(95_000, enoughToWake);
 
     const push = new Sent();
-    const outcome = await firePriceWatches({ db, push }, new Date());
+    const outcome = await firePriceWatches({ db, notify: reaching(push) }, new Date());
 
     expect(push.notifications).toHaveLength(0);
     expect(outcome).toContain('expired 1');
@@ -411,7 +445,7 @@ describe('a watch dies with the lot it was about', () => {
     await aWatch(farmer, 90_000);
     await reports(95_000, enoughToWake);
 
-    await firePriceWatches({ db, push: new Sent() }, new Date());
+    await firePriceWatches({ db, notify: reaching(new Sent()) }, new Date());
 
     const { rows } = await db.query<{ notified_kobo_per_kg: string | null }>(
       'select notified_kobo_per_kg from price_watches',

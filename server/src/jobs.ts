@@ -1,8 +1,15 @@
 import type { Db } from './db.js';
 import { isWorthWaking, pricesFor, type RegionalPrice } from './prices/current.js';
-import type { Push } from './push.js';
+import type { Notifier } from './notify.js';
 
-export type JobContext = { readonly db: Db; readonly push: Push };
+/**
+ * What a job has.
+ *
+ * `notify` rather than `push`: which channel a message goes down is a decision
+ * about how badly it needs to arrive, and that decision belongs beside the
+ * message rather than in whatever driver happens to be wired up.
+ */
+export type JobContext = { readonly db: Db; readonly notify: Notifier };
 export type Job = (context: JobContext, now: Date) => Promise<string>;
 
 /** How long before a listing expires the farmer is told about it. */
@@ -18,7 +25,7 @@ export const warnBefore = 6 * 60 * 60 * 1000;
  * for is the **warning**, which nothing else can send, and the farmer's own
  * list of what is still for sale being true.
  */
-export const expireListings: Job = async ({ db, push }, now) => {
+export const expireListings: Job = async ({ db, notify }, now) => {
   const { rows: warn } = await db.query<{ id: string; account_id: string; crop: string }>(
     `update listings set status = status
      where status = 'active'
@@ -28,11 +35,11 @@ export const expireListings: Job = async ({ db, push }, now) => {
     [now, new Date(now.getTime() + warnBefore)],
   );
   for (const listing of warn) {
-    await push.send(
-      listing.account_id,
-      'Your lot is nearly out of time',
-      `The ${listing.crop} you listed comes off the market in a few hours.`,
-    );
+    // Worth a text. A window that closes in six hours is the definition of a
+    // message where arriving tomorrow is the same as not arriving.
+    await notify.notify(listing.account_id, 'listing-expiring', 'reach-them', {
+      crop: listing.crop,
+    });
   }
   if (warn.length) {
     await db.query(`update listings set warned_at = $2 where id = any($1::uuid[])`, [
@@ -65,7 +72,7 @@ export const expireListings: Job = async ({ db, push }, now) => {
  * **twice** — `notified_at`, for the same reason the listing warning has
  * `warned_at`.
  */
-export const firePriceWatches: Job = async ({ db, push }, now) => {
+export const firePriceWatches: Job = async ({ db, notify }, now) => {
   const { rows: watches } = await db.query<{
     id: string;
     account_id: string;
@@ -114,11 +121,10 @@ export const firePriceWatches: Job = async ({ db, push }, now) => {
     // table.
     if (!rowCount) continue;
 
-    await push.send(
-      watch.account_id,
-      'The price has come up',
-      `${watch.crop} is at ₦${Math.round(price.kobo / 100)} a kilogram where you are.`,
-    );
+    await notify.notify(watch.account_id, 'price-reached', 'reach-them', {
+      crop: watch.crop,
+      nairaPerKg: Math.round(price.kobo / 100),
+    });
     fired++;
   }
 

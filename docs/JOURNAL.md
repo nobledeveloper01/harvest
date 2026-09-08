@@ -2646,3 +2646,51 @@ job being written against a copy.
 whole result map, which was only true while the schedule had one job in it. The
 second job broke it for a reason with nothing to do with locking. It names the
 row it cares about now.
+
+## 2026-09-08 (evening) — SMS fallback, which changed what the product is
+
+"SMS fallback alerts" reads like a nice-to-have on the Phase 6 list. It is not.
+The server has three or four things to say that only it can know — a listing
+about to expire, a price that has come up — and until today the only way it
+could say them was a push gateway that does not exist. With the fallback, those
+messages arrive **with no push integration at all**, on the channel the primary
+persona actually has.
+
+So the state of the product changed more than the diff suggests: the alerts
+work, on the phones they were designed for, today.
+
+### Three decisions worth keeping
+
+**Both channels, not one.** The obvious design is *push, and SMS if push
+failed*. A gateway accepts a token for a handset switched off three weeks ago
+and reports success — so *push succeeded* is not evidence of arrival, and
+treating it as such would silently drop the most important messages on exactly
+the phones least likely to be online. Urgent messages go down both.
+
+**Urgency is declared at the call site**, not inferred from whether push worked.
+SMS costs money per message. Which messages are worth one is a decision somebody
+made about the message, and it belongs next to the message.
+
+**The rate limit is claimed before the send**, in the `update`'s own `where`. The
+expiry sweep and the price watches finishing together is a normal Tuesday, and
+both would otherwise read the same old timestamp and both send. Claiming first
+can cost a message when the gateway throws; claiming after costs the farmer two
+texts and this product the reputation of an app that spams. There is a test that
+runs the two concurrently.
+
+### The translations announce themselves
+
+These are the only strings in the product not in the app binary, because they
+arrive when there is no app to read them. Four of the five languages are the
+English text with `[en] ` in front — the same decision as the placeholder clips,
+for the same reason, and `translated()` counts the gap so a gate can (R12).
+
+In front rather than behind: a marker at the end is a marker an SMS gateway
+truncates.
+
+### What is deliberately not built
+
+Nothing on the phone registers a push token. There is no FCM project and no
+`google-services.json`, and a client that pretended to register would make a
+missing integration look exactly like a working one — which is the failure this
+repository keeps finding and keeps refusing to ship. R13.
