@@ -45,6 +45,7 @@ const app = build({
   signingKey: config.signingKey,
   otpSalt: config.otpSalt,
   sms: consoleSms(),
+  operators: config.operators,
   logLevel: config.logLevel,
 });
 await app.listen({ port: config.port, host: '0.0.0.0' });

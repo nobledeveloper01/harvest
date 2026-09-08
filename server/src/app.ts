@@ -8,6 +8,7 @@ import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 import { deviceRoutes } from './routes/devices.js';
+import { moderationRoutes, type Operators } from './routes/moderation.js';
 import { priceRoutes } from './routes/prices.js';
 import { syncRoutes } from './routes/sync.js';
 import { trustRoutes } from './routes/trust.js';
@@ -19,6 +20,8 @@ export type BuildOptions = {
   readonly signingKey: string;
   readonly otpSalt: string;
   readonly sms: Sms;
+  /** Named operator keys. Empty means every moderation endpoint refuses. */
+  readonly operators?: Operators;
   readonly identity?: IdentityCheck;
   readonly callbackSecret?: string;
   readonly logLevel?: string;
@@ -37,6 +40,7 @@ export function build({
   signingKey,
   otpSalt,
   sms,
+  operators = {},
   identity = noIdentityCheck(),
   callbackSecret = signingKey,
   logLevel = 'info',
@@ -72,6 +76,7 @@ export function build({
   priceRoutes(app, { signingKey });
   deviceRoutes(app, { signingKey });
   trustRoutes(app, { signingKey, identity, callbackSecret });
+  moderationRoutes(app, { operators });
   syncRoutes(app, { signingKey });
 
   return app;

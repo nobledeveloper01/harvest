@@ -10,6 +10,13 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The operator console's operations.** `GET /moderation/queue` lists who the
+  report threshold suspended and why; `reinstate` and `uphold` both require a
+  written reason, and `history` shows what was decided and by whom. Behind a
+  separate door with named keys rather than an account tier — an operator is not
+  a farmer, and a privilege column would put suspension one value away from
+  every sign-in path in the product.
+
 - **Buyer aggregation (F-405)** — `GET /listings/basket` assembles one order out
   of many small lots. A lot that will not last until the collection day is left
   out, and of the ones that will, the closest to running out go first: freshest
@@ -97,6 +104,15 @@ Entries say *why*, not just what.
 - Five clips for *How did it go?*, bringing the bundle to 980.
 
 ### Fixed
+
+- **A reinstated account was re-suspended by the next single report.** `sweep`
+  counts reports where `actioned_at is null` and nothing in the product had ever
+  written that column, so the three reports behind a suspension stayed uncounted
+  after it was lifted and one further report pushed the total back over the
+  threshold. Nothing could have found this before, because until now nothing
+  could reinstate. Reports are closed by the decision that resolves them, and
+  only those still open — otherwise a later decision quietly relabels an earlier
+  one in the record.
 
 - **An alert could be manufactured by one person.** The threshold for waking
   somebody counted price *reports* rather than reporters, so ten rows from one

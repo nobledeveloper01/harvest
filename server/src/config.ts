@@ -6,12 +6,15 @@
  * that silently invents a database URL is one that passes its tests against an
  * empty schema.
  */
+import { readOperators, type Operators } from './routes/moderation.js';
+
 export type Config = {
   readonly port: number;
   readonly databaseUrl: string;
   readonly signingKey: string;
   readonly otpSalt: string;
   readonly logLevel: string;
+  readonly operators: Operators;
 };
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -41,5 +44,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     signingKey,
     otpSalt,
     logLevel: env.LOG_LEVEL ?? 'info',
+    // Empty unless set, and empty means nobody may moderate. A server that
+    // invented an operator key would be one anybody could suspend anybody on.
+    operators: readOperators(env.OPERATORS),
   };
 }

@@ -226,6 +226,22 @@ centroid. It is also P2. The honest sequence is: a way for a farmer to state a
 collection point that is theirs to give, then routing over that — not a
 coordinate the app inferred.
 
+**The operator console's operations exist** — `GET /moderation/queue`, and
+`reinstate` / `uphold` / `history` — behind a separate door with named keys, so
+the audit row can say *who* decided. An operator is not a farmer and has no lot,
+and giving the ordinary account system a privilege tier would put the most
+powerful thing this server does one column away from every sign-in path in the
+product.
+
+Building it found the defect it was built for. `sweep` counts reports where
+`actioned_at is null`, and **nothing had ever written that column** — so the
+three reports that suspended an account were still uncounted afterwards, and one
+further report re-suspended immediately. A reinstatement would have survived
+exactly as long as it took one more person to press a button. Nothing else in
+the product could have found this, because until now nothing could reinstate.
+
+The console's own screen is Phase 7, with the Flutter Web buyer console.
+
 Storage booking is **not** in this phase and cannot be, whatever the line above
 says. It needs a facility directory, and
 [ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md) refuses one for

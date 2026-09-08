@@ -2733,3 +2733,59 @@ that means nothing.
 
 The honest sequence is a way for a farmer to state a collection point that is
 theirs to give, and routing over that. Not a coordinate the app inferred.
+
+## 2026-09-08 (night) — The operator console, and the bug that could only be found by building it
+
+Moderation has been automatic since Phase 5: three separate reporters suspend an
+account within seconds, and every suspension writes an audit row whose own
+comment says *an action nobody can review is an action nobody can appeal.*
+
+Nothing could review one. There was no way to reinstate anybody, so the sentence
+was true about the code that contained it.
+
+### The defect
+
+`sweep` counts reports where `actioned_at is null`. That column has existed
+since `0003` and **nothing has ever written it.** Which was invisible while
+suspension was one-way: the count only ever went up, and up was the direction it
+was supposed to go.
+
+Add reinstatement and it becomes a hole you can drive through. The three reports
+that suspended somebody are still uncounted after the operator lets them back,
+so the next report — one person — pushes the total over the threshold again. The
+operator's decision survives for as long as it takes one more button press, and
+the audit log shows a restore followed by a suspend with nothing between them to
+explain it.
+
+Reports are closed by the decision that resolves them now. Only the open ones,
+because closing all of them relabels the `action` on reports an earlier decision
+already resolved — a restore in March reading as an uphold in June.
+
+**Nothing else in the product could have found this.** Not a test of `sweep`,
+which was correct; not a test of `/reports`, which was correct. It needed the
+feature that made the pair wrong to exist.
+
+### Upholding is an action, though nothing changes
+
+*A person looked and agreed* is a different fact from *the threshold fired and
+nobody has been back*, and the account's tier cannot carry the difference. It is
+also the fact an appeal is answered from, so it is written down like any other.
+
+### A separate door, with named keys
+
+Not an `operator` tier on accounts. Suspension is the most powerful thing this
+server does to a person, and a tier column puts it one value away from every
+sign-in path in the product. Keys are named — `OPERATORS=moni:key` — because the
+audit row has to be able to say *who*, and an action nobody can attribute is an
+action nobody can be answerable for.
+
+### Two breaks that were not breaks
+
+Testing the gates by breaking them, two of the six changed nothing observable
+and one of those was the interesting one. Making `operatorFor` return the first
+operator for any caller left every test green — because the only negative cases
+were *no key* and *a farmer's bearer token*, and both are refused by the
+`typeof` guard before the comparison is reached. **The comparison itself had
+never been exercised.** There is a wrong-key case now, and a wrong key of the
+right length, because a check that only compares lengths is the next thing to
+get wrong.

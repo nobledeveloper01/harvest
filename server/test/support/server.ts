@@ -27,12 +27,22 @@ export class Outbox implements Sms {
   }
 }
 
+/**
+ * The one operator these tests know about.
+ *
+ * Exported so a test asserts against the same key the server was built with —
+ * a literal repeated in a test file is a test that passes the day somebody
+ * changes the server and not the string.
+ */
+export const testOperator = { name: 'moni', key: 'an-operator-key-long-enough-to-pass' };
+
 export function testServer(db: Db, sms: Sms = new Outbox()): FastifyInstance {
   return build({
     db,
     signingKey: 'a-test-signing-key-that-is-long-enough',
     otpSalt: 'a-test-otp-salt-value',
     sms,
+    operators: { [testOperator.name]: testOperator.key },
     logLevel: 'silent',
   });
 }
