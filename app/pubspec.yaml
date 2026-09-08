@@ -78,109 +78,107 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Every bundled clip, in every language, and every crop tile.
-  # `scripts/audio-check.py` and `scripts/crop-check.py` prove the sets are
-  # complete; this is what puts them in the binary.
+  # Every bundled clip, in every language, and every tile the app draws.
   #
-  # **These entries are not recursive.** `assets/speech/ha/` bundles the files
-  # directly inside it and nothing under `assets/speech/ha/crop/`, with no build
-  # error either way — an undeclared asset only fails when a device asks for it.
-  # Both gates now read this list, so a directory added on disk and forgotten
-  # here fails the build instead of failing silently in a farmer's hand.
+  # **Generated — `make assets`.** Do not edit by hand: this list is one
+  # directory per language per namespace, and adding a language by hand is
+  # thirteen lines that fail silently when one is missed. Flutter's entries are
+  # not recursive, so `assets/speech/ha/` bundles what is directly inside it and
+  # nothing under `assets/speech/ha/crop/` — with no build error either way. An
+  # undeclared asset only fails when a device asks for it.
+  #
+  # `make assets-check` fails the build when this block is not what the
+  # catalogue would produce, and `scripts/audio-check.py` proves the clips
+  # themselves exist.
   assets:
     - assets/speech/en/
     - assets/speech/en/crop/
     - assets/speech/en/unit/
     - assets/speech/en/storage/
-    - assets/speech/en/weight/
     - assets/speech/en/region/
     - assets/speech/en/outcome/
     - assets/speech/en/loss/
     - assets/speech/en/ailment/
     - assets/speech/en/step/
-    - assets/speech/en/framing/
     - assets/speech/en/judgement/
+    - assets/speech/en/framing/
     - assets/speech/en/naira/
+    - assets/speech/en/weight/
     - assets/speech/pcm/
     - assets/speech/pcm/crop/
     - assets/speech/pcm/unit/
     - assets/speech/pcm/storage/
-    - assets/speech/pcm/weight/
     - assets/speech/pcm/region/
     - assets/speech/pcm/outcome/
     - assets/speech/pcm/loss/
     - assets/speech/pcm/ailment/
     - assets/speech/pcm/step/
-    - assets/speech/pcm/framing/
     - assets/speech/pcm/judgement/
+    - assets/speech/pcm/framing/
     - assets/speech/pcm/naira/
+    - assets/speech/pcm/weight/
     - assets/speech/ha/
     - assets/speech/ha/crop/
     - assets/speech/ha/unit/
     - assets/speech/ha/storage/
-    - assets/speech/ha/weight/
     - assets/speech/ha/region/
     - assets/speech/ha/outcome/
     - assets/speech/ha/loss/
     - assets/speech/ha/ailment/
     - assets/speech/ha/step/
-    - assets/speech/ha/framing/
     - assets/speech/ha/judgement/
+    - assets/speech/ha/framing/
     - assets/speech/ha/naira/
+    - assets/speech/ha/weight/
     - assets/speech/yo/
     - assets/speech/yo/crop/
     - assets/speech/yo/unit/
     - assets/speech/yo/storage/
-    - assets/speech/yo/weight/
     - assets/speech/yo/region/
     - assets/speech/yo/outcome/
     - assets/speech/yo/loss/
     - assets/speech/yo/ailment/
     - assets/speech/yo/step/
-    - assets/speech/yo/framing/
     - assets/speech/yo/judgement/
+    - assets/speech/yo/framing/
     - assets/speech/yo/naira/
+    - assets/speech/yo/weight/
     - assets/speech/ig/
     - assets/speech/ig/crop/
     - assets/speech/ig/unit/
     - assets/speech/ig/storage/
-    - assets/speech/ig/weight/
     - assets/speech/ig/region/
     - assets/speech/ig/outcome/
     - assets/speech/ig/loss/
     - assets/speech/ig/ailment/
     - assets/speech/ig/step/
-    - assets/speech/ig/framing/
     - assets/speech/ig/judgement/
+    - assets/speech/ig/framing/
     - assets/speech/ig/naira/
-    - assets/crops/
-    - assets/units/
-    - assets/storage/
-    - assets/regions/
-    - assets/outcomes/
-    - assets/losses/
-    - assets/judgements/
+    - assets/speech/ig/weight/
+    - assets/speech/ff/
+    - assets/speech/ff/crop/
+    - assets/speech/ff/unit/
+    - assets/speech/ff/storage/
+    - assets/speech/ff/region/
+    - assets/speech/ff/outcome/
+    - assets/speech/ff/loss/
+    - assets/speech/ff/ailment/
+    - assets/speech/ff/step/
+    - assets/speech/ff/judgement/
+    - assets/speech/ff/framing/
+    - assets/speech/ff/naira/
+    - assets/speech/ff/weight/
     - assets/ailments/
+    - assets/crops/
+    - assets/judgements/
+    - assets/losses/
+    - assets/outcomes/
+    - assets/regions/
     - assets/steps/
-
-  # To add assets to your application, add an assets section, like this:
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
-
-  # Inter, variable, one file for every weight.
-  #
-  # Bundled rather than fetched: the app is designed for a phone with no
-  # network, and a typeface that arrives over the wire is a screen that renders
-  # in a fallback face the first time somebody opens it in a field.
-  #
-  # Chosen after checking, not assuming, that it covers what these languages
-  # need: Hausa's hooked letters (ɓ ɗ ƙ Ɓ Ɗ Ƙ), Yorùbá's dot-below vowels with
-  # tone marks (ẹ ọ ṣ), Igbo's (ị ọ ụ ṅ), and the naira sign ₦. A beautiful
-  # typeface that cannot set the product's own languages is not a candidate.
+    - assets/storage/
+    - assets/units/
+    - assets/judgements/
   fonts:
     - family: Inter
       fonts:

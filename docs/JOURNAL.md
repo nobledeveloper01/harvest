@@ -2789,3 +2789,53 @@ were *no key* and *a farmer's bearer token*, and both are refused by the
 never been exercised.** There is a wrong-key case now, and a wrong key of the
 right length, because a check that only compares lengths is the next thing to
 get wrong.
+
+## 2026-09-08 (night, later) — A sixth language, and what it actually cost
+
+Phase 7's exit gate: *a sixth language is added without touching any screen — if
+it takes more than recordings and a catalogue entry, the speech architecture was
+wrong.*
+
+It is **Fulfulde**. Not the next largest by headcount: its speakers are
+pastoralists and northern smallholders across the states where post-harvest loss
+is worst and where Hausa is a second language rather than a first. That is the
+gap the product had, which is a different question from which language has the
+most speakers.
+
+Adding it was one constant. No screen changed. But the gate found two things
+that were not screens, and both were the interesting kind.
+
+### `pubspec.yaml` was code nobody thought of as code
+
+Flutter's asset entries are **not recursive**: `assets/speech/ha/` bundles what
+is directly inside it and nothing under `assets/speech/ha/crop/`. So every
+language needed thirteen hand-written directory lines, and a missed one fails
+with no build error at all — the app runs, and one namespace is silent in one
+language on a farmer's phone.
+
+Thirteen hand-written lines is not "recordings and a catalogue entry". `make
+assets` writes the block from the same catalogue every other gate reads, and
+`make assets-check` fails the build when it drifts. Regenerating it produced
+exactly the set that was there, reordered — which is the outcome that makes a
+generator worth trusting.
+
+### And `make language-check`, because the claim was true by habit
+
+No screen names a language and none ever did. Nothing said so. One
+`if (language == Speech.hausa)` in one widget would make the gate's claim false,
+pass every other check in this repository, and be found by the *seventh*
+language rather than by the build. Broken on purpose both ways — a constant and
+a code literal — and it fires on both.
+
+### Three tests had grown a dependency on there being five
+
+`for (final language in Speech.values) { expect(find.text(language.endonym), ...) }`
+looks like it is asserting the picker offers every language. Against a lazy
+`ListView` it is asserting that the list is short enough to fit on the test
+surface, because a row below the fold is **absent from the tree** rather than
+present and off screen.
+
+That is the third time this session the same distinction has cost something: the
+deal screen's money sentence, the calibration report's version card, and now
+this. *Not in the tree* and *not on the screen* are different claims, and a loop
+over an enum is exactly where the difference hides.

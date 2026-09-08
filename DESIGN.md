@@ -133,7 +133,7 @@ farmer is looking at. *"Somewhere else"* is one of the five.
 
 ## Speech
 
-Five languages: English, Nigerian Pidgin (`pcm`), Hausa, Yoruba, Igbo. Each named by its
+Six languages: English, Nigerian Pidgin (`pcm`), Hausa, Yoruba, Igbo, Fulfulde. Each named by its
 **endonym** — `Yorùbá`, not `Yoruba` — because the name in the language is the only name
 useful to somebody who cannot read the rest of the screen.
 

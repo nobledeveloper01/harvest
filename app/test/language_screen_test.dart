@@ -23,6 +23,24 @@ class _Recording implements Speaker {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+
+/// Scrolls the picker until a language's row is built, and returns its finder.
+///
+/// The list is lazy, so a row below the fold is **absent from the tree** rather
+/// than present and off screen — and an assertion written against the whole
+/// enum passes only while the enum is short enough to fit. That is a test
+/// asserting a screen limit nobody chose: adding Fulfulde as the sixth language
+/// broke three of these without the screen changing at all.
+Future<Finder> _row(WidgetTester tester, Speech language) async {
+  final row = find.text(language.endonym);
+  if (row.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(row, 120,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+  }
+  return row;
+}
+
 void main() {
   Future<void> pump(WidgetTester tester, _Recording speaker) async {
     await tester.pumpWidget(
@@ -38,13 +56,13 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('offers all five languages, each under its own name', (tester) async {
+  testWidgets('offers every language, each under its own name', (tester) async {
     await pump(tester, _Recording());
 
     // Endonyms, not English names. `Yorùbá` is the only version of that word
     // useful to somebody who cannot read the rest of the screen.
     for (final language in Speech.values) {
-      expect(find.text(language.endonym), findsOneWidget, reason: language.code);
+      expect(await _row(tester, language), findsOneWidget, reason: language.code);
     }
   });
 
@@ -81,7 +99,10 @@ void main() {
     // design floor, not an office.
     for (final language in Speech.values) {
       final row = tester.getSize(
-        find.ancestor(of: find.text(language.endonym), matching: find.byType(Container)).first,
+        find
+            .ancestor(
+                of: await _row(tester, language), matching: find.byType(Container))
+            .first,
       );
       expect(row.height, greaterThanOrEqualTo(Target.primary), reason: language.code);
     }

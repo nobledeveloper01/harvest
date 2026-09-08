@@ -18,14 +18,26 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check design-check counts-check audio-check picture-check analyze test coverage-gate server-check ## Everything CI runs
+ci: doc-check design-check counts-check assets-check language-check audio-check picture-check analyze test coverage-gate server-check ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check design-check counts-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check design-check counts-check assets-check language-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
 
 .PHONY: design-check
 design-check: ## Fail if DESIGN.md disagrees with the theme it documents
 	@python3 scripts/design-check.py
+
+.PHONY: assets
+assets: ## Rewrite the pubspec asset list from the catalogue
+	@python3 scripts/asset-manifest.py
+
+.PHONY: assets-check
+assets-check: ## Fail if the pubspec asset list is not what the catalogue produces
+	@python3 scripts/asset-manifest.py --check
+
+.PHONY: language-check
+language-check: ## Fail if any screen names a language rather than being handed one
+	@python3 scripts/language-check.py
 
 .PHONY: counts-check
 counts-check: ## Fail if README or RELEASE-GATES quote a figure the code does not produce

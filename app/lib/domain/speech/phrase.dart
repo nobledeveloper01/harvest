@@ -32,7 +32,22 @@ enum Speech {
   yoruba('yo', 'Yorùbá'),
 
   /// `ig` — Igbo.
-  igbo('ig', 'Igbo');
+  igbo('ig', 'Igbo'),
+
+  /// `ff` — Fulfulde.
+  ///
+  /// The sixth, and the one Phase 7's exit gate was written for: *a sixth
+  /// language is added without touching any screen.* It was — this entry, and
+  /// then recordings. No screen names a language and none ever did; what did
+  /// was `pubspec.yaml`, thirteen hand-written directory entries per language
+  /// that fail silently when one is missed. `make assets` writes them now.
+  ///
+  /// Fulfulde rather than the next-largest by headcount. Its speakers are
+  /// pastoralists and northern smallholders across exactly the states where
+  /// post-harvest loss is worst and where Hausa is a second language rather
+  /// than a first — which is the gap this product had, not a gap in the
+  /// population count.
+  fulfulde('ff', 'Fulfulde');
 
   const Speech(this.code, this.endonym);
 

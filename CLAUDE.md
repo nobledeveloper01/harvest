@@ -31,7 +31,7 @@ one-handed outdoors, display type at 30 sp rather than 40.
    is not finished.
 2. **Speech is bundled, not synthesised.** System TTS has no voice for Hausa, Igbo or
    Nigerian Pidgin — verified, not assumed. Every P0 prompt is a recorded asset, and
-   `make audio-check` fails the build when one is missing in any of the five languages.
+   `make audio-check` fails the build when one is missing in any of the six languages.
 3. **The domain imports nothing from the platform.** No Flutter, no plugins, no clock, no
    randomness. Enforced by `make domain-purity`, which is proved to fire.
 4. **Say the consequence in money.** Not "shelf life 72 hours" but "if you wait, you could
@@ -63,7 +63,7 @@ one-handed outdoors, display type at 30 sp rather than 40.
 ## Definition of done
 
 - [ ] Acceptance criteria met and demonstrated on a device
-- [ ] Every P0 flow completable without reading a word, in all five languages
+- [ ] Every P0 flow completable without reading a word, in every language
 - [ ] Spoilage rules property-tested if the engine was touched
 - [ ] Verified on physical Android **and** physical iOS, including a low-end handset
 - [ ] Light and dark authored; every pair contrast-asserted in CI

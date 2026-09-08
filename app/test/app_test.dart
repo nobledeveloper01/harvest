@@ -308,7 +308,20 @@ void main() {
 
     expect(find.text('What did you harvest?'), findsNothing);
     for (final language in Speech.values) {
-      expect(find.text(language.endonym), findsOneWidget, reason: language.code);
+      /*
+        Scrolled to, because the picker is a lazy list.
+
+        A row below the fold is absent from the tree, not merely off screen —
+        so the version of this loop without the scroll was asserting that the
+        picker is short enough to fit, which is not a thing anybody decided.
+      */
+      final row = find.text(language.endonym);
+      if (row.evaluate().isEmpty) {
+        await tester.scrollUntilVisible(row, 120,
+            scrollable: find.byType(Scrollable).first);
+        await tester.pumpAndSettle();
+      }
+      expect(row, findsOneWidget, reason: language.code);
     }
 
     // And the forgotten choice stays forgotten.

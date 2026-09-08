@@ -10,6 +10,22 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Fulfulde (`ff`), the sixth language** — Phase 7's exit gate, which asked that
+  a sixth be addable *without touching any screen*. It was: one constant in
+  `Speech`, and then recordings. Fulfulde rather than the next largest by
+  headcount, because its speakers are pastoralists and northern smallholders
+  across the states where post-harvest loss is worst and where Hausa is a second
+  language — the gap this product had, rather than a gap in a population table.
+- `make language-check` — refuses any `Speech.hausa` or `'pcm'` outside the
+  catalogue. One such line in one widget would make the gate's claim false, pass
+  every other check here, and be found by the *seventh* language rather than by
+  the build.
+- `make assets` writes the `flutter: assets:` block from the catalogue, and
+  `make assets-check` fails when it drifts. This is what the exit gate actually
+  found: Flutter's asset entries are not recursive, so each language needed
+  thirteen hand-written directory lines, and a missed one fails **silently** — a
+  farmer whose phone is mute for one namespace in one language.
+
 - **The operator console's operations.** `GET /moderation/queue` lists who the
   report threshold suspended and why; `reinstate` and `uphold` both require a
   written reason, and `history` shows what was decided and by whom. Behind a
@@ -104,6 +120,11 @@ Entries say *why*, not just what.
 - Five clips for *How did it go?*, bringing the bundle to 980.
 
 ### Fixed
+
+- Three tests were asserting that the language picker is short enough to fit on
+  a test surface. Written as `for (final language in Speech.values)` against a
+  lazy `ListView`, they passed only while the enum was short: the sixth row is
+  absent from the widget tree, not merely off screen. They scroll now.
 
 - **A reinstated account was re-suspended by the next single report.** `sweep`
   counts reports where `actioned_at is null` and nothing in the product had ever

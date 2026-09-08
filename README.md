@@ -14,7 +14,7 @@ naira, and **matches** verified buyers to available lots.
 See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full analysis.
 
 <p align="center">
-  <img src="docs/screenshots/01-language.png" width="240" alt="Language picker: five languages, each named in its own language, each spoken aloud as it is focused" />
+  <img src="docs/screenshots/01-language.png" width="240" alt="Language picker: six languages, each named in its own language, each spoken aloud as it is focused" />
   <img src="docs/screenshots/02-crops.png" width="240" alt="Crop grid: twenty-five crops as pictures, ordered by how fast each one spoils" />
   <img src="docs/screenshots/05-home.png" width="240" alt="Home: the lots logged so far, newest harvest first" />
 </p>
@@ -23,7 +23,7 @@ See [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full 
 > outcome, loss and ailment tiles are illustrations now — flat shapes, silhouettes
 > chosen so the three greens and the three peppers are told apart by shape and not
 > only by colour. What R4 still wants is the judgement of somebody who has seen the
-> crops in an actual market. The audio has not moved: all 980 clips say, in English,
+> crops in an actual market. The audio has not moved: all 1176 clips say, in English,
 > that they are placeholders and which language belongs there, because a stand-in
 > that sounded like the product is how a missing feature ships.
 

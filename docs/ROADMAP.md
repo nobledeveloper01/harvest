@@ -131,7 +131,7 @@ What ships instead is the arithmetic on an offer the farmer already has.
 ## Phase 4 — Diagnosis · **current**, and blocked
 
 Labelling, training, INT8 quantisation, pre-capture guidance, isolate
-inference, the confidence gate, illustrated guidance in five languages.
+inference, the confidence gate, illustrated guidance in every language.
 
 **Exit gate**. *Per-class precision and recall are published, inference is
 under two seconds on the 2 GB reference device, and an uncertain result routes
@@ -280,7 +280,36 @@ languages, a Flutter Web buyer console.
 
 **Exit gate**. *A sixth language is added without touching any screen — if it
 takes more than recordings and a catalogue entry, the speech architecture was
-wrong.*
+wrong.* **Met, and it cost one entry.**
+
+The sixth is **Fulfulde** (`ff`). Not the next largest by headcount: its
+speakers are pastoralists and northern smallholders across the states where
+post-harvest loss is worst and where Hausa is a second language rather than a
+first, which is the gap the product had rather than a gap in a population table.
+
+Adding it was one constant in `Speech`. No screen changed, and
+`make language-check` is now what says so rather than habit — it refuses any
+`Speech.hausa` or `'pcm'` outside the catalogue, because one such line in one
+widget would make the claim false, pass every other gate here, and be found by
+the *seventh* language instead of by the build.
+
+What the gate did find was `pubspec.yaml`. Flutter's asset entries are not
+recursive, so every language needed thirteen hand-written directory lines, and a
+missed one fails **silently** — no build error, and a farmer whose phone is mute
+for one namespace in one language. Thirteen lines is not "recordings and a
+catalogue entry". `make assets` writes the block from the catalogue now and
+`make assets-check` fails the build when it drifts.
+
+It also broke three tests, and none of them for a reason the screen was
+responsible for. The picker is a lazy `ListView`, so its sixth row is **absent
+from the tree** rather than merely below the fold — and three assertions written
+as `for (final language in Speech.values)` had been quietly asserting that the
+list is short enough to fit on a test surface, which is not a limit anybody
+chose. They scroll now.
+
+So the honest reading of the gate today: the architecture held. The two places
+it did not were a manifest nobody thought of as code, and a handful of tests
+that had grown a dependency on there being five.
 
 ---
 
