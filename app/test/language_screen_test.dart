@@ -4,6 +4,7 @@ import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/features/language/language_screen.dart';
 import 'package:harvest/core/theme.dart';
 import 'package:harvest/data/speech/speaker.dart';
+import 'package:harvest/features/brand/mark.dart';
 
 /// A speaker that records what it was asked to say instead of playing it.
 ///
@@ -106,5 +107,26 @@ void main() {
       );
       expect(row.height, greaterThanOrEqualTo(Target.primary), reason: language.code);
     }
+  });
+
+  testWidgets('the name is beside the mark, and it is the app\'s own mark',
+      (tester) async {
+    /*
+      What regressed, and what it cost.
+
+      This screen's own comment says the shape beside the name is what makes the
+      app findable on a phone somebody else set up. That only works if it is the
+      shape on the home screen — and for six phases it was not: a green tile
+      with a leaf in it, next to a launcher icon that was the freshness ring.
+
+      So this asserts the widget rather than a picture. `HarvestMark` is the one
+      thing that draws the mark, and the launcher icon and both launch screens
+      are drawn from the same two pieces by `scripts/brandmark.py`, which
+      `make splash-check` holds to the same proportions.
+    */
+    await pump(tester, _Recording());
+
+    expect(find.byType(HarvestMark), findsOneWidget);
+    expect(find.text('Harvest'), findsOneWidget);
   });
 }

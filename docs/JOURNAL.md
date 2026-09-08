@@ -3444,3 +3444,24 @@ nothing.
 `app_test.dart` now pumps the real `HarvestApp` 400 ms in and asserts the splash
 is still there and the language picker is not. Broken on purpose by reverting
 `home:` to `!_loaded`, and it fails.
+
+### And the last leaf
+
+Asked to take the leaf out of the home screen's empty state too, which I had
+argued for leaving on the grounds that it reads as an illustration rather than a
+logo. That was the wrong way round: it is `Icons.eco_rounded`, which is
+*precisely* the glyph that used to be the mark, sitting on the screen a farmer
+with nothing logged looks at longest. Keeping it there kept a ghost of an
+identity the app had just abandoned.
+
+It is a basket now — not a crate and not a clock, because a basket is the
+farmer's own container and it is already in this product's vocabulary: `Unit`
+counts in small baskets and big ones, and the sentence underneath asks them to
+log what they picked. An empty basket is what "nothing logged yet" looks like in
+a yard.
+
+Two assertions came out of it, and they are about the rule rather than the
+picture: the name screen shows `HarvestMark`, and the empty state does not. The
+second is the one worth having — the mark says *which app this is* to somebody
+looking for it, and a mark used as decoration stops being a mark. Both broken on
+purpose and watched to fail.

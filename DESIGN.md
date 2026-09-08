@@ -159,6 +159,13 @@ to look for the icon found one shape on the home screen and another inside the a
 ring is rounded at both ends now for the same reason — the app paints with `StrokeCap.round`
 and PIL cuts an arc square, and at 40 dp that was visible.
 
+**The mark is not an illustration.** It says *which app this is*, on the screen where somebody
+is looking for it, and nowhere else. The home screen's empty state used to wear the old leaf
+glyph — the abandoned mark, on the screen a farmer with nothing logged looks at longest — and it
+is a **basket** now: the farmer's own container, already in this product's vocabulary, since
+`Unit` counts in small baskets and big ones. A mark used as decoration stops being a mark, so a
+test asserts it is on the name screen and not in the empty state.
+
 The launch screen is that mark, centred, on `#0B0F0C` — the far stop of the **dark** canvas
 gradient. Until this was written it was `flutter create`'s **white**, on both platforms, and
 every cold start on the design floor was a white flash into a near-black screen.

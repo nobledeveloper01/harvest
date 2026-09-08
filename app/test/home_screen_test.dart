@@ -11,6 +11,7 @@ import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:harvest/features/home/freshness_ring.dart';
 import 'package:harvest/features/home/home_screen.dart';
+import 'package:harvest/features/brand/mark.dart';
 
 class _Recording implements Speaker {
   final List<String> said = [];
@@ -180,6 +181,20 @@ void main() {
     expect(find.text('Nothing logged yet.'), findsOneWidget);
     expect(find.byType(FreshnessRing), findsNothing);
     expect(find.text('Log a harvest'), findsOneWidget);
+
+    /*
+      And it does not wear the app's mark.
+
+      The picture here was `Icons.eco_rounded` — the glyph that used to be the
+      mark, left behind when the mark became the freshness ring, so the one
+      screen a farmer with nothing logged looks at longest still carried the
+      abandoned identity. It is a basket now.
+
+      The mark says *which app this is*, on the screen where somebody is looking
+      for it. An empty state is not that screen, and a mark used as decoration
+      stops being a mark.
+    */
+    expect(find.byType(HarvestMark), findsNothing);
   });
 
   testWidgets('lots that cannot be read are admitted to, not swallowed',

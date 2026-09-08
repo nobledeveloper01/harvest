@@ -320,7 +320,23 @@ class _Empty extends StatelessWidget {
                 color: freshness.fresh.withValues(alpha: 0.14),
                 borderRadius: Radii.pill,
               ),
-              child: Icon(Icons.eco_rounded, size: 44, color: freshness.fresh),
+              /*
+                A basket, and deliberately not a leaf.
+
+                This was `Icons.eco_rounded` — the same glyph the language
+                screen used as the app's mark, back when the app had two marks.
+                The mark is the freshness ring now, and leaving the old one here
+                would keep a ghost of the abandoned identity on the screen a
+                farmer with nothing logged looks at longest.
+
+                A basket rather than a crate or a clock because it is the
+                farmer's own container and it is already in this product's
+                vocabulary: `Unit` counts in small baskets and big ones, and the
+                sentence under this asks them to log what they picked. An empty
+                basket is what "nothing logged yet" looks like in a yard.
+              */
+              child: Icon(Icons.shopping_basket_outlined,
+                  size: 44, color: freshness.fresh),
             ),
             const SizedBox(height: Gap.l),
             Text('Nothing logged yet.', style: text.titleMedium),

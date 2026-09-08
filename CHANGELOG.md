@@ -188,6 +188,11 @@ Entries say *why*, not just what.
   app. `HarvestMark` is now the single widget both the bar and the splash draw, composed
   from the same ring and the same generated crop, and the generator rounds the ring's ends
   to match what the app paints.
+- The home screen's empty state showed the **old** mark — the leaf glyph, kept after the
+  mark became the ring, on the screen a farmer with nothing logged looks at longest. It is
+  a basket now, which is the farmer's own container and already one of the app's units.
+  The mark itself belongs on the screen where somebody is looking for the app, not in an
+  empty state: a mark used as decoration stops being a mark.
 - **The mark animates on the screen after the launch window.** Neither platform can
   move a native launch screen, and what came after it was `SizedBox.shrink()` — so the
   mark appeared, vanished into an empty rectangle, and the language picker arrived out of
