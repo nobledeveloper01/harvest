@@ -2694,3 +2694,42 @@ Nothing on the phone registers a push token. There is no FCM project and no
 `google-services.json`, and a client that pretended to register would make a
 missing integration look exactly like a working one — which is the failure this
 repository keeps finding and keeps refusing to ship. R13.
+
+## 2026-09-08 (late) — Aggregation, and the ordering that would have defeated the product
+
+F-405: a buyer assembles one order from multiple lots. Grace buys vegetables in
+Jos and moves them to Abuja, and five tonnes is thirty farmers.
+
+The whole feature is two rules, and the second is the one worth arguing with.
+
+**A lot that will not last until collection is not in the load.** Obvious once
+written down, and easy to leave out: the basket would still look like a basket.
+
+**Of the lots that will last, the ones closest to running out go first.** The
+obvious implementation sorts by most time left — it is what a buyer would choose
+alone, it looks like service, and it quietly defeats the thing this app is for.
+The lots most at risk are exactly the ones that need a buyer, and a matcher that
+always reaches for the freshest leaves them to rot while doing nothing wrong on
+any screen anybody looks at.
+
+Both sides are served rather than one traded against the other, because the
+survival filter runs first. What the buyer gives up is shelf life they had
+already said they did not need, by naming a collection day.
+
+Three things the endpoint deliberately does not do: reserve anything, return an
+account id, or total up a basket where some lots have no asking price. The third
+is the subtlest — most listings carry no price because the farmer is waiting to
+be offered one, so a partial sum would be the common case, and it would be a
+number that is right, labelled as a total, and not the total of what is on the
+screen.
+
+### Route planning is withdrawn rather than approximated
+
+F-408 needs to know where the lots are. `migrations/0009` deleted the latitude
+and longitude columns for ADR-0006's reasons, and a listing is now in one of
+five regions the size of several states. There is no route to plan across a
+region centroid, and a plan drawn over one would be a confident line on a map
+that means nothing.
+
+The honest sequence is a way for a farmer to state a collection point that is
+theirs to give, and routing over that. Not a coordinate the app inferred.

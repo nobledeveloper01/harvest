@@ -199,6 +199,33 @@ the phone registers a push token, because there is no FCM project and a client
 that pretended to register would make a missing integration look like a working
 one (R13).
 
+**Buyer aggregation (F-405) is done.** `GET /listings/basket` assembles one
+order out of many small lots, and two rules decide what goes in it. A lot that
+will not last until the collection day is left out — a basket that includes it
+is a lorry where part of the load turns before it is picked up. And of the lots
+that will last, **the ones closest to running out go first**: freshest-first is
+what a buyer would choose left to themselves, and it is the ordering that
+quietly defeats this product, because the lots most at risk are exactly the ones
+that need a buyer. The survival filter runs first, so both sides are served
+rather than one traded off — what the buyer gives up is shelf life they already
+said they did not need.
+
+Nothing is reserved by assembling a basket, and no account ids leave the
+endpoint. A lot marked as spoken for by somebody who has not spoken to anybody
+is a lot off the market for nothing, and FR-5.3 keeps contact details behind
+mutual acceptance — an aggregation tool that returned the supply base in one
+call would be the largest hole in that promise and the least visible.
+
+**Route planning (F-408) cannot be built and is withdrawn from this phase.** It needs to know where the lots are, and
+[ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md) says the app
+holds no such claim about the world. `migrations/0009_listings_are_regional.sql`
+deleted the latitude and longitude columns a listing used to carry, for exactly
+that reason. A listing is in one of five regions,
+each the size of several states, and there is no route to plan across a region
+centroid. It is also P2. The honest sequence is: a way for a farmer to state a
+collection point that is theirs to give, then routing over that — not a
+coordinate the app inferred.
+
 Storage booking is **not** in this phase and cannot be, whatever the line above
 says. It needs a facility directory, and
 [ADR-0006](adr/0006-no-directory-of-places-we-have-not-been.md) refuses one for

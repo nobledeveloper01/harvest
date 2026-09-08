@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { require as requireCaller } from '../auth/guard.js';
+import { assemble, costOf } from '../listings/basket.js';
 
 /**
  * The five the app knows, and no others.
@@ -21,6 +22,18 @@ const listingBody = z.object({
   askingPriceKobo: z.number().int().positive().max(10 ** 15).optional(),
   region: z.enum(regions),
   expiresAt: z.string().datetime(),
+});
+
+const basketQuery = z.object({
+  crop: z.string().min(1).max(32),
+  region: z.enum(regions),
+  kilograms: z.coerce.number().positive().max(1_000_000),
+  /*
+    When the lorry comes. Defaults to now, which is the strictest reading and
+    the safe one: a basket assembled without a date should not quietly include
+    lots that turn tomorrow.
+  */
+  collectBy: z.string().datetime().optional(),
 });
 
 const searchQuery = z.object({
@@ -139,6 +152,91 @@ export function listingRoutes(app: FastifyInstance, options: ListingOptions): vo
         askingPriceKobo: row.asking_price_kobo === null ? null : Number(row.asking_price_kobo),
         region: row.region,
         expiresAt: row.expires_at,
+      })),
+    });
+  });
+
+  /*
+    One order out of many small lots (F-405).
+
+    Signed in, unlike search. Search is the shop window and is deliberately open
+    — a buyer who cannot see what is for sale does not sign up. A basket is the
+    tool, it names thirty farmers at once, and the difference between browsing
+    and assembling a collection round is the difference between a customer and a
+    competitor scraping the supply base.
+
+    **Nothing is reserved.** The response is a proposal: every farmer in it still
+    has to be asked, and every one of them can say no. There is no `matched`
+    written here and no notification sent, because a lot marked as spoken for by
+    somebody who has not spoken to anybody is a lot taken off the market for
+    nothing.
+  */
+  app.get('/listings/basket', async (request, reply) => {
+    const who = await requireCaller(app.db, request, reply, options.signingKey);
+    if (!who) return reply;
+
+    const query = basketQuery.safeParse(request.query);
+    if (!query.success) return reply.code(400).send({ error: 'bad order' });
+
+    const collectBy = query.data.collectBy
+      ? new Date(query.data.collectBy)
+      : new Date();
+
+    const { rows } = await app.db.query<{
+      id: string;
+      account_id: string;
+      crop: string;
+      quantity_kg: string;
+      asking_price_kobo: string | null;
+      expires_at: Date;
+    }>(
+      `select id, account_id, crop, quantity_kg, asking_price_kobo, expires_at
+       from listings
+       where status = 'active' and expires_at > now()
+         and crop = $1 and region = $2
+       order by expires_at asc
+       limit 500`,
+      [query.data.crop, query.data.region],
+    );
+
+    const basket = assemble(
+      rows.map((row) => ({
+        id: row.id,
+        accountId: row.account_id,
+        crop: row.crop,
+        kilograms: Number(row.quantity_kg),
+        expiresAt: row.expires_at,
+        askingKobo:
+          row.asking_price_kobo === null ? null : Number(row.asking_price_kobo),
+      })),
+      query.data.kilograms,
+      collectBy,
+    );
+
+    return reply.send({
+      crop: query.data.crop,
+      region: query.data.region,
+      wanted: basket.wanted,
+      kilograms: basket.kilograms,
+      short: basket.short,
+      // Named rather than left to be inferred from a shorter list. A buyer who
+      // asked for five tonnes and got three is entitled to know whether the
+      // region is empty or whether nine lots run out before Thursday.
+      tooLate: basket.tooLate,
+      askingKobo: costOf(basket),
+      /*
+        Lots, not farmers.
+
+        No account ids leave this endpoint. A buyer assembling a round has no
+        need of them before anybody has accepted, and FR-5.3 keeps contact
+        details behind mutual acceptance — an aggregation tool that handed over
+        the supply base in one call would be the largest hole in that promise.
+      */
+      lots: basket.lots.map((lot) => ({
+        id: lot.id,
+        kilograms: lot.kilograms,
+        expiresAt: lot.expiresAt,
+        askingKobo: lot.askingKobo,
       })),
     });
   });

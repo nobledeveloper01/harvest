@@ -10,6 +10,21 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Buyer aggregation (F-405)** — `GET /listings/basket` assembles one order out
+  of many small lots. A lot that will not last until the collection day is left
+  out, and of the ones that will, the closest to running out go first: freshest
+  first is what a buyer would choose alone, and it is the ordering that quietly
+  defeats the product, because the lots most at risk are the ones that need a
+  buyer. The survival filter runs first, so the buyer still gets a load that
+  arrives good.
+- Assembling a basket **reserves nothing** and returns no account ids. A lot
+  marked as spoken for by somebody who has not spoken to anybody is off the
+  market for nothing, and FR-5.3 keeps contact details behind mutual acceptance.
+- The basket's total is null when *any* lot in it has no asking price, rather
+  than a sum over the ones that do — a figure that silently covers eleven lots
+  out of thirty is right, labelled as a total, and not the total of what the
+  buyer is looking at.
+
 - **SMS fallback for the messages that cannot wait.** The server now reaches an
   account by whatever channel it has: push where a token is registered, SMS
   where the message is urgent enough to be worth paying for. With no push
