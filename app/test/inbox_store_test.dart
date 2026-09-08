@@ -162,6 +162,36 @@ void main() {
     });
   });
 
+  group('asking for what has happened', () {
+    /*
+      `pull` used to run in one place — when the inbox opened. A farmer who
+      opened a thread saying *waiting for them to agree the figures* would see
+      that sentence for ever, however long they waited and however many times
+      they came back, unless they left all the way out to the home screen.
+
+      Asserted here rather than on the screen, and that is a limit worth
+      writing down: an app-level test cannot open the inbox at all. Those routes
+      hold Drift stream queries, a stream query holds a timer, and Flutter
+      checks for pending timers at the end of the test body — so the test hangs
+      and then fails with `!timersPending` for a reason that has nothing to do
+      with what it was checking. The same family as the badge, which was solved
+      by not holding a stream; these screens legitimately need one.
+
+      So the wiring — that opening a thread calls `pull` — is verified by
+      running the app against a real server, and what is asserted here is that
+      doing it on every open is safe.
+    */
+    test('is safe to repeat, and writes the same rows once', () async {
+      final store = storeOver(_Server(_asPostgresSendsIt()));
+      expect(await store.pull(), 3);
+      expect(await store.pull(), 3);
+
+      expect(await database.select(database.enquiries).get(), hasLength(1));
+      expect(await database.select(database.messages).get(), hasLength(1));
+      expect(await database.select(database.deals).get(), hasLength(1));
+    });
+  });
+
   group('the phone\'s own placeholder', () {
     /*
       `_openDeal` writes a row under `local-<enquiryId>` so a farmer with no

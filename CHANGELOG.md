@@ -157,6 +157,13 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **A thread never asked the server anything.** `pull` ran in one place — when
+  the inbox opened — so a farmer looking at *waiting for them to agree the
+  figures* saw that sentence for ever, however long they waited and however many
+  times they came back, unless they happened to go all the way out to the home
+  screen and in again. Opening a thread asks now, exactly as opening the inbox
+  does.
+
 - **The rating was unreachable.** The band offering *say how they did* rendered
   only for an enquiry in `accepted` — and the server moves it to `completed` the
   moment both sides confirm the figures, which is exactly when a rating becomes

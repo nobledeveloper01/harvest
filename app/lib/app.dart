@@ -613,8 +613,23 @@ class _HarvestAppState extends State<HarvestApp> {
     );
   }
 
+  /*
+    Opening a thread asks the server what has happened, exactly as opening the
+    inbox does.
+
+    Without it, `pull` ran in one place — the inbox — and a farmer who opened a
+    thread saying *waiting for them to agree the figures* would see that
+    sentence for ever, however long they sat there and however many times they
+    came back to it, unless they happened to leave all the way out to the home
+    screen and back in. Found by doing it: the buyer had confirmed, the server
+    knew, and the phone had never asked.
+
+    A pull that never lands changes nothing, so this is safe to do on every
+    open. The screen is built from the phone's rows and does not wait for it.
+  */
   void _openThread(BuildContext context, EnquiryRow enquiry) {
     final navigator = Navigator.of(context);
+    unawaited(_inbox.pull().then((_) => _countWaiting()));
     navigator.push<void>(
       MaterialPageRoute(
         builder: (_) => StreamBuilder<List<EnquiryRow>>(

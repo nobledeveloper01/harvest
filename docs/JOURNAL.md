@@ -3086,3 +3086,46 @@ and noted rather than done here.
 I also accused `_listOnTheMarket` of dropping the listing after sign-in, and it
 does not — I had mistyped a code. Checking the sessions table settled it in
 thirty seconds; the accusation would have cost an hour.
+
+## 2026-09-08 (last of it) — The thread asks, and a test that could not be written
+
+The one thing left over from the marketplace walk: `pull` ran when the inbox
+opened and nowhere else. A farmer looking at *waiting for them to agree the
+figures* would look at it for ever — the buyer had confirmed, the server knew,
+and the phone had never asked. Opening a thread asks now.
+
+One line. Then two hours of trying to test it, which is the part worth writing
+down.
+
+### Why there is no widget test for it
+
+An app-level test that opens the inbox **cannot pass**. Those routes hold Drift
+stream queries; a stream query holds a timer; and Flutter checks for pending
+timers at the end of the test body. The test does not fail — it hangs for two
+minutes and then reports `!timersPending`, which is a sentence about the harness
+wearing the clothes of a sentence about the app.
+
+The badge had this exact problem and it was solved by not holding a stream. The
+inbox and the thread legitimately need one, so that fix is not available.
+Unmounting the tree inside the body does not clear it, and neither does
+`addTearDown(database.close)`, which already runs before the check.
+
+So the wiring is verified by running the app: seed an enquiry into the phone's
+own sqlite, open the inbox, watch one `/sync/pull` arrive, open the thread,
+watch the second. What the suite asserts instead is the property that makes
+pulling on every open safe — that the same rows written twice are still one row.
+
+That is a worse test than the one I wanted and a better one than the one that
+hangs. The limit is recorded beside it, because the next person will try the
+same thing.
+
+### And a smaller lesson about the log
+
+The first attempt at that verification showed no requests at all, and I was
+about to call the fix broken. The log file had been truncated with `: >` while
+the server still held it open, so the new lines sat past the old offset behind a
+block of NULs and `grep` skipped the lot. `tr -d '\0'` and there they were.
+
+Three times today I have started from *the code is wrong* and found the
+measurement was. The order that works is: get the evidence, then form the
+accusation.
