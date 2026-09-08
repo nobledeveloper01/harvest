@@ -9,6 +9,9 @@ docs/*
 !docs/screenshots/
 # The mark the README shows above the title. Drawn by `scripts/brandmark.py`.
 !docs/mark.png
+# What a native speaker is handed. `doc-check.sh` requires it, and requires
+# it to be *tracked* — which is how this line stopped being forgotten.
+!docs/RECORDING-KIT.md
 
 # OS / editors
 .DS_Store

@@ -190,12 +190,26 @@ enum Phrase {
     hedge is the part that matters. `docs/04-UX-DESIGN.md` §6.4: never a
     percentage; the certainty is carried by the words or it is not carried.
   */
+  /// *"I'm fairly sure this is"* — the ailment's name follows as its own clip.
   fairlySure('fairly-sure'),
+
+  /// *"This might be"* — the ailment's name follows as its own clip.
+  ///
+  /// **The screen says more than the clip does.** Written, this reads *"This
+  /// might be leaf curl, but I'm not certain."*; spoken, it is this clip and
+  /// then the name, so the second half is never heard. The hedge survives in
+  /// the word *might*, which is why this is not a defect — but it is why the
+  /// recording script gives a speaker the opening alone. A sentence with the
+  /// blank in the middle cannot be one clip followed by another.
   mightBe('might-be'),
+
+  /// *"I don't recognise this."*
   doNotRecognise('do-not-recognise'),
 
   /// The storage verdict's direction, so the amount can follow it as its own
   /// clip — the same split as [youCouldLose] and the diagnosis hedge.
+  ///
+  /// *"Do not store this."*
   doNotStore('do-not-store'),
 
   /*

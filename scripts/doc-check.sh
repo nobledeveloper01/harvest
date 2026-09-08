@@ -28,7 +28,7 @@ ok()   { printf '%s✓%s %s\n' "$GRN" "$OFF" "$1"; }
 # from GitHub for a day. The gate now asks git, not the filesystem.
 REQUIRED="README.md DESIGN.md CHANGELOG.md PHASE
           docs/ROADMAP.md docs/JOURNAL.md docs/00-PRODUCT-STATEMENT.md
-          docs/FEATURE-BACKLOG.md"
+          docs/FEATURE-BACKLOG.md docs/RECORDING-KIT.md"
 
 for f in $REQUIRED; do
   [ -f "$f" ] || err "missing $f"

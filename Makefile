@@ -18,10 +18,10 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check analyze test coverage-gate server-check ## Everything CI runs
+ci: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check recording-check analyze test coverage-gate server-check ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check recording-check coverage-gate ## The blocking gates alone. These never go yellow.
 
 .PHONY: design-check
 design-check: ## Fail if DESIGN.md disagrees with the theme it documents
@@ -50,6 +50,26 @@ audio-check: ## Fail if anything the app says is missing a clip, or is not bundl
 .PHONY: picture-check
 picture-check: ## Fail if a crop or unit has no picture, or a picture has nothing using it
 	@python3 scripts/picture-check.py
+
+.PHONY: recording-check
+recording-check: ## Fail if anything the app says has no words a speaker could be given
+	@python3 scripts/recording-kit.py --check
+
+.PHONY: recording-kit
+# The half of R1 that is not waiting on a person.
+#
+# `make recording-kit L=ha` writes the script; `make recording-import L=ha
+# D=<dir>` takes the recordings back. See docs/RECORDING-KIT.md.
+recording-kit: ## Write a recording script for one language:  make recording-kit L=ha
+	@python3 scripts/recording-kit.py $(or $(L),en)
+
+.PHONY: recording-import
+recording-import: ## Bring recordings in:  make recording-import L=ha D=<dir>
+	@if [ -z "$(D)" ]; then \
+	  echo "\033[0;33m!\033[0m no directory given:  make recording-import L=ha D=<dir>"; \
+	  exit 64; \
+	fi
+	@python3 scripts/recording-kit.py $(or $(L),en) --import "$(D)" $(if $(FORCE),--force,)
 
 .PHONY: splash-check
 splash-check: ## Fail if a launch screen or an app icon is not what the theme and the generator say

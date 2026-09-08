@@ -3526,3 +3526,64 @@ Third time in two days that a thing which is *covered* turned out not to be
 enquiry status swallowed by a default, and now a warning nobody could be shown.
 The suite is not a map of the product. It is a map of what somebody thought to
 pump.
+
+
+## 2026-09-08 (later still) — The half of R1 that was not waiting on anybody
+
+Eleven gates block v1.0 and every one waits on a person or a thing outside this
+repository. R1 is the largest: 1,176 clips, all placeholders, waiting on five
+native speakers. It has been written that way since Phase 0, and the sentence
+"we need native speakers" had nothing attached to it — no script, no format, no
+way to take a recording back. The gate was a description of a problem rather
+than a thing anybody could be handed.
+
+`make recording-kit L=ha` writes it: 196 numbered lines, the English source
+beside each, grouped so a session can stop at a heading and resume, sentences
+first because they are the hardest and a tired voice spoils them. `make
+recording-import L=ha D=<dir>` takes anything ffmpeg can decode, converts to
+ADR-0009's format, files it and strikes it off `placeholders.txt` — so the count
+in `make audio-check` falls as the recordings arrive and `git diff` says exactly
+which clips stopped being stand-ins. Tested end to end with three takes made by
+`say`: 1,176 became 1,173, and `git checkout` put it back.
+
+Derived from the same enums the gate reads, so a script cannot fall behind the
+app. That is the whole reason not to write it by hand.
+
+### Four clips nobody could have been asked to record
+
+Building the script found that four `Phrase` constants had no English anywhere:
+`fairly-sure`, `might-be`, `do-not-recognise`, `do-not-store`. The convention in
+that enum is that every constant documents what it says as `/// *"..."*`, and
+these four did not. The words existed — on the diagnosis screen and the decision
+screen, as Dart string literals — but not where somebody preparing a recording
+session would look.
+
+They have their sentences now, and `make recording-check` fails on a clip that
+has none. That is the useful shape of this gate: not "are the recordings made"
+(R1 already asks that) but **"could anybody be asked to make them"**.
+
+### And one that would have been recorded twice
+
+The script's first draft rendered `weight/kg-more` as *"About 5,000
+kilograms."* — identical to `weight/kg-5000` on the line above it. `kg-more` is
+the **bound**: it carries 5,000 as the figure it is more than, the same way
+`naira-under` carries 500. A speaker would have recorded the same sentence into
+two clips without ever knowing why, and the app would then have said *"about
+five thousand kilograms"* for a tonne and a half of yams.
+
+Nothing in the app was wrong. The *description* of the app was, and only reading
+the generated script showed it. So it is a check now rather than a memory: two
+clips that say the same thing fail the gate, which will catch the next bound
+somebody adds to either scale.
+
+Also *"About 1 kilograms."* Less serious, and the same cause: a template applied
+without looking at what came out of it.
+
+### The gitignore, again
+
+`docs/*` is ignored with an allowlist, and `docs/RECORDING-KIT.md` landed
+outside it — exactly as `docs/mark.png` did an hour earlier. This time it was
+caught immediately, because `doc-check.sh` already has a *present but not
+tracked* check and the document is now on its required list. That is the better
+fix: not remembering the allowlist, but making the document required and letting
+the gate notice.

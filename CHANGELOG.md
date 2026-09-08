@@ -10,6 +10,17 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A recording kit**, which is the half of R1 that was not waiting on a person.
+  `make recording-kit L=ha` writes a numbered 196-line script per language —
+  every clip, the English source beside it, grouped so a session can stop at a
+  section and resume — and `make recording-import L=ha D=<dir>` converts the
+  takes to the bundled format ([ADR-0009](docs/adr/0009-the-clips-ship-as-aac.md)),
+  files them, and strikes them off `placeholders.txt`. Derived from the enums
+  `audio-check` already gates, so a script cannot fall behind the app.
+  [`docs/RECORDING-KIT.md`](docs/RECORDING-KIT.md) is what a speaker is handed.
+- `make recording-check` — fail if anything the app says has no words somebody
+  could be asked to record, or if two clips say the same thing.
+
 - **An operator console at `/console`** — one HTML file the server serves, no
   Flutter and no second package ([ADR-0013](docs/adr/0013-the-operator-console-is-a-page-the-server-serves.md)).
   Moderation has worked since Phase 5 and nobody could use it: FR-5.3 says
