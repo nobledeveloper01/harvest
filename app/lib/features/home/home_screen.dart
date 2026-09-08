@@ -151,9 +151,21 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               Expanded(
-                child: stored.lots.isEmpty
-                    ? _Empty()
-                    : ListView.separated(
+                /*
+                  An empty list, when every row is one this version cannot read.
+
+                  There used to be a *Nothing logged yet* state here. It could
+                  not happen: `HarvestApp` opens straight into the log flow when
+                  the database holds nothing, gives the crop grid no way back
+                  while that is true, and nothing in the app ever removes a lot
+                  — so the only way to reach home with no cards is the one
+                  above it, where the banner is already saying why. Two
+                  sentences, and the cheerful one was wrong.
+
+                  If a lot ever becomes removable, this comes back. Until then
+                  it was a screen with a test and no way of being seen.
+                */
+                child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(
                             Gap.l, 0, Gap.l, Gap.l),
                         itemCount: stored.lots.length,
@@ -299,58 +311,6 @@ Future<void> _askWhatHappened(
     ),
   );
   if (outcome != null) screen.onClosed(index, outcome);
-}
-
-class _Empty extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final freshness = Theme.of(context).extension<Freshness>()!;
-    final text = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Gap.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: freshness.fresh.withValues(alpha: 0.14),
-                borderRadius: Radii.pill,
-              ),
-              /*
-                A basket, and deliberately not a leaf.
-
-                This was `Icons.eco_rounded` — the same glyph the language
-                screen used as the app's mark, back when the app had two marks.
-                The mark is the freshness ring now, and leaving the old one here
-                would keep a ghost of the abandoned identity on the screen a
-                farmer with nothing logged looks at longest.
-
-                A basket rather than a crate or a clock because it is the
-                farmer's own container and it is already in this product's
-                vocabulary: `Unit` counts in small baskets and big ones, and the
-                sentence under this asks them to log what they picked. An empty
-                basket is what "nothing logged yet" looks like in a yard.
-              */
-              child: Icon(Icons.shopping_basket_outlined,
-                  size: 44, color: freshness.fresh),
-            ),
-            const SizedBox(height: Gap.l),
-            Text('Nothing logged yet.', style: text.titleMedium),
-            const SizedBox(height: Gap.xs),
-            Text(
-              'Log what you picked and the clock starts.',
-              textAlign: TextAlign.center,
-              style: text.bodyMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _LotCard extends StatelessWidget {

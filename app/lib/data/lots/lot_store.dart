@@ -37,6 +37,21 @@ class StoredLots {
   /// added, never removed, precisely so that this stays zero — and this counter
   /// is how anybody would find out if that rule were ever broken.
   final int unreadable;
+
+  /// True when the database holds nothing at all: no readable lot, and no row
+  /// this version could not read either.
+  ///
+  /// **Not the same as `lots.isEmpty`, and the difference is a farmer.** A
+  /// phone whose every row this version cannot parse has an empty *list* and a
+  /// full *database*, and the two want opposite things from the app: one is a
+  /// first launch, which should go straight to logging, and the other is
+  /// somebody whose harvests have gone missing, who has to be told.
+  ///
+  /// The app asked `lots.isEmpty` in both places that decide this, so the
+  /// second case was routed like the first — into the crop grid, with no way
+  /// back to the screen carrying the warning. The warning had a widget test and
+  /// no way of ever being seen.
+  bool get nothingSaved => lots.isEmpty && unreadable == 0;
 }
 
 /// Reading and writing lots.

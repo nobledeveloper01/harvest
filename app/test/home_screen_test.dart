@@ -11,7 +11,6 @@ import 'package:harvest/domain/speech/phrase.dart';
 import 'package:harvest/domain/speech/spoken_weight.dart';
 import 'package:harvest/features/home/freshness_ring.dart';
 import 'package:harvest/features/home/home_screen.dart';
-import 'package:harvest/features/brand/mark.dart';
 
 class _Recording implements Speaker {
   final List<String> said = [];
@@ -175,26 +174,27 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('an empty list says so, and still offers the way forward',
+  testWidgets('an empty list is not dressed up as a first launch',
       (tester) async {
+    /*
+      What this used to assert, and why it could not fail.
+
+      There was a *Nothing logged yet* state, and a test that pumped an empty
+      list and found it. Nothing in the product could produce that: the app
+      opens straight into the log flow when the database is empty, the crop grid
+      has no way back while it is, and no lot is ever removed. The one state
+      that does reach home with no cards is a database of rows this version
+      cannot read — and there the empty state contradicted the banner directly
+      above it.
+
+      So the claim is now the one that can be checked: an empty list is empty,
+      and the way forward is still there.
+    */
     await pump(tester, []);
-    expect(find.text('Nothing logged yet.'), findsOneWidget);
+
+    expect(find.text('Nothing logged yet.'), findsNothing);
     expect(find.byType(FreshnessRing), findsNothing);
     expect(find.text('Log a harvest'), findsOneWidget);
-
-    /*
-      And it does not wear the app's mark.
-
-      The picture here was `Icons.eco_rounded` — the glyph that used to be the
-      mark, left behind when the mark became the freshness ring, so the one
-      screen a farmer with nothing logged looks at longest still carried the
-      abandoned identity. It is a basket now.
-
-      The mark says *which app this is*, on the screen where somebody is looking
-      for it. An empty state is not that screen, and a mark used as decoration
-      stops being a mark.
-    */
-    expect(find.byType(HarvestMark), findsNothing);
   });
 
   testWidgets('lots that cannot be read are admitted to, not swallowed',

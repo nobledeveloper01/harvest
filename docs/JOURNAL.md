@@ -3465,3 +3465,64 @@ picture: the name screen shows `HarvestMark`, and the empty state does not. The
 second is the one worth having — the mark says *which app this is* to somebody
 looking for it, and a mark used as decoration stops being a mark. Both broken on
 purpose and watched to fail.
+
+
+## 2026-09-08 (later still) — A screen with a test and no way of being seen
+
+Asked to check whether the home screen's empty state is reachable. It is not,
+and the trail led somewhere better than the question.
+
+`_Empty` renders when `stored.lots.isEmpty` and the farmer is not logging. Three
+things make that combination impossible:
+
+  * `app.dart` sets `_logging = stored.lots.isEmpty` at start, so an empty
+    database goes straight into the log flow;
+  * the crop grid is given `onBack: _stored.lots.isEmpty ? null : ...` — no way
+    back **precisely** when there are no lots, with a comment saying so; and
+  * nothing in `data/lots/` ever deletes a row. `close()` records an outcome; it
+    does not remove the lot.
+
+So the list only ever grows, and the two places that could show home with an
+empty list are the two that refuse to.
+
+### The part worth having
+
+The interesting thing is not the dead widget, it is the question the two
+decisions were asking. Both asked `lots.isEmpty`. But **`lots.isEmpty` and *the
+database is empty* are different claims**, and the gap between them has a farmer
+in it: a phone whose every row this version cannot parse has an empty list and a
+full database.
+
+That farmer was being routed as though this were a first launch — into the crop
+grid, past the one screen carrying *N lots are saved but cannot be read by this
+version of the app. Nothing has been deleted*, with no way back to it. The
+banner exists for exactly that person. It has a widget test, at
+`home_screen_test.dart:201`, pumping `StoredLots(lots: [], unreadable: 2)`. That
+state could not happen. **The warning against silently losing somebody's
+harvests was itself silently unreachable.**
+
+`StoredLots.nothingSaved` names the difference now, and both decisions ask it. A
+test in `app_test.dart` seeds two rows this version cannot read, launches the
+real app, and asserts the farmer lands on the banner rather than on the crop
+grid. Broken on purpose by defining `nothingSaved` as `lots.isEmpty` again, and
+it fails.
+
+### And then the empty state went
+
+With that fixed, `_Empty` was still unreachable — and now visibly wrong as well:
+*Nothing logged yet* sitting under a banner saying **N lots are saved**, two
+consecutive sentences contradicting each other, the cheerful one being the false
+one. It is deleted. Its test asserted a state the product cannot produce; the
+replacement asserts one it can.
+
+Opening into the log flow rather than an empty list is a deliberate choice and a
+good one — *an empty list above a button is a screen that asks the farmer to
+read their way to the only thing they can do* — so the state was surplus to the
+design, not missing from it. If a lot ever becomes removable it comes back, and
+the comment where it stood says so.
+
+Third time in two days that a thing which is *covered* turned out not to be
+*reachable*: the rating that needed an enquiry state it could never be in, the
+enquiry status swallowed by a default, and now a warning nobody could be shown.
+The suite is not a map of the product. It is a map of what somebody thought to
+pump.

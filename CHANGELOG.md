@@ -212,6 +212,22 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **A phone whose harvests this version cannot read was sent to log more.**
+  `HarvestApp` asked `lots.isEmpty` to decide whether to open in the log flow,
+  and asked it again to decide whether the crop grid gets a back button. A
+  database of rows this version cannot parse has an empty *list* and a full
+  *database* — so that farmer went straight to the crop grid, past the one
+  screen that says *N lots are saved but cannot be read. Nothing has been
+  deleted*, with no way back to it. The warning had a widget test and no way of
+  ever being seen. `StoredLots.nothingSaved` now names the difference, and both
+  decisions ask it.
+- **Removed the home screen's *Nothing logged yet* state**, which nothing could
+  reach: the app opens straight into logging when the database is empty, the
+  crop grid has no way back while it is, and no lot is ever removed. The only
+  way to reach home with no cards is the unreadable case above — where it
+  contradicted the banner directly over it. Its test asserted a state the
+  product cannot produce; the replacement asserts one it can.
+
 - **A photograph from a buyer drew an empty bubble.** The thread tested for
   `voice` and let every other kind fall through to `body ?? ''`, so an `image`
   message — one of the three `migrations/0003` allows — rendered as a blank

@@ -259,6 +259,50 @@ void main() {
     return speaker;
   }
 
+  testWidgets('a phone whose rows cannot be read is told, not sent to log more',
+      (tester) async {
+    /*
+      The state the warning exists for, reached the way a farmer reaches it.
+
+      `home_screen_test.dart` pumps `StoredLots(lots: [], unreadable: 2)`
+      directly and checks the banner. Nothing could produce that state: the app
+      asked `lots.isEmpty` to decide whether to open in the log flow, and asked
+      it again to decide whether the crop grid gets a back button — so a phone
+      with nothing readable went straight to the crop grid and could not leave
+      it. The banner was covered by a suite and reachable by nobody, which is
+      the shape this repository keeps finding.
+
+      Every row here is unreadable, which is the worst version: the farmer has
+      harvests and the app can see none of them.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'en'});
+    for (final crop in ['sorghum', 'millet']) {
+      await database.into(database.lots).insert(
+            LotsCompanion.insert(
+              cropId: crop,
+              amount: 1,
+              unitId: 'bag',
+              grams: 100000,
+              how: 'converted',
+              storageId: 'ventilated',
+              harvestedAt: DateTime(2026, 8, 1, 7),
+              loggedAt: DateTime(2026, 8, 1, 7),
+            ),
+          );
+    }
+
+    await launch(tester);
+
+    expect(find.textContaining('cannot be read'), findsOneWidget,
+        reason: 'the harvests are still there, and the farmer is told so');
+    expect(find.text('What did you harvest?'), findsNothing,
+        reason: 'not dropped into logging as though this were a first launch');
+    expect(find.text('Nothing logged yet.'), findsNothing,
+        reason: 'that would contradict the banner directly above it');
+    expect(find.text('Log a harvest'), findsOneWidget,
+        reason: 'and there is still a way forward');
+  });
+
   testWidgets('the mark is not cut off half-drawn', (tester) async {
     /*
       The one assertion the splash's own suite cannot make.

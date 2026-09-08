@@ -194,10 +194,18 @@ class _HarvestAppState extends State<HarvestApp> {
       _brightness = brightness ?? Brightness.dark;
       _region = region;
       _stored = stored;
-      // Straight into logging when there is nothing to show. An empty list
-      // above a button is a screen that asks the farmer to read their way to
-      // the only thing they can do.
-      _logging = stored.lots.isEmpty;
+      /*
+        Straight into logging when there is nothing at all. An empty list above
+        a button is a screen that asks the farmer to read their way to the only
+        thing they can do.
+
+        `nothingSaved`, not `lots.isEmpty`. A phone whose rows this version
+        cannot read has an empty list and a full database — and that farmer was
+        being sent to the crop grid, past the one screen that would have told
+        them their harvests are still there but unreadable, with no way back to
+        it. Nothing was missing; nothing could be reached.
+      */
+      _logging = stored.nothingSaved;
       _loaded = true;
     });
 
@@ -929,8 +937,10 @@ class _HarvestAppState extends State<HarvestApp> {
             onChangeLanguage: _forgetLanguage,
             onToggleBrightness: _flipBrightness,
             // No way back on a first launch: this screen is the app until
-            // there is a lot to go back to.
-            onBack: _stored.lots.isEmpty
+            // there is something to go back to. The same question as the one
+            // that sent the farmer here, asked the same way, so the two cannot
+            // disagree about whether home is worth showing.
+            onBack: _stored.nothingSaved
                 ? null
                 : () => setState(() => _logging = false),
           ),
