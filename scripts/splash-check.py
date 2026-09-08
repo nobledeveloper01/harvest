@@ -221,18 +221,26 @@ def check_ring_geometry() -> None:
     suite can see. The duplication is admitted and guarded here rather than
     left as a comment asking the next person to remember.
     """
-    py = GENERATOR.read_text()
     dart = SPLASH.read_text()
 
+    # `_ring`'s body alone. The first version searched the whole file and found
+    # `silhouette`'s stroke instead — a gate reading a number from the wrong
+    # function, which is the failure it exists to catch.
+    py = GENERATOR.read_text()
+    try:
+        body = py[py.index('def _ring('):py.index('def _crop(')]
+    except ValueError:
+        fail(f'{GENERATOR.name}: no _ring to read the proportions from')
+        return
+
     wanted = {}
-    m = re.search(r'radius = span \* ([\d.]+)', py)
-    if m:
-        wanted['radius'] = float(m.group(1))
-    m = re.search(r"width=max\(1, int\(span \* ([\d.]+)\)\)", py)
-    if m:
-        wanted['width'] = float(m.group(1))
+    for name, pattern in (('radius', r'radius = span \* ([\d.]+)'),
+                          ('width', r'width = span \* ([\d.]+)')):
+        m = re.search(pattern, body)
+        if m:
+            wanted[name] = float(m.group(1))
     if len(wanted) != 2:
-        fail(f'{GENERATOR.name}: could not read the ring\'s proportions')
+        fail(f'{GENERATOR.name}: could not read _ring\'s proportions')
         return
 
     for name, value in wanted.items():
@@ -243,14 +251,19 @@ def check_ring_geometry() -> None:
             fail(f'{SPLASH.name}: {name} is {m.group(1)}, the generator draws '
                  f'{value} — the animated ring is not the mark\'s shape')
 
-    # The gap too: the generator opens a quarter turn, `-45` to `225` of 360.
-    m = re.search(r'start=-45, end=225', py)
+    # And the gap: the generator names where the ring opens and closes, and the
+    # app names the fraction left open. They have to be the same quarter.
+    m = re.search(r'START, END = (-?\d+), (-?\d+)', py)
     g = re.search(r'static const gap = ([\d.]+);', dart)
     if not m:
-        fail(f'{GENERATOR.name}: could not read the ring\'s gap')
-    elif not g or float(g.group(1)) != 0.25:
-        fail(f'{SPLASH.name}: gap is {g.group(1) if g else "missing"}, the '
-             f'generator leaves a quarter turn open')
+        fail(f'{GENERATOR.name}: could not read where the ring opens')
+    elif not g:
+        fail(f'{SPLASH.name}: no `gap` to compare with the generator')
+    else:
+        drawn = 1 - (int(m.group(2)) - int(m.group(1))) / 360
+        if abs(float(g.group(1)) - drawn) > 1e-9:
+            fail(f'{SPLASH.name}: gap is {g.group(1)}, the generator leaves '
+                 f'{drawn:g} of the circle open')
 
 
 def check_tracked(paths: list[pathlib.Path]) -> None:

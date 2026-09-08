@@ -58,12 +58,13 @@ void main() {
 
   testWidgets('it is still when the phone has asked for stillness',
       (tester) async {
+    var swept = 0;
     Future<SplashRingPainter> painterWith({required bool disabled}) async {
       await tester.pumpWidget(MediaQuery(
         data: MediaQueryData(disableAnimations: disabled),
         child: MaterialApp(
           theme: Palette.theme(brightness: Brightness.dark),
-          home: const SplashScreen(),
+          home: SplashScreen(onSwept: () => swept++),
         ),
       ));
       await tester.pump(const Duration(milliseconds: 60));
@@ -78,6 +79,8 @@ void main() {
     final still = await painterWith(disabled: true);
     expect(still.grown, 1, reason: 'whole from the first frame');
     expect(still.turned, 0, reason: 'and not turning');
+    expect(swept, 1,
+        reason: 'nothing to wait for, so the app is not made to wait for it');
     await tester.pumpWidget(const SizedBox.shrink());
 
     final moving = await painterWith(disabled: false);
@@ -85,4 +88,25 @@ void main() {
         reason: 'sixty milliseconds into a nine-hundred millisecond sweep');
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('the app is told only once the ring is whole', (tester) async {
+    var swept = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: Palette.theme(brightness: Brightness.dark),
+      home: SplashScreen(onSwept: () => swept++),
+    ));
+
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(swept, 0, reason: 'still drawing — handing off here cuts it off');
+
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(swept, 1, reason: 'whole, and said so exactly once');
+
+    // And it keeps turning afterwards without saying so again, because the app
+    // may still be loading and the ring is what says the clock is running.
+    await tester.pump(const Duration(milliseconds: 2500));
+    expect(swept, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
+

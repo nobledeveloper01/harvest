@@ -3,15 +3,23 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import 'mark.dart';
 
 /// The screen between the native launch window and the first real one.
 ///
-/// **It is not a delay.** `HarvestApp` builds this only while `_start()` is in
-/// flight — three preference reads and a database open — and replaces it the
-/// instant the answer is in. On a fast phone it is a blink; on the 2 GB design
-/// floor it is the second or so that was already being spent. Nothing here
-/// waits for the animation to finish and nothing here is allowed to: a farmer
-/// with a lorry outside does not owe this app 900 ms.
+/// **What it costs, stated plainly.** It is shown while `_start()` is in flight
+/// — three preference reads and a database open — *and* until the sweep has
+/// finished, whichever is longer. On the 2 GB design floor the loading is the
+/// longer of the two and the animation is free. On a fast phone it is up to
+/// **900 ms** that the app would not otherwise have taken.
+///
+/// That is a real cost and it was not the first answer. The first version
+/// handed off the moment loading finished, on the argument that a farmer with a
+/// lorry outside does not owe this app 900 ms — and the result was an animation
+/// that, on any phone quick enough to load in 200 ms, nobody ever saw. An
+/// animation nobody sees is not a cheap animation; it is dead code that costs
+/// 200 ms. One sweep, once per cold start, is the honest version of the
+/// trade, and reduced motion skips the wait entirely.
 ///
 /// What it replaced was `SizedBox.shrink()` — the mark from the launch screen
 /// vanishing into an empty rectangle, and the language picker then arriving out
@@ -23,7 +31,12 @@ import '../../core/theme.dart';
 /// the one indeterminate progress indicator this product has any business
 /// showing.
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({required this.onSwept, super.key});
+
+  /// Called once the arc is whole — or immediately, when the phone has asked
+  /// for reduced motion. `HarvestApp` waits for this *and* for its own loading
+  /// before it hands over, so the mark is never cut off half-drawn.
+  final VoidCallback onSwept;
 
   /// How wide the ring is drawn, in logical pixels.
   ///
@@ -61,11 +74,26 @@ class _SplashScreenState extends State<SplashScreen>
     _clock.forward().then((_) {
       if (!mounted) return;
       setState(() => _swept = true);
+      widget.onSwept();
       // Slower than the sweep. A ring that hurries reads as a spinner, and a
       // spinner says *something is wrong*; this says *a clock is running*.
       _clock.duration = const Duration(milliseconds: 2400);
       _clock.repeat();
     });
+  }
+
+  /// Reduced motion has nothing to wait for, so it does not wait.
+  ///
+  /// Checked here rather than in `build` because `onSwept` must be called once,
+  /// and calling it from `build` would call it on every frame.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if ((MediaQuery.maybeDisableAnimationsOf(context) ?? false) && !_swept) {
+      _clock.stop();
+      _swept = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onSwept());
+    }
   }
 
   @override
@@ -76,24 +104,16 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final freshness = Theme.of(context).extension<Freshness>()!;
-
     /*
       Still, if the phone has asked for stillness.
 
       `disableAnimations` is the platform's *reduce motion* switch, and somebody
       who has turned it on has usually done so because movement makes them ill
       or because they cannot follow it. A splash animation is exactly the
-      decoration it means. The mark stays; it simply does not move, and the
-      screen still lasts precisely as long as the loading does.
+      decoration it means. The mark stays; it simply does not move, and nothing
+      waits for a sweep that is not happening.
     */
     final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-
-    // The ring is a fixed fraction of the whole mark, so the drawing that
-    // carries the crop is the bigger of the two and everything is measured
-    // from it.
-    final canvas =
-        SplashScreen.ringFor(Theme.of(context).platform) / SplashRingPainter.outer;
 
     return Scaffold(
       body: PageCanvas(
@@ -102,28 +122,14 @@ class _SplashScreenState extends State<SplashScreen>
             // Named, because a screen reader lands here for as long as the load
             // lasts, and an unlabelled screen is an unexplained silence.
             label: 'Harvest is starting',
-            child: SizedBox(
-              width: canvas,
-              height: canvas,
-              child: AnimatedBuilder(
-                animation: _clock,
-                builder: (context, child) => CustomPaint(
-                  painter: SplashRingPainter(
-                    grown: still || _swept ? 1 : _clock.value,
-                    turned: still || !_swept ? 0 : _clock.value,
-                    colour: freshness.fresh,
-                  ),
-                  child: child,
-                ),
-                // The crop is the same drawing as the launcher icon's, from
-                // `scripts/brandmark.py`, on a canvas of the same proportions —
-                // so the ring painted around it lands where the generator's
-                // ring would. The app does not own a second tomato.
-                child: Image.asset(
-                  'assets/brand/mark_crop.png',
-                  excludeFromSemantics: true,
-                  filterQuality: FilterQuality.medium,
-                ),
+            child: AnimatedBuilder(
+              animation: _clock,
+              // The same widget the app bar uses, given moving numbers instead
+              // of still ones. Two marks drawn two ways is what this replaced.
+              builder: (context, _) => HarvestMark(
+                ring: SplashScreen.ringFor(Theme.of(context).platform),
+                grown: still || _swept ? 1 : _clock.value,
+                turned: still || !_swept ? 0 : _clock.value,
               ),
             ),
           ),

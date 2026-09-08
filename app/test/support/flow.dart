@@ -439,7 +439,7 @@ Future<void> pumpTheUnreachable(
   await tester.pumpWidget(
     MaterialApp(
       theme: Palette.theme(brightness: Brightness.dark),
-      home: const SplashScreen(),
+      home: SplashScreen(onSwept: () {}),
     ),
   );
   await tester.pump(const Duration(milliseconds: 100));

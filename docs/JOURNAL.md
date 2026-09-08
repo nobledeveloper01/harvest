@@ -3382,3 +3382,65 @@ Four times now in two days I have started from *the code is wrong* and found the
 measurement was. It is no longer a coincidence; it is the default failure mode
 of working through a log file, and the fix is to read the log with the NULs
 stripped every single time, not when something looks odd.
+
+
+## 2026-09-08 (later) — Two marks, and an animation nobody had seen
+
+Shown a screenshot of the running simulator and told the logos were not
+uniform. They were not. The launcher icon, both launch screens and the new
+splash all carried the freshness ring; the language screen's own bar carried a
+green tile with `Icons.eco_rounded` in it. A leaf. A different shape, a
+different silhouette and a different idea, on the first screen of the app.
+
+The point of a mark here is specific and it is written in that screen's own
+comment: *the app's name is the one word a farmer might have been told to look
+for, and a shape beside it is what makes it findable on a phone somebody else
+set up for them*. That only works if it is the **same** shape as the one on the
+home screen. It was not, and the comment saying why had been sitting above the
+wrong picture for six phases.
+
+`HarvestMark` is now the one widget: it composes `SplashRingPainter` and the
+generated crop, and the bar and the splash both draw it — still in one case,
+with moving numbers in the other. They cannot drift, because they are the same
+two pieces.
+
+One difference survived that and was visible at 40 dp: Flutter paints with
+`StrokeCap.round`, PIL cuts an arc square, so the drawn icon and the painted bar
+mark ended differently. PIL has no cap option, so the generator now puts a disc
+at each end. Two versions of one mark that differ only in how their ends are
+finished is still two marks.
+
+### The animation that existed, was tested, and had never been seen
+
+I was also told, twice, that the splash was not animated — and after the first
+time I had verified it on Android by recording a cold start and watching the arc
+grow across five frames. Both true. On Android the emulator takes about a second
+and a half to open its database, so the sweep ran. On the iOS simulator the
+whole load is a couple of hundred milliseconds, and the splash was handed off
+the moment `_loaded` flipped: the ring got about a third of the way round and
+vanished.
+
+That was a deliberate decision and it was wrong. I had written that it "adds no
+time" and defended it with *a farmer with a lorry outside does not owe this app
+900 ms*, which is a good argument for a feature that works and a bad one for a
+feature that does not exist. An animation nobody sees is not a cheap animation;
+it is dead code that costs 200 ms.
+
+So the splash now reports when its arc is whole, and `HarvestApp` waits for that
+**and** for loading. On the design floor the loading is the longer of the two and
+the sweep is free. On a fast phone it is up to 900 ms that the app would not
+otherwise have taken, once, on a cold start, and `DESIGN.md` says so in those
+words rather than claiming it is free. Reduced motion has nothing to wait for
+and does not wait.
+
+### The test that could not have caught it
+
+`splash_test.dart` proved the arc sweeps and says so when it is whole. It passed
+throughout. It could not fail, because it tests the widget and the defect was in
+what *listened* to the widget — the same shape as the rating that was
+unreachable and the enquiry that could not be seen: a part that works, wired to
+nothing.
+
+`app_test.dart` now pumps the real `HarvestApp` 400 ms in and asserts the splash
+is still there and the language picker is not. Broken on purpose by reverting
+`home:` to `!_loaded`, and it fails.

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
 import 'package:harvest/core/theme.dart';
+import 'package:harvest/features/brand/splash.dart';
 import 'package:harvest/data/net/api.dart';
 import 'package:harvest/data/alerts/alarms.dart';
 import 'package:harvest/data/lots/lot_store.dart';
@@ -257,6 +258,48 @@ void main() {
     await tester.pumpAndSettle();
     return speaker;
   }
+
+  testWidgets('the mark is not cut off half-drawn', (tester) async {
+    /*
+      The one assertion the splash's own suite cannot make.
+
+      `splash_test.dart` proves the ring sweeps and says so when it is whole.
+      It cannot prove that anything *listens* — and the first version of
+      `HarvestApp` did not: it swapped the splash out the moment the database
+      opened, which on a phone this quick is about two hundred milliseconds, a
+      third of the way round the ring. The animation was there, was tested, and
+      had never been seen by anybody.
+
+      So this asserts the product, not the widget: what is on the screen part
+      of the way through, and what is on it after.
+    */
+    SharedPreferences.setMockInitialValues({});
+    final speaker = _Silent();
+    await tester.pumpWidget(
+      HarvestApp(
+        speaker: speaker,
+        languages: const Settings(),
+        database: database,
+        api: _NoServer(),
+        alarms: alarms,
+        weather: weather,
+      ),
+    );
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SplashScreen), findsOneWidget,
+        reason: 'the ring is still being drawn');
+    expect(find.text('Hausa'), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(SplashScreen), findsNothing,
+        reason: 'and then it gets out of the way');
+    expect(find.text('Hausa'), findsOneWidget);
+  });
 
   testWidgets('the first launch asks which language', (tester) async {
     SharedPreferences.setMockInitialValues({});

@@ -151,6 +151,14 @@ logo and a gap is a clock, and at 48 dp the gap is the only part of it that says
 There is **no wordmark**. The primary user may not read, the app ships in six languages, and
 a name in Latin script at 48 dp is decoration for everybody it is not for.
 
+**One mark, one widget.** `HarvestMark` composes the ring and the crop, and everything the app
+draws goes through it — the language screen's bar and the splash, still and moving. It had to,
+because there were two: the launcher icon and both launch screens carried the ring while the
+app's own bar carried a green tile with a leaf glyph in it, so somebody handed a phone and told
+to look for the icon found one shape on the home screen and another inside the app. The drawn
+ring is rounded at both ends now for the same reason — the app paints with `StrokeCap.round`
+and PIL cuts an arc square, and at 40 dp that was visible.
+
 The launch screen is that mark, centred, on `#0B0F0C` — the far stop of the **dark** canvas
 gradient. Until this was written it was `flutter create`'s **white**, on both platforms, and
 every cold start on the design floor was a white flash into a near-black screen.
@@ -192,9 +200,15 @@ picker arrived out of nothing.
 
 So the same mark, at the same size and in the same place, is now drawn in Dart with the ring
 **sweeping** — a countdown, which is what this ring means everywhere else — and then turning
-slowly for as long as the loading lasts. It is not a delay: it is built only while the app is
-reading its preferences and opening its database, and is replaced the instant that finishes.
-A phone asking for reduced motion gets the mark whole and still, for exactly as long.
+slowly for as long as the loading lasts.
+
+It is shown until the app is ready **and** the sweep has finished, whichever is longer, and that
+costs up to **900 ms** on a phone quick enough not to need it. That was not the first answer:
+the first version handed off the moment loading finished, on the argument that a farmer with a
+lorry outside owes this app nothing — and on a device that opens its database in 200 ms the ring
+was cut off a third of the way round. An animation nobody ever sees is not a cheap animation.
+One sweep, once, on a cold start. A phone asking for reduced motion waits for nothing: it gets
+the mark whole and still, for exactly as long as the loading takes.
 
 The ring's proportions exist twice, in `brandmark.py` and in `SplashRingPainter` — Dart cannot
 read a Python constant — so `make splash-check` reads both and fails if they disagree.

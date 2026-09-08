@@ -66,6 +66,11 @@ IOS = ROOT / 'app/ios/Runner/Assets.xcassets'
 #: Drawn large and downsampled — PIL has no antialiasing of its own.
 BIG = 1024
 
+#: Where the ring opens, measured PIL's way: clockwise from three o'clock.
+#: -45° to 225° is three quarters of a turn with the gap centred on twelve.
+#: `make splash-check` proves the app's painter opens the same quarter.
+START, END = -45, 225
+
 #: The far stop of `Palette.dark`'s canvas, from `core/theme.dart` — dark
 #: because that is the brightness the app *starts* in, not because it is the
 #: only one it has. `make splash-check` reads both the palette and the default
@@ -120,10 +125,23 @@ def _ring(draw, cx: float, cy: float, span: float) -> None:
     bounding box, which is why `ring_outer()` measures rather than calculates.
     """
     radius = span * 0.36
+    width = span * 0.085
     draw.arc(
         [cx - radius, cy - radius, cx + radius, cy + radius],
-        start=-45, end=225, fill=RING, width=max(1, int(span * 0.085)),
+        start=START, end=END, fill=RING, width=max(1, int(width)),
     )
+    # Round ends, because the app paints this ring with `StrokeCap.round` and
+    # PIL cuts an arc square. Two versions of one mark that differ only in how
+    # their ends are finished is still two marks — it was visible at 40 dp in
+    # the app bar, beside a launcher icon drawn here.
+    #
+    # A disc at each end rather than a cap option, because PIL has none.
+    middle = radius - width / 2
+    for degrees in (START, END):
+        a = math.radians(degrees)
+        ex, ey = cx + math.cos(a) * middle, cy + math.sin(a) * middle
+        draw.ellipse([ex - width / 2, ey - width / 2,
+                      ex + width / 2, ey + width / 2], fill=RING)
 
 
 def _crop(draw, cx: float, cy: float, span: float) -> None:

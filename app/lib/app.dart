@@ -173,6 +173,10 @@ class _HarvestAppState extends State<HarvestApp> {
   */
   bool _loaded = false;
 
+  /// True once the splash's ring has finished drawing itself, or at once when
+  /// the phone has asked for reduced motion. See `home:` below.
+  bool _swept = false;
+
   @override
   void initState() {
     super.initState();
@@ -577,14 +581,25 @@ class _HarvestAppState extends State<HarvestApp> {
           : ThemeMode.light,
       theme: Palette.theme(brightness: Brightness.light),
       darkTheme: Palette.theme(brightness: Brightness.dark),
-      home: !_loaded
-          // The mark, animating, for exactly as long as `_start()` takes.
-          //
-          // It was `SizedBox.shrink()` — an empty rectangle between the launch
-          // screen's mark and the first real screen, so the app appeared to
-          // blink out and start again. See `features/brand/splash.dart`; it
-          // adds no time, because it is replaced the moment `_loaded` is true.
-          ? const SplashScreen()
+      home: !_loaded || !_swept
+          /*
+            The mark, animating, until the app is ready **and** the sweep is
+            finished.
+
+            It was `SizedBox.shrink()` — an empty rectangle between the launch
+            screen's mark and the first real screen, so the app appeared to
+            blink out and start again.
+
+            Both conditions, not just the first. Waiting only for `_loaded` cost
+            nothing and showed nothing: on a phone that opens its database in
+            200 ms the sweep was cut off before it had drawn a third of the
+            ring, so the animation existed and nobody had ever seen it. It is
+            one sweep, once, on a cold start — and `disableAnimations` reports
+            back immediately, so a phone asking for stillness waits for nothing.
+          */
+          ? SplashScreen(onSwept: () {
+              if (mounted) setState(() => _swept = true);
+            })
           : switch (_language) {
               null => LanguageScreen(
                   speaker: _speaker,

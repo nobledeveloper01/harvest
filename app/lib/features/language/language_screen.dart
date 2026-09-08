@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../data/speech/speaker.dart';
 import '../../domain/speech/phrase.dart';
+import '../brand/mark.dart';
 
 /// The first screen, and the one the whole product's accessibility rests on.
 ///
@@ -66,7 +67,6 @@ class _LanguageScreenState extends State<LanguageScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final freshness = Theme.of(context).extension<Freshness>()!;
 
     return Scaffold(
       body: PageCanvas(
@@ -80,26 +80,18 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 Row(
                   children: [
                     /*
-                      A mark, not a logo.
+                      The mark, and the same one as everywhere else.
 
                       The app's name is the one word on this screen that a
                       farmer might have been told to look for, and a shape
                       beside it is what makes it findable on a phone somebody
-                      else set up for them.
+                      else set up for them. That only works if it is the shape
+                      on the home screen: this was a green tile with a leaf in
+                      it while the launcher icon and both launch screens were
+                      the freshness ring, so the thing to look for and the
+                      thing to find were two different pictures.
                     */
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: freshness.fresh,
-                        borderRadius: Radii.chip,
-                      ),
-                      child: Icon(
-                        Icons.eco_rounded,
-                        size: 26,
-                        color: freshness.onAccent,
-                      ),
-                    ),
+                    const HarvestMark(ring: 40),
                     const SizedBox(width: Gap.m),
                     // Flexible, because at 200% "Harvest" is wider than the
                     // screen left beside the mark, and an unflexed Row does not

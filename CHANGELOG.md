@@ -182,13 +182,22 @@ Entries say *why*, not just what.
   its size as a storyboard constraint: an image view sized `center` takes its
   size from what the compiled storyboard believes the asset to be, which is
   stale the moment the asset is redrawn.
+- **One mark, everywhere.** The launcher icon and both launch screens carried the
+  freshness ring while the app's own bar carried a green tile with a leaf glyph — two
+  different shapes, so somebody told to look for the icon found something else inside the
+  app. `HarvestMark` is now the single widget both the bar and the splash draw, composed
+  from the same ring and the same generated crop, and the generator rounds the ring's ends
+  to match what the app paints.
 - **The mark animates on the screen after the launch window.** Neither platform can
   move a native launch screen, and what came after it was `SizedBox.shrink()` — so the
   mark appeared, vanished into an empty rectangle, and the language picker arrived out of
   nothing. The same mark is now drawn in Dart at the same size and place, with the ring
-  sweeping out and then turning while the app loads. It adds no time: it exists only while
-  the preferences and the database are being read, and a phone asking for reduced motion
-  gets it whole and still.
+  sweeping out and then turning while the app loads. It is held until the app is ready
+  *and* the sweep has finished — up to 900 ms on a fast phone, and nothing at all on the
+  design floor, where the loading is the longer of the two. Handing off the moment loading
+  finished, which is what it did first, meant the ring was cut off a third of the way round
+  on any device quick enough: the animation existed, was tested, and had never been seen.
+  A phone asking for reduced motion waits for nothing.
 - `make splash-check` — the launch colour on both platforms must equal the
   canvas of the brightness the app *starts* in, both read out of the Dart, and
   every generated file must have exactly the pixels the generator draws. That
