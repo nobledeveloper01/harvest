@@ -7,7 +7,24 @@ plugins {
 android {
     namespace = "ng.harvest.harvest"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    /*
+      Pinned, not `flutter.ndkVersion`.
+
+      That property tracks whatever the installed Flutter happens to pin —
+      3.47.1 wants 28.2.13676358 — so a build on a machine with any other NDK
+      silently downloads about a gigabyte before it compiles anything. On a
+      metered connection, or a laptop in a field office, that is a surprise the
+      build has no business springing.
+
+      Nothing in this app has native code of its own. `sqlite3_flutter_libs`
+      ships prebuilt `.so` files and the NDK is only along for the ride, so the
+      version is a reproducibility choice rather than a compatibility one — and
+      the reproducible answer is the one written down here. 27.1 is what built
+      the APK that cleared R2.
+
+      Raise it deliberately, with a note, when there is a reason.
+    */
+    ndkVersion = "27.1.12297006"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

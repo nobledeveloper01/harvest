@@ -225,11 +225,26 @@ class _EnquiryTile extends StatelessWidget {
     ].join(' ');
   }
 
+  /*
+    Every status the server can produce, named.
+
+    `migrations/0003` allows five — open, accepted, declined, expired,
+    completed — and the first version of this named three and let a default
+    catch the rest. So an **expired** enquiry read as *waiting for you*, which
+    is a farmer being told to answer something that has lapsed.
+
+    Same shape as the bug that made the rating unreachable: a status the server
+    produces, swallowed by a branch written for statuses that do not exist. The
+    default is still here, because a sixth would otherwise be a crash rather
+    than a shrug — but it now says the honest thing about not knowing.
+  */
   static String _state(String status) => switch (status) {
+        'open' => 'waiting for you',
         'accepted' => 'you agreed to talk',
         'declined' => 'you said no',
+        'expired' => 'the time ran out',
         'completed' => 'done',
-        _ => 'waiting for you',
+        _ => '',
       };
 }
 
@@ -241,11 +256,21 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final freshness = Theme.of(context).extension<Freshness>()!;
+    /*
+      An expired enquiry is not new.
+
+      It fell into the default and came out amber, labelled **New** — the one
+      badge that says *answer this* — on a conversation nobody can act on any
+      more. The default is the honest end of the list now, not a catch-all that
+      dresses the unknown as the urgent.
+    */
     final (colour, word) = switch (status) {
+      'open' => (freshness.atRisk, 'New'),
       'accepted' => (freshness.fresh, 'Talking'),
       'completed' => (freshness.sold, 'Done'),
       'declined' => (freshness.sold, 'No'),
-      _ => (freshness.atRisk, 'New'),
+      'expired' => (freshness.outline, 'Over'),
+      _ => (freshness.outline, ''),
     };
 
     return Container(

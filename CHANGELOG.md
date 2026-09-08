@@ -157,6 +157,14 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **A lapsed enquiry read as one waiting for an answer.** The inbox named three
+  of the five statuses the server can produce and let a default catch the rest,
+  so an `expired` enquiry carried the amber **New** badge — the one that means
+  *answer this* — and was announced to a screen reader as *waiting for you*. All
+  five are named now, and the default says nothing rather than something wrong.
+  Same shape as the `completed` bug that made the rating unreachable: a status
+  the server produces, swallowed by a branch written for statuses that do not.
+
 - **A thread never asked the server anything.** `pull` ran in one place — when
   the inbox opened — so a farmer looking at *waiting for them to agree the
   figures* saw that sentence for ever, however long they waited and however many

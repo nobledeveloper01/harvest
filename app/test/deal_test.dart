@@ -439,6 +439,73 @@ void main() {
     });
   });
 
+  group('every status the server can produce', () {
+    /*
+      `server/migrations/0003_enquiries_and_deals.sql` allows exactly these
+      five. Written out here rather than derived, so that adding a sixth to the
+      server is a red test on the phone rather than a farmer seeing a blank —
+      and the list is checked against the migration by eye, which is the only
+      link between two languages there is.
+
+      Two bugs came out of this one at a time. `completed` was swallowed by a
+      branch that made the rating unreachable; `expired` was swallowed by a
+      default that called a lapsed enquiry **New**, in amber, on the badge that
+      means *answer this*.
+    */
+    const fromTheServer = ['open', 'accepted', 'declined', 'expired', 'completed'];
+
+    testWidgets('is announced by its own name, not a catch-all', (tester) async {
+      /*
+        `_state` is read out, not drawn — it is the row's semantics label. So
+        the reader who was told a lapsed enquiry was *waiting for you* is the
+        one who cannot see the badge that would have corrected it.
+      */
+      const announced = {
+        'open': 'waiting for you',
+        'accepted': 'you agreed to talk',
+        'declined': 'you said no',
+        'expired': 'the time ran out',
+        'completed': 'done',
+      };
+      expect(announced.keys, fromTheServer);
+
+      for (final MapEntry(key: status, value: said) in announced.entries) {
+        await _pump(tester, InboxScreen(
+          enquiries: [_enquiry(status: status)],
+          me: 'me',
+          onOpen: (_) {},
+          onBack: () {},
+        ));
+        expect(find.bySemanticsLabel('Tomato, $said'), findsOneWidget,
+            reason: status);
+      }
+    });
+
+    testWidgets('only an open one is called new', (tester) async {
+      for (final status in fromTheServer) {
+        await _pump(tester, InboxScreen(
+          enquiries: [_enquiry(status: status)],
+          me: 'me',
+          onOpen: (_) {},
+          onBack: () {},
+        ));
+        expect(find.text('New'), status == 'open' ? findsOneWidget : findsNothing,
+            reason: status);
+      }
+    });
+
+    testWidgets('a lapsed one is over, not new', (tester) async {
+      await _pump(tester, InboxScreen(
+        enquiries: [_enquiry(status: 'expired')],
+        me: 'me',
+        onOpen: (_) {},
+        onBack: () {},
+      ));
+      expect(find.text('Over'), findsOneWidget);
+      expect(find.bySemanticsLabel('Tomato, waiting for you'), findsNothing);
+    });
+  });
+
   group('when nobody is signed in', () {
     /*
       The ordinary state until R14 clears: the token store forgets the refresh

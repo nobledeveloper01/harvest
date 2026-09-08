@@ -3129,3 +3129,26 @@ block of NULs and `grep` skipped the lot. `tr -d '\0'` and there they were.
 Three times today I have started from *the code is wrong* and found the
 measurement was. The order that works is: get the evidence, then form the
 accusation.
+
+## 2026-09-08 (while a gigabyte downloaded) — The same bug, one status along
+
+Having found that `completed` was swallowed by a branch written for `accepted`,
+the obvious next question is where else a status is compared. Five places, and
+two of them had the same hole one value along.
+
+`migrations/0003` allows five enquiry statuses — open, accepted, declined,
+expired, completed. The inbox named three and let a default catch the rest. So
+an **expired** enquiry:
+
+  * carried the amber **New** badge, which is the one badge that means *answer
+    this*, on a conversation nobody can act on any more; and
+  * was announced to a screen reader as *waiting for you*, which is the same lie
+    told to the reader least able to check it against the badge.
+
+Both are now named, and the default says nothing rather than something wrong.
+The test lists all five from the migration and walks them, so a sixth on the
+server is a red test here rather than a farmer seeing a blank.
+
+Worth saying plainly: I found this by grepping for `status ==` immediately after
+the `completed` bug, rather than by waiting to trip over it. One bug of a shape
+is a bug; the shape is worth a search.
