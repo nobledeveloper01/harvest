@@ -506,6 +506,74 @@ void main() {
     });
   });
 
+  group('every message kind the server can produce', () {
+    /*
+      `migrations/0003` permits text, voice and image. The thread tested for
+      `voice` and let the rest fall through to `body ?? ''` — so a photograph
+      from a buyer drew an **empty grey pill**. Not an error and not a
+      placeholder: a blank, on the screen where a farmer decides whether to
+      trust somebody.
+    */
+    MessageRow said(String kind, {String? body}) => MessageRow(
+          id: 'm-$kind',
+          enquiryId: 'e1',
+          senderId: 'buyer',
+          kind: kind,
+          body: body,
+          sentAt: DateTime(2026, 9, 8, 9),
+          seq: 2,
+        );
+
+    Future<void> showing(WidgetTester tester, MessageRow message) =>
+        _pump(tester, ThreadScreen(
+          enquiry: _enquiry(),
+          messages: [message],
+          me: 'me',
+          onAccept: () {},
+          onDecline: () {},
+          onSpeak: () {},
+          onDeal: () {},
+          onRate: () {},
+          onBack: () {},
+        ));
+
+    testWidgets('none of them is a blank bubble', (tester) async {
+      /*
+        A table, not a count.
+
+        The first version collected every `Text` on the screen and asserted the
+        set was non-empty — which the offer card satisfies on its own, so it
+        passed happily with the photo case reverted to a blank. A test that
+        cannot fail is worse than no test, and this one could not.
+      */
+      const shows = {
+        'text': 'Hello',
+        'voice': 'A voice note',
+        'image': 'A photo',
+        'a-kind-from-a-later-server': 'does not know how to show',
+      };
+
+      for (final MapEntry(key: kind, value: expected) in shows.entries) {
+        await showing(tester, said(kind, body: kind == 'text' ? 'Hello' : null));
+        expect(find.textContaining(expected), findsOneWidget, reason: kind);
+      }
+    });
+
+    testWidgets('a photo says it is a photo, and that it cannot be shown',
+        (tester) async {
+      // There is no media fetching in this app, so the honest thing is to say
+      // one arrived rather than to draw nothing.
+      await showing(tester, said('image'));
+      expect(find.textContaining('A photo'), findsOneWidget);
+      expect(find.textContaining('cannot show it yet'), findsOneWidget);
+    });
+
+    testWidgets('a kind this build does not know says so', (tester) async {
+      await showing(tester, said('a-kind-from-a-later-server'));
+      expect(find.textContaining('does not know how to show'), findsOneWidget);
+    });
+  });
+
   group('when nobody is signed in', () {
     /*
       The ordinary state until R14 clears: the token store forgets the refresh

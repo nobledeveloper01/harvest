@@ -341,7 +341,29 @@ class _Message extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final freshness = Theme.of(context).extension<Freshness>()!;
-    final spoken = message.kind == 'voice';
+    /*
+      All three kinds the server allows, and one honest answer for the rest.
+
+      `migrations/0003` permits text, voice and image. The first version tested
+      for `voice` and let everything else fall through to `body ?? ''` — so a
+      **photograph** from a buyer drew an empty grey pill. Not an error, not a
+      placeholder: a blank, on the screen where a farmer decides whether to
+      trust somebody.
+
+      There is no media fetching in this app yet, so a photograph cannot be
+      shown. What it can do is say that one arrived and that it cannot show it,
+      which is what a placeholder is for — `CLAUDE.md`: *a placeholder that
+      looks like the real thing is how a missing feature ships*, and a blank
+      looks like nothing at all.
+    */
+    final (icon, said) = switch (message.kind) {
+      'voice' => (Icons.play_arrow_rounded, 'A voice note'),
+      'image' => (Icons.photo_outlined, 'A photo — this app cannot show it yet'),
+      'text' => (null, message.body ?? ''),
+      // A fourth kind from a later server. Saying something is arriving beats
+      // drawing an empty bubble and hoping nobody looks.
+      _ => (Icons.help_outline_rounded, 'Something this app does not know how to show'),
+    };
 
     return Align(
       alignment: fromMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -358,15 +380,12 @@ class _Message extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (spoken) ...[
-              Icon(Icons.play_arrow_rounded, color: freshness.fresh),
+            if (icon case final icon?) ...[
+              Icon(icon, color: freshness.fresh),
               const SizedBox(width: Gap.s),
             ],
             Flexible(
-              child: Text(
-                spoken ? 'A voice note' : (message.body ?? ''),
-                style: text.bodyLarge,
-              ),
+              child: Text(said, style: text.bodyLarge),
             ),
           ],
         ),
