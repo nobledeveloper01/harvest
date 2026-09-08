@@ -8,6 +8,7 @@ import { dealRoutes } from './routes/deals.js';
 import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 import { deviceRoutes } from './routes/devices.js';
+import { consoleRoutes } from './console.js';
 import { moderationRoutes, type Operators } from './routes/moderation.js';
 import { outcomeRoutes } from './routes/outcomes.js';
 import { priceRoutes } from './routes/prices.js';
@@ -82,6 +83,7 @@ export function build({
   outcomeRoutes(app, { signingKey, reportSalt });
   trustRoutes(app, { signingKey, identity, callbackSecret });
   moderationRoutes(app, { operators });
+  consoleRoutes(app, { operators });
   syncRoutes(app, { signingKey });
 
   return app;

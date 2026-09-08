@@ -2902,3 +2902,55 @@ a `tap` on the last row of a growing list failed as off-screen; and the walk's
 storage-card witness had drifted above the fold. Each reports as *this screen
 was never reached*, which is a sentence about the test surface wearing the
 clothes of a sentence about the app.
+
+## 2026-09-08 (last) — The operator console, and where Phase 7 stops
+
+Moderation has worked since Phase 5 and nobody could use it. Three separate
+reporters suspend an account automatically; the queue, reinstate, uphold and
+history endpoints all exist and are tested; and reaching any of them meant
+`curl` with a header. FR-5.3 requires that reports be *actioned*, and an action
+that in practice needs a shell is one that will not happen at three in the
+afternoon.
+
+The roadmap lists an operator console beside a Flutter Web buyer console, which
+makes the obvious answer *add web as a target*. That answer is expensive:
+`app/` has no `web/` and depends on `drift_flutter`,
+`flutter_local_notifications`, `audioplayers` and `path_provider`, none of which
+survive the move — so it would be a **second Flutter package**, with its own
+build, its own coverage gate and its own entry in a screen-coverage walk this
+repository has already had to teach about every screen twice. Built to a design
+floor derived from a 5" handset in sunlight, for somebody sitting at a desk.
+
+So the console is one HTML file the server serves. ADR-0013. And the buyer
+console and officer dashboard are written up as **not living here** — they are a
+different product for a different persona, and the API they would use is already
+public.
+
+### What using it changed
+
+The first version asked for the reason with a native prompt. I could not drive
+it from here, which is itself the finding: a modal browsers suppress after
+repeated use, and block outright in some embedding contexts, has a failure mode
+of an operator whose clicks stop doing anything with nothing on screen to say
+why — on the tool that decides whether somebody may go on selling. It is an
+inline field now.
+
+### The test that only a browser could pass
+
+The seeded queue included a report whose text is
+`<img src=x onerror=alert(1)> and rude about it`, because report reasons are
+free text typed by farmers and this page is read by the one person who can
+suspend an account. It renders as those characters. No console error, no
+dialog. The string assertion against `innerHTML` says the code does not do the
+wrong thing; the browser says the page does not.
+
+Then the whole flow, end to end: queue, type a reason, put them back — account
+`verified`, three reports closed, and an audit row reading
+`restore … (moni)`.
+
+### And two of my own comments failed the gates
+
+The console tests refuse `localStorage` and `innerHTML` anywhere in the served
+page, and the first thing they caught was the comments explaining why those are
+not used. Reworded rather than the tests loosened: a test that has to know the
+difference between a mention and a use is a test that will one day get it wrong.

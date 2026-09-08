@@ -240,7 +240,12 @@ further report re-suspended immediately. A reinstatement would have survived
 exactly as long as it took one more person to press a button. Nothing else in
 the product could have found this, because until now nothing could reinstate.
 
-The console's own screen is Phase 7, with the Flutter Web buyer console.
+The console's own screen is now `/console` — one HTML file the server serves,
+no Flutter and no second package. [ADR-0013](adr/0013-the-operator-console-is-a-page-the-server-serves.md)
+has the argument, and the three properties that make it a decision rather than a
+shortcut: the key lives in a variable and nowhere that outlives the tab, every
+value from the database reaches the page as text rather than markup, and the
+page is a 404 when no operator is configured.
 
 Storage booking is **not** in this phase and cannot be, whatever the line above
 says. It needs a facility directory, and
@@ -277,6 +282,23 @@ told the app what happened. That is field work, not engineering.
 
 Extension-officer dashboard, outbreak mapping, more crops and diseases, more
 languages, a Flutter Web buyer console.
+
+**The buyer console and the extension-officer dashboard are not going to live in
+this repository**, and the roadmap says so rather than carrying them as work
+that is nearly done. They are a different product for a different persona: a
+buyer on a laptop, an officer at a desk. Everything in `DESIGN.md` — 56 dp
+targets, 30 sp display type, contrast asserted against a sunlit dusty screen —
+is derived from *a 5" 720p handset held by work-hardened hands*, and inheriting
+those constraints only to argue with them one widget at a time is not how either
+of those products should be built.
+
+The interface they would use already exists and is public: `/listings/search`,
+`/listings/basket`, `/outcomes/signal`. What they need from Harvest is an API,
+which is what an API is for.
+
+The operator console is the exception and was built, because it is not a
+product — it is the missing half of a feature this repository already ships.
+See [ADR-0013](adr/0013-the-operator-console-is-a-page-the-server-serves.md).
 
 **Exit gate**. *A sixth language is added without touching any screen — if it
 takes more than recordings and a catalogue entry, the speech architecture was

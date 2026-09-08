@@ -10,6 +10,22 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **An operator console at `/console`** — one HTML file the server serves, no
+  Flutter and no second package ([ADR-0013](docs/adr/0013-the-operator-console-is-a-page-the-server-serves.md)).
+  Moderation has worked since Phase 5 and nobody could use it: FR-5.3 says
+  reports must be actioned, and until now that meant `curl` with a header.
+- Three properties the console has to have, each asserted: the key lives in a
+  variable and nowhere that outlives the tab; every value from the database
+  reaches the page as text rather than markup, because report reasons are free
+  text typed by farmers and this is the one page read by somebody who can
+  suspend accounts; and `/console` is a 404 when no operator is configured,
+  because a login box in front of a door with no lock advertises a capability
+  the deployment does not have.
+- The reason for a decision is typed into the page rather than a native dialog —
+  browsers suppress those after repeated use and block them outright in some
+  contexts, and the failure mode is an operator whose clicks silently stop
+  working.
+
 - **What is going around** — outbreak mapping from the data the product actually
   has. Not diagnoses: R10 blocks the classifier, so a map of those would be a map
   of no data. Instead it is FR-2.4's fixed illustrated loss reason, which every
