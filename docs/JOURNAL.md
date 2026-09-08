@@ -2839,3 +2839,66 @@ That is the third time this session the same distinction has cost something: the
 deal screen's money sentence, the calibration report's version card, and now
 this. *Not in the tree* and *not on the screen* are different claims, and a loop
 over an enum is exactly where the difference hides.
+
+## 2026-09-08 (very late) — Outbreak mapping without a classifier
+
+Phase 7 lists *outbreak mapping*, and the obvious reading is a map of diagnoses.
+There are none. R10 blocks the classifier, `UntrainedClassifier` recognises
+nothing on purpose, and the diagnosis feature is not reachable from the app. A
+map drawn from that would be a map of no data with a legend on it.
+
+What every farmer who closes a lot does supply is FR-2.4's fixed illustrated
+loss reason — rotted, pests, damaged, no buyer, water, animals. A spike in
+`pests` for tomato in the middle belt in week 37 is the thing an extension
+officer wants to know, it comes from people rather than from a model, and it
+needs nothing that does not exist. FR-3.4 had already asked for these rows for a
+different reason: *aggregated anonymised outcomes SHOULD be used to refine base
+shelf-life values per crop and region.* One table, two uses.
+
+### Anonymous means there is nowhere to write it down
+
+Not a nullable column, not a column excluded from a select — absent. A column
+holding who reported a loss is a column that will eventually be joined against
+by somebody with a good reason, and the promise that this is anonymous would be
+a comment rather than a fact.
+
+What replaces it is a daily rotating pseudonym: `HMAC(salt, account || date)`.
+It caps how much one person can file, which is the only thing that stops one
+account inventing an outbreak — and it is the only thing it can do, because it
+changes at midnight and cannot be reversed by anybody holding the database.
+
+### The floor counts people, and a week below it is absent rather than zero
+
+Twenty reports from one pseudonym is one farmer having a bad week. A floor
+written against `count(*)` would publish it as a pattern, which is both a false
+alarm and, in a thin region, a description of one farm.
+
+And a suppressed week returns **nothing**, not a zero. Zero is a claim — *we
+looked and nothing happened* — and a reader could subtract two queries to
+recover exactly the count the floor exists to hide.
+
+### The median, not the mean
+
+One catastrophic week in the baseline drags a mean up and hides the next one,
+which is precisely the situation where a warning matters most. Measured against
+the ordinary week instead. There is a test whose figures make the two disagree.
+
+### Two tests that would have passed for the wrong reason
+
+The ordering test compared a reason that had risen five-fold against one that
+had risen 2.5-fold — and the sharper rise also had the larger count, so sorting
+by count gave the same answer. Breaking the sort on purpose left it green. The
+figures now make the two orderings disagree, and the smaller number leads.
+
+And the *not a diagnosis* note sits at the bottom of a `ListView`, so the
+negative assertion — that it is absent when the server could not be reached —
+passed without scrolling regardless. Fourth time today.
+
+### One row on the decision screen broke three suites
+
+Not one of them because the screen was wrong. `reachAndTap` leaves the list
+wherever it scrolled to, so the witness for the *next* step was no longer built;
+a `tap` on the last row of a growing list failed as off-screen; and the walk's
+storage-card witness had drifted above the fold. Each reports as *this screen
+was never reached*, which is a sentence about the test surface wearing the
+clothes of a sentence about the app.

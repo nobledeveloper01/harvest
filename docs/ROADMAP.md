@@ -300,8 +300,33 @@ for one namespace in one language. Thirteen lines is not "recordings and a
 catalogue entry". `make assets` writes the block from the catalogue now and
 `make assets-check` fails the build when it drifts.
 
-It also broke three tests, and none of them for a reason the screen was
-responsible for. The picker is a lazy `ListView`, so its sixth row is **absent
+**Outbreak mapping is built, from the data the product actually has.** The
+obvious reading is a map of diagnoses; there are none, because R10 blocks the
+classifier and the diagnosis feature is not reachable from the app. A map drawn
+from that would be a map of no data.
+
+What every farmer who closes a lot does supply is FR-2.4's fixed illustrated
+loss reason. *What is going around* on the decision screen is that, counted by
+crop, region and week — a rise flagged only when it is both **twice the ordinary
+week** and at least eight reports, measured against the median rather than the
+mean so that one catastrophic week in the baseline cannot hide the next one.
+
+Three things hold it honest. The rows carry **no account id and there is no
+column for one**; a daily rotating pseudonym caps how much one person can file
+without being able to link their Tuesday to their Wednesday. A week under five
+separate reporters is **absent from the answer, not zero** — zero is a claim, and
+publishing it would let a reader subtract two queries to recover the count the
+floor exists to hide. And the screen says, in as many words, that this is what
+farmers reported and not what the app thinks is wrong with anybody's crop:
+R10 keeps a plausible-looking stand-in out of the product, and a screen dressing
+neighbours' reports up as a diagnosis would be the same failure with different
+data.
+
+FR-3.4 already wanted these rows — *aggregated anonymised outcomes SHOULD be
+used to refine base shelf-life values per crop and region.* Same table, two uses.
+
+Adding the sixth language also broke three tests, and none of them for a reason
+the screen was responsible for. The picker is a lazy `ListView`, so its sixth row is **absent
 from the tree** rather than merely below the fold — and three assertions written
 as `for (final language in Speech.values)` had been quietly asserting that the
 list is short enough to fit on a test surface, which is not a limit anybody

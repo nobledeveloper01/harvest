@@ -10,6 +10,26 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **What is going around** — outbreak mapping from the data the product actually
+  has. Not diagnoses: R10 blocks the classifier, so a map of those would be a map
+  of no data. Instead it is FR-2.4's fixed illustrated loss reason, which every
+  farmer who closes a lot supplies, counted by crop, region and week. A rise is
+  flagged only when it is both twice the ordinary week and at least eight
+  reports, measured against the **median** rather than the mean so one
+  catastrophic week in the baseline cannot hide the next one.
+- Outcome reports carry **no account id, and the table has no column for one** —
+  a column holding who reported a loss is one that will eventually be joined
+  against, and the promise would then be a comment rather than a fact. A daily
+  rotating pseudonym caps what one person can file without linking their Tuesday
+  to their Wednesday.
+- A week under five separate reporters is **absent from the answer, not zero**.
+  Zero is a claim, and publishing it would let a reader subtract two queries to
+  recover the count the floor exists to hide.
+- The screen distinguishes *nothing unusual* from *we could not ask*. It is the
+  one screen in the app where silence reads as good news, and there is nothing
+  cached — a three-week-old answer to "what is going around" is worse than not
+  knowing.
+
 - **Fulfulde (`ff`), the sixth language** — Phase 7's exit gate, which asked that
   a sixth be addable *without touching any screen*. It was: one constant in
   `Speech`, and then recordings. Fulfulde rather than the next largest by

@@ -33,6 +33,23 @@ class _Recording implements Speaker {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+
+/// Taps a row that may have scrolled below the fold.
+///
+/// The decision screen's list of other things to do grows: reporting a price,
+/// listing the lot, watching for a price, what is going around, the deductions,
+/// a storage quote. Every one of those pushed the ones under it further down,
+/// and a bare `tap` on the last of them fails as *off screen* — which reads
+/// like the control is gone rather than like the test surface is short.
+Future<void> _tapRow(WidgetTester tester, String label) async {
+  final row = find.text(label);
+  await tester.scrollUntilVisible(row, 120,
+      scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+  await tester.tap(row);
+  await tester.pump();
+}
+
 void main() {
   final noon = DateTime(2026, 9, 5, 12);
 
@@ -113,6 +130,7 @@ void main() {
           onReportPrice: () => reports++,
           onQuoteStorage: () => quotes++,
           onWatchPrice: () => watches++,
+          onGoingAround: () {},
           watching: watching,
           onEnterCosts: () => costEntries++,
           onList: () => listings++,
@@ -395,8 +413,7 @@ void main() {
         being told a daily rate.
       */
       await pump(tester, decision());
-      await tester.tap(find.text('A store quoted me a price'));
-      await tester.pump();
+      await _tapRow(tester, 'A store quoted me a price');
       expect(quotes, 1);
     });
 

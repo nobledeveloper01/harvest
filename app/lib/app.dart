@@ -33,9 +33,11 @@ import 'data/net/account_store.dart';
 import 'data/net/api.dart';
 import 'data/net/outbox_store.dart';
 import 'data/net/inbox_store.dart';
+import 'data/net/signal_store.dart';
 import 'features/account/sign_in_screen.dart';
 import 'domain/market/deal.dart';
 import 'domain/spoilage/calibration.dart';
+import 'domain/spoilage/going_around.dart';
 import 'features/market/deal_screen.dart';
 import 'features/market/inbox_screen.dart';
 import 'features/market/rating_screen.dart';
@@ -43,6 +45,7 @@ import 'features/market/thread_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/costs_screen.dart';
 import 'features/money/price_screen.dart';
+import 'features/money/going_around_screen.dart';
 import 'features/money/price_watch_screen.dart';
 import 'features/money/storage_offer_screen.dart';
 import 'features/lots/storage_screen.dart';
@@ -136,6 +139,7 @@ class _HarvestAppState extends State<HarvestApp> {
       AccountStore(api: _api, tokens: ForgetfulTokenStore());
   late final Outbox _outbox = Outbox(database: _database, api: _api);
   late final InboxStore _inbox = InboxStore(database: _database, api: _api);
+  late final SignalStore _signals = SignalStore(api: _api);
 
 
   /// The lots this session has put on the market.
@@ -245,6 +249,27 @@ class _HarvestAppState extends State<HarvestApp> {
       to teach them the app does not know what it is talking about.
     */
     await _alarms.clearFor(id);
+
+    /*
+      Told to the server with nobody's name on it (FR-3.4).
+
+      Crop, region, what happened and the week — no lot reference, no account
+      id, and the server has no column for one. It is what lets a farmer in the
+      next village be warned that pests are about, and what Phase 6's engine
+      calibration is meant to be refined from.
+
+      Queued rather than sent: this happens the moment a farmer says a lot is
+      gone, which is not a moment to make them wait for a network.
+    */
+    await _outbox.add('outcome.report', {
+      'crop': _stored.lots[index].crop.id,
+      'region': (_region ?? Region.unknown).id,
+      'outcome': outcome.what.id,
+      if (outcome.why case final why?) 'lossReason': why.id,
+      'at': outcome.at.toUtc().toIso8601String(),
+    });
+    unawaited(_outbox.drain());
+
     final stored = await _lots.all();
     if (!mounted) return;
     setState(() => _stored = stored);
@@ -339,6 +364,8 @@ class _HarvestAppState extends State<HarvestApp> {
                   .nairaPerKg
                   ?.value,
           watchingNow: () => _watchingFor(lot),
+          signalFor: () =>
+              _signals.forCrop(lot.crop, _region ?? Region.unknown),
           onWatch: (kobo) => _watchPrice(lot, kobo),
           onList: (context) => _listOnTheMarket(context, lot),
           listedNow: () => _listed.contains(_lotRef(lot)),
@@ -908,6 +935,7 @@ class _DecisionHost extends StatefulWidget {
     required this.decide,
     required this.priceNow,
     required this.watchingNow,
+    required this.signalFor,
     required this.onWatch,
     required this.onList,
     required this.listedNow,
@@ -946,6 +974,9 @@ class _DecisionHost extends StatefulWidget {
   /// What is being watched for now, in kobo per kilogram, or null.
   final Future<int?> Function() watchingNow;
 
+  /// What is going around, or null when nobody could be asked.
+  final Future<GoingAround?> Function() signalFor;
+
   @override
   State<_DecisionHost> createState() => _DecisionHostState();
 }
@@ -973,6 +1004,26 @@ class _DecisionHostState extends State<_DecisionHost> {
       _suggested = price == null ? null : (price * 100).round();
       _ready = true;
     });
+  }
+
+  /// What farmers near here have been losing this crop to.
+  ///
+  /// Asked when the screen is opened rather than held: it is about other
+  /// people, it changes weekly, and there is deliberately nothing cached — a
+  /// three-week-old answer to *what is going around* is worse than not knowing.
+  Future<void> _goingAround() async {
+    final navigator = Navigator.of(context);
+    final report = await widget.signalFor();
+    if (!mounted) return;
+    await navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => GoingAroundScreen(
+          crop: widget.lot.crop,
+          report: report,
+          onBack: navigator.pop,
+        ),
+      ),
+    );
   }
 
   /// Ask to be told when this crop reaches a price (F-305).
@@ -1071,6 +1122,7 @@ class _DecisionHostState extends State<_DecisionHost> {
       onReportPrice: _reportPrice,
       onQuoteStorage: _quoteStorage,
       onWatchPrice: _watchPrice,
+      onGoingAround: _goingAround,
       watching: _watching,
       onEnterCosts: _enterCosts,
       onList: _list,

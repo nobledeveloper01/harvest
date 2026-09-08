@@ -9,6 +9,7 @@ import { enquiryRoutes } from './routes/enquiries.js';
 import { listingRoutes } from './routes/listings.js';
 import { deviceRoutes } from './routes/devices.js';
 import { moderationRoutes, type Operators } from './routes/moderation.js';
+import { outcomeRoutes } from './routes/outcomes.js';
 import { priceRoutes } from './routes/prices.js';
 import { syncRoutes } from './routes/sync.js';
 import { trustRoutes } from './routes/trust.js';
@@ -19,6 +20,8 @@ export type BuildOptions = {
   readonly db: Db;
   readonly signingKey: string;
   readonly otpSalt: string;
+  /** Salts the daily pseudonym on anonymous outcome reports. */
+  readonly reportSalt?: string;
   readonly sms: Sms;
   /** Named operator keys. Empty means every moderation endpoint refuses. */
   readonly operators?: Operators;
@@ -39,6 +42,7 @@ export function build({
   db,
   signingKey,
   otpSalt,
+  reportSalt = otpSalt,
   sms,
   operators = {},
   identity = noIdentityCheck(),
@@ -75,6 +79,7 @@ export function build({
   dealRoutes(app, { signingKey });
   priceRoutes(app, { signingKey });
   deviceRoutes(app, { signingKey });
+  outcomeRoutes(app, { signingKey, reportSalt });
   trustRoutes(app, { signingKey, identity, callbackSecret });
   moderationRoutes(app, { operators });
   syncRoutes(app, { signingKey });

@@ -34,6 +34,7 @@ class DecisionScreen extends StatefulWidget {
     required this.onReportPrice,
     required this.onQuoteStorage,
     required this.onWatchPrice,
+    required this.onGoingAround,
     required this.watching,
     required this.onEnterCosts,
     required this.onList,
@@ -57,6 +58,9 @@ class DecisionScreen extends StatefulWidget {
 
   /// Ask to be told when this crop reaches a price (F-305).
   final VoidCallback onWatchPrice;
+
+  /// What farmers near here have been losing this crop to.
+  final VoidCallback onGoingAround;
 
   /// What they are already watching for, in kobo per kilogram, or null.
   final int? watching;
@@ -261,6 +265,12 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   a farmer has no way to tell whether the number in front of
                   them already had the fare taken off.
                 */
+                _Another(
+                  icon: Icons.groups_outlined,
+                  label: 'What is going around near you',
+                  onTap: widget.onGoingAround,
+                ),
+                const SizedBox(height: Gap.m),
                 _Another(
                   icon: Icons.local_shipping_outlined,
                   label: widget.deductions.isNothing

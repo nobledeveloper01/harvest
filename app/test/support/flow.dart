@@ -23,6 +23,8 @@ import 'package:harvest/data/net/api.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
 import 'package:harvest/domain/market/deal.dart';
 import 'package:harvest/domain/spoilage/calibration.dart';
+import 'package:harvest/domain/spoilage/going_around.dart';
+import 'package:harvest/features/money/going_around_screen.dart';
 import 'package:harvest/features/money/price_watch_screen.dart';
 import 'package:harvest/features/settings/calibration_screen.dart';
 import 'package:harvest/features/market/deal_screen.dart';
@@ -289,6 +291,23 @@ Future<void> walkTheFlow(
     what it did here: at 200% the transport line sits below the fold behind
     two option cards that are each three lines tall.
   */
+  /// Brings a target into view without tapping it.
+  ///
+  /// The decision screen's list is long and is left wherever the last tap
+  /// scrolled it, so a witness further up is **absent from the tree** rather
+  /// than merely off screen — and the step then reports a screen it did reach
+  /// as never reached. Adding one row to that list broke this twice.
+  Future<void> reach(Finder target) async {
+    if (target.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        target,
+        -100,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+    }
+  }
+
   Future<void> reachAndTap(Finder target) async {
     if (target.evaluate().isEmpty) {
       await tester.scrollUntilVisible(
@@ -334,6 +353,7 @@ Future<void> walkTheFlow(
     that reports a screen never reached. The card this step exists to produce is
     both visible and the actual claim.
   */
+  await reach(find.text('Put it in storage'));
   await at('the decision screen, with a storage course',
       find.text('Put it in storage'));
 
@@ -567,6 +587,52 @@ Future<void> pumpTheUnreachable(
       'the price watch, ${watching == null ? 'not set' : 'already set'}',
       find.byType(PriceWatchScreen),
     );
+  }
+
+  /*
+    What is going around, in the three states that are different answers.
+
+    Quiet, something rising, and *we could not ask* — which is the one a
+    suite would skip and the one that matters: an app that showed "nothing
+    unusual" when it had reached nobody would be telling a farmer something
+    untrue about their neighbours' crops.
+  */
+  final quietWeeks = [
+    for (var week = 0; week < 4; week++)
+      Losses(
+        week: DateTime.utc(2026, 8, 3).add(Duration(days: 7 * week)),
+        reason: LossReason.pests,
+        reports: 9,
+      ),
+  ];
+  for (final (label, report) in [
+    ('nobody could be asked', null),
+    ('all quiet', GoingAround.from(quietWeeks)),
+    (
+      'pests rising',
+      GoingAround.from([
+        ...quietWeeks,
+        Losses(
+          week: DateTime.utc(2026, 8, 31),
+          reason: LossReason.pests,
+          reports: 30,
+        ),
+      ])
+    ),
+  ]) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: GoingAroundScreen(
+          crop: Crop.tomato,
+          report: report,
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('what is going around, $label', find.byType(GoingAroundScreen));
   }
 
   /*

@@ -49,6 +49,7 @@ const operations = {
     body: b,
   }),
   'device.register': (b: Record<string, unknown>) => ({ url: '/devices', body: b }),
+  'outcome.report': (b: Record<string, unknown>) => ({ url: '/outcomes', body: b }),
   'price.report': (b: Record<string, unknown>) => ({ url: '/prices/report', body: b }),
   'price.watch': (b: Record<string, unknown>) => ({ url: '/prices/watch', body: b }),
   'price.watch.cancel': (b: Record<string, unknown>) => ({
