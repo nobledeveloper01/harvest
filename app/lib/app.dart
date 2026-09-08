@@ -43,6 +43,7 @@ import 'features/market/thread_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/costs_screen.dart';
 import 'features/money/price_screen.dart';
+import 'features/money/price_watch_screen.dart';
 import 'features/money/storage_offer_screen.dart';
 import 'features/lots/storage_screen.dart';
 
@@ -333,6 +334,12 @@ class _HarvestAppState extends State<HarvestApp> {
           lot: lot,
           weather: _weather,
           decide: decide,
+          priceNow: () async =>
+              MarketPrice.from(await _prices.forCrop(lot.crop), DateTime.now())
+                  .nairaPerKg
+                  ?.value,
+          watchingNow: () => _watchingFor(lot),
+          onWatch: (kobo) => _watchPrice(lot, kobo),
           onList: (context) => _listOnTheMarket(context, lot),
           listedNow: () => _listed.contains(_lotRef(lot)),
           onQuoted: (quote) async => quoted = quote,
@@ -348,6 +355,61 @@ class _HarvestAppState extends State<HarvestApp> {
         ),
       ),
     );
+  }
+
+  /// What this lot's crop is being watched for, in kobo per kilogram, or null.
+  ///
+  /// Read from the phone's own row rather than asked of the server, for the
+  /// reason everything else here is: the farmer who set it thirty seconds ago
+  /// in a field with no signal has to see that it is set.
+  Future<int?> _watchingFor(Lot lot) async {
+    final region = _region ?? Region.unknown;
+    final row = await (_database.select(_database.priceWatches)
+          ..where((watch) => watch.cropId.equals(lot.crop.id))
+          ..where((watch) => watch.regionId.equals(region.id)))
+        .getSingleOrNull();
+    return row?.targetKoboPerKg;
+  }
+
+  /// Sets or clears the watch for a lot's crop (F-305).
+  ///
+  /// Written locally first and queued, like everything else that leaves this
+  /// phone. The watch expires with the lot's window, which only the phone
+  /// knows — the server has never seen a lot, and a default there would keep
+  /// messaging a farmer about tomatoes that turned three weeks ago.
+  Future<void> _watchPrice(Lot lot, int? koboPerKg) async {
+    final region = _region ?? Region.unknown;
+    final rows = _database.priceWatches;
+
+    if (koboPerKg == null) {
+      await (_database.delete(rows)
+            ..where((watch) => watch.cropId.equals(lot.crop.id))
+            ..where((watch) => watch.regionId.equals(region.id)))
+          .go();
+      await _outbox.add('price.watch.cancel', {
+        'crop': lot.crop.id,
+        'region': region.id,
+      });
+    } else {
+      final life = ShelfLifeEngine.predict(lot: lot, weather: _weather);
+      final expires = lot.harvestedAt
+          .add(life?.longest ?? const Duration(days: 3));
+      await _database.into(rows).insertOnConflictUpdate(
+            PriceWatchesCompanion.insert(
+              cropId: lot.crop.id,
+              regionId: region.id,
+              targetKoboPerKg: koboPerKg,
+              expiresAt: expires,
+            ),
+          );
+      await _outbox.add('price.watch', {
+        'crop': lot.crop.id,
+        'region': region.id,
+        'targetKoboPerKg': koboPerKg,
+        'expiresAt': expires.toUtc().toIso8601String(),
+      });
+    }
+    unawaited(_outbox.drain());
   }
 
   /// A lot's identity to the server: stable, and not a database row number.
@@ -844,6 +906,9 @@ class _DecisionHost extends StatefulWidget {
     required this.lot,
     required this.weather,
     required this.decide,
+    required this.priceNow,
+    required this.watchingNow,
+    required this.onWatch,
     required this.onList,
     required this.listedNow,
     required this.onReported,
@@ -857,6 +922,13 @@ class _DecisionHost extends StatefulWidget {
   final Lot lot;
   final Weather? weather;
   final Future<Decision?> Function() decide;
+
+  /// What the crop is worth now, per kilogram, or null if nobody knows.
+  ///
+  /// Passed in rather than dug out of the [Decision], which does not carry a
+  /// price: it carries what the three courses come to, and the figure the watch
+  /// screen opens its pad on is the market price itself.
+  final Future<double?> Function() priceNow;
   final Future<void> Function(double perKg) onReported;
   final Future<void> Function(Quote quote) onQuoted;
   final Future<void> Function(Deductions costs) onCosts;
@@ -868,12 +940,20 @@ class _DecisionHost extends StatefulWidget {
   /// Whether it already is.
   final bool Function() listedNow;
 
+  /// Sets or clears the price watch for this lot's crop. Null clears it.
+  final Future<void> Function(int? koboPerKg) onWatch;
+
+  /// What is being watched for now, in kobo per kilogram, or null.
+  final Future<int?> Function() watchingNow;
+
   @override
   State<_DecisionHost> createState() => _DecisionHostState();
 }
 
 class _DecisionHostState extends State<_DecisionHost> {
   Decision? _decision;
+  int? _watching;
+  int? _suggested;
   bool _ready = false;
 
   @override
@@ -884,11 +964,43 @@ class _DecisionHostState extends State<_DecisionHost> {
 
   Future<void> _reload() async {
     final decision = await widget.decide();
+    final watching = await widget.watchingNow();
+    final price = await widget.priceNow();
     if (!mounted) return;
     setState(() {
       _decision = decision;
+      _watching = watching;
+      _suggested = price == null ? null : (price * 100).round();
       _ready = true;
     });
+  }
+
+  /// Ask to be told when this crop reaches a price (F-305).
+  ///
+  /// The pad opens on what the crop is worth now, so the question a farmer
+  /// answers is *how much better would it have to be* rather than *what number
+  /// am I thinking of*.
+  Future<void> _watchPrice() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => PriceWatchScreen(
+          cropLabel: widget.lot.crop.label,
+          suggestedKoboPerKg: _suggested,
+          watchingKoboPerKg: _watching,
+          onWatch: (kobo) async {
+            Navigator.of(context).pop();
+            await widget.onWatch(kobo);
+            await _reload();
+          },
+          onStop: () async {
+            Navigator.of(context).pop();
+            await widget.onWatch(null);
+            await _reload();
+          },
+          onBack: Navigator.of(context).pop,
+        ),
+      ),
+    );
   }
 
   Future<void> _enterCosts() async {
@@ -958,6 +1070,8 @@ class _DecisionHostState extends State<_DecisionHost> {
       now: DateTime.now(),
       onReportPrice: _reportPrice,
       onQuoteStorage: _quoteStorage,
+      onWatchPrice: _watchPrice,
+      watching: _watching,
       onEnterCosts: _enterCosts,
       onList: _list,
       listed: widget.listedNow(),

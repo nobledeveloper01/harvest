@@ -66,6 +66,20 @@ export function isOutlier(kobo: number, all: readonly number[]): boolean {
 export type Aggregate = {
   readonly kobo: number;
   readonly reports: number;
+  /*
+    How many distinct people are behind the figure.
+
+    Not the same as `reports` and not interchangeable with it: ten rows from one
+    account is one voice. The influence cap already stops that account *moving*
+    the price much, but a caller asking "is this well supported?" — the alert
+    job does — gets the wrong answer from a report count, and the price watch
+    test that fires an alert off a single shouter is what found it.
+
+    Anonymous reports each count as their own voice. There is no better answer:
+    the alternative, pooling them, would let one signed-in reporter reduce the
+    apparent support of everybody who reported without an account.
+  */
+  readonly reporters: number;
   readonly newest: Date;
   readonly stale: boolean;
 };
@@ -143,6 +157,7 @@ export function aggregate(reports: readonly Report[], now = new Date()): Aggrega
   return {
     kobo: Math.round(kobo),
     reports: bounded.length,
+    reporters: byReporter.size,
     newest,
     // Reported rather than hidden. FR-4.4: *the app MUST NOT hide prices merely
     // because they are stale — a stale price is more useful than no price,

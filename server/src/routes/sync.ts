@@ -49,6 +49,11 @@ const operations = {
     body: b,
   }),
   'price.report': (b: Record<string, unknown>) => ({ url: '/prices/report', body: b }),
+  'price.watch': (b: Record<string, unknown>) => ({ url: '/prices/watch', body: b }),
+  'price.watch.cancel': (b: Record<string, unknown>) => ({
+    url: '/prices/watch/cancel',
+    body: b,
+  }),
   'report.create': (b: Record<string, unknown>) => ({ url: '/reports', body: b }),
 } as const;
 

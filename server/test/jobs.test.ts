@@ -152,7 +152,10 @@ describe('the schedule', () => {
       await holder.query(`select name from jobs where name = 'listing-expiry' for update`);
 
       const ran = await runDueJobs({ db, push: new Sent() });
-      expect(ran).toEqual({});
+      // Named rather than `toEqual({})`. The empty-map version was true only
+      // while there was one job in the schedule, and it failed the day a second
+      // one arrived — for a reason that had nothing to do with locking.
+      expect(Object.keys(ran)).not.toContain('listing-expiry');
     } finally {
       // Rolled back in `finally`, not after the assertion. A failing
       // expectation throws, the client goes back to the pool still holding an

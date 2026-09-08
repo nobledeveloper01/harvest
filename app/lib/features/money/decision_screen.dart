@@ -33,6 +33,8 @@ class DecisionScreen extends StatefulWidget {
     required this.now,
     required this.onReportPrice,
     required this.onQuoteStorage,
+    required this.onWatchPrice,
+    required this.watching,
     required this.onEnterCosts,
     required this.onList,
     required this.listed,
@@ -52,6 +54,12 @@ class DecisionScreen extends StatefulWidget {
 
   /// Ask what a store quoted them.
   final VoidCallback onQuoteStorage;
+
+  /// Ask to be told when this crop reaches a price (F-305).
+  final VoidCallback onWatchPrice;
+
+  /// What they are already watching for, in kobo per kilogram, or null.
+  final int? watching;
 
   /// Ask what it costs to get the lot to market.
   final VoidCallback onEnterCosts;
@@ -214,7 +222,25 @@ class _DecisionScreenState extends State<DecisionScreen> {
                   nothing, which is the same answer the app gives everywhere
                   else it cannot help.
                 */
+                /*
+                  Offered only while there is something to wait for.
+
+                  A watch on a lot whose window has closed is a notification
+                  about a decision nobody can act on — the server refuses it for
+                  the same reason, and a row that queued an operation the server
+                  will reject is a row that looks like it worked.
+                */
                 if (_stillHasTime) ...[
+                  const SizedBox(height: Gap.m),
+                  _Another(
+                    icon: widget.watching == null
+                        ? Icons.notifications_none_rounded
+                        : Icons.notifications_active_rounded,
+                    label: widget.watching == null
+                        ? 'Tell me if the price goes up'
+                        : 'Telling you at ${naira(widget.watching! / 100)} a kg',
+                    onTap: widget.onWatchPrice,
+                  ),
                   const SizedBox(height: Gap.m),
                   _Another(
                     icon: widget.listed

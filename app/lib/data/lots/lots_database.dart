@@ -243,13 +243,38 @@ class Deals extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Lots, Prices, OutboxItems, Enquiries, Messages, Deals])
+/// A price a farmer asked to be told about (F-305).
+///
+/// The phone's own copy of something the server does the watching for. It is
+/// here so that the decision screen can say *watching ₦900* to somebody with no
+/// signal, immediately after they set it — the same local-first shape as
+/// everything else, and the reason the outbox exists.
+///
+/// Keyed by crop and region rather than by a server id, because there is
+/// exactly one watch per crop per region per person. An id would be a thing the
+/// phone had to learn from the server before it could undo something it did
+/// itself.
+@DataClassName('PriceWatchRow')
+class PriceWatches extends Table {
+  TextColumn get cropId => text()();
+  TextColumn get regionId => text()();
+
+  IntColumn get targetKoboPerKg => integer()();
+
+  /// The far end of the lot's window. The watch dies with the lot.
+  DateTimeColumn get expiresAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {cropId, regionId};
+}
+
+@DriftDatabase(tables: [Lots, Prices, OutboxItems, Enquiries, Messages, Deals, PriceWatches])
 class LotsDatabase extends _$LotsDatabase {
   LotsDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'harvest'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -290,6 +315,9 @@ class LotsDatabase extends _$LotsDatabase {
           }
           if (from < 6) {
             await m.createTable(deals);
+          }
+          if (from < 7) {
+            await m.createTable(priceWatches);
           }
         },
       );

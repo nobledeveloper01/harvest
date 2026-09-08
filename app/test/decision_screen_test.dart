@@ -74,6 +74,8 @@ void main() {
 
   late int reports;
   late int quotes;
+  late int watches;
+  int? watching;
   late int costEntries;
   late int listings;
   late Deductions deductions;
@@ -83,10 +85,13 @@ void main() {
     Decision? given, {
     Deductions costs = const Deductions(),
     Lot? about,
+    int? watchingFor,
   }) async {
+    watching = watchingFor;
     deductions = costs;
     reports = 0;
     quotes = 0;
+    watches = 0;
     costEntries = 0;
     listings = 0;
     final speaker = _Recording();
@@ -107,6 +112,8 @@ void main() {
           now: noon,
           onReportPrice: () => reports++,
           onQuoteStorage: () => quotes++,
+          onWatchPrice: () => watches++,
+          watching: watching,
           onEnterCosts: () => costEntries++,
           onList: () => listings++,
           listed: false,

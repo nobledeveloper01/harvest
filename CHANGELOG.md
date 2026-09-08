@@ -10,6 +10,19 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **Price alerts (F-305)** — *tell me when it reaches this*, from the decision
+  screen, with the keypad opening on what the crop is worth now so the question
+  a farmer answers is *how much better would it have to be* rather than *what
+  number am I thinking of*. The other half of the wedge: the spoilage clock says
+  how long you have, this says whether waiting is paying.
+- An alert will not fire on a **stale** price or on fewer than three separate
+  reporters. FR-4.4 is explicit that a stale price must not be hidden — shown
+  with its age beside it, a farmer can judge it. Pushed to their phone
+  unsolicited, they cannot. The screen says so before anybody sets a watch, so a
+  silent phone reads as *it has not happened* rather than as a broken feature.
+- A watch dies with the lot it was about, is fired once, and can be stopped in
+  one tap.
+
 - **How often is this right?** — the app's own record of being wrong, on the
   home screen under the countdowns rather than buried in settings. Each closed
   lot is read against the window that was stored on it at the time, never
@@ -48,6 +61,16 @@ Entries say *why*, not just what.
 - Five clips for *How did it go?*, bringing the bundle to 980.
 
 ### Fixed
+
+- **An alert could be manufactured by one person.** The threshold for waking
+  somebody counted price *reports* rather than reporters, so ten rows from one
+  account cleared a bar meant to require three people — the cheapest possible
+  lie, delivered to a phone. The per-reporter influence cap already stopped that
+  account moving the figure much; it had nothing to say about how well supported
+  the figure looked. `Aggregate` now carries `reporters` as well as `reports`.
+- The price endpoint and the alert job had the same query and the same call to
+  `aggregate` written twice. One function now, because a job with its own copy
+  is how somebody gets sent to market on a number the app itself does not show.
 
 - **A screen that fitted, measured against the wrong rectangle.** The deal
   screen's assertion that the money sentence is on screen compared it to the

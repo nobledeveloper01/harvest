@@ -23,6 +23,7 @@ import 'package:harvest/data/net/api.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
 import 'package:harvest/domain/market/deal.dart';
 import 'package:harvest/domain/spoilage/calibration.dart';
+import 'package:harvest/features/money/price_watch_screen.dart';
 import 'package:harvest/features/settings/calibration_screen.dart';
 import 'package:harvest/features/market/deal_screen.dart';
 import 'package:harvest/features/market/inbox_screen.dart';
@@ -537,6 +538,36 @@ Future<void> pumpTheUnreachable(
   );
   await tester.pumpAndSettle();
   await at('the three questions about a buyer', find.byType(RatingScreen));
+
+  /*
+    The price watch, before and after somebody has set one.
+
+    The second state is the only place in the app with a way to *stop* being
+    notified, and `CLAUDE.md` asks that every error path have a forward path —
+    a walk that saw only the first would be checking the half of this screen
+    that cannot be got wrong.
+  */
+  for (final watching in [null, 90000]) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: PriceWatchScreen(
+          cropLabel: 'Tomato',
+          suggestedKoboPerKg: 82000,
+          watchingKoboPerKg: watching,
+          onWatch: (_) {},
+          onStop: () {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at(
+      'the price watch, ${watching == null ? 'not set' : 'already set'}',
+      find.byType(PriceWatchScreen),
+    );
+  }
 
   /*
     The calibration report in both of its states.

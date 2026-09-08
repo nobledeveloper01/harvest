@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { require as requireCaller } from '../auth/guard.js';
-import { aggregate, isOutlier, weightOf, type Report } from '../prices/aggregate.js';
+import { isOutlier, weightOf } from '../prices/aggregate.js';
+import { pricesFor } from '../prices/current.js';
 
 /**
  * The five the app already knows, and no others.
@@ -20,6 +21,27 @@ const reportBody = z.object({
   region: z.enum(regions),
   koboPerKg: z.number().int().positive().max(10 ** 12),
   source: z.enum(['farmer', 'buyer', 'partner']).default('farmer'),
+});
+
+const watchBody = z.object({
+  crop: z.string().min(1).max(32),
+  region: z.enum(regions),
+  targetKoboPerKg: z.number().int().positive().max(10 ** 12),
+  /*
+    When the watch dies, supplied by the client rather than defaulted here.
+
+    It is the far end of the lot's spoilage window, and only the phone knows
+    that: the window was computed from the crop, the storage and the weather at
+    the moment the lot was logged, and this server has never seen a lot. A
+    default of "thirty days" here would keep messaging a farmer about tomatoes
+    that turned three weeks ago.
+  */
+  expiresAt: z.string().datetime(),
+});
+
+const cancelBody = z.object({
+  crop: z.string().min(1).max(32),
+  region: z.enum(regions),
 });
 
 const priceQuery = z.object({
@@ -97,65 +119,95 @@ export function priceRoutes(app: FastifyInstance, options: PriceOptions): void {
     beside the figure, because a farmer deciding on ₦180,000 is entitled to know
     whether the number is from this morning or from last week.
   */
+  /*
+    Tell me when this crop reaches this price (F-305).
+
+    The other half of the wedge. The spoilage clock says how long you have; this
+    says whether waiting is paying — which is the only question a farmer with a
+    lot and a low offer actually has.
+
+    One watch per crop per region per person, replaced rather than added to.
+    A farmer changing their mind about a number should not have to find and
+    delete the old one, and a list of watches is a list somebody has to prune.
+  */
+  app.post('/prices/watch', async (request, reply) => {
+    const who = await requireCaller(app.db, request, reply, options.signingKey);
+    if (!who) return reply;
+
+    const body = watchBody.safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: 'watch is not well formed' });
+
+    const expires = new Date(body.data.expiresAt);
+    if (expires.getTime() <= Date.now()) {
+      return reply.code(400).send({ error: 'that lot has already run out of time' });
+    }
+
+    const { rows } = await app.db.query<{ id: string }>(
+      `insert into price_watches (account_id, crop, region, target_kobo_per_kg, expires_at)
+       values ($1, $2, $3, $4, $5)
+       on conflict (account_id, crop, region) do update
+         set target_kobo_per_kg = excluded.target_kobo_per_kg,
+             expires_at         = excluded.expires_at,
+             created_at         = now(),
+             -- Re-armed. A new figure is a new question, and a watch that stayed
+             -- fired would silently never answer it.
+             notified_at        = null,
+             notified_kobo_per_kg = null
+       returning id`,
+      [who.accountId, body.data.crop, body.data.region, body.data.targetKoboPerKg, expires],
+    );
+
+    return reply.code(201).send({ id: rows[0]!.id });
+  });
+
+  /*
+    Stop watching — keyed by the crop and the region, not by an id.
+
+    There is exactly one watch per person per crop per region, so the id adds
+    nothing except a thing the phone would have to learn from the server before
+    it could undo something it did itself. A farmer with no signal who set a
+    watch by mistake can take it back immediately, and the cancellation queues
+    behind the watch in the same outbox.
+  */
+  app.post('/prices/watch/cancel', async (request, reply) => {
+    const who = await requireCaller(app.db, request, reply, options.signingKey);
+    if (!who) return reply;
+
+    const body = cancelBody.safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: 'not well formed' });
+
+    // Scoped to the caller in the statement rather than checked afterwards: a
+    // delete that finds the row first and then compares owners is a race.
+    await app.db.query(
+      'delete from price_watches where account_id = $1 and crop = $2 and region = $3',
+      [who.accountId, body.data.crop, body.data.region],
+    );
+
+    /*
+      200 whether or not there was one.
+
+      This arrives from an outbox that retries, so the second delivery finds
+      nothing — and a 404 there would be a permanent refusal for an operation
+      that already succeeded, which is how a queue gets stuck on a message it
+      has no reason to be stuck on.
+    */
+    return reply.code(200).send({ watching: false });
+  });
+
   app.get('/prices', async (request, reply) => {
     const query = priceQuery.safeParse(request.query);
     if (!query.success) return reply.code(400).send({ error: 'bad query' });
 
-    const values: unknown[] = [query.data.crop];
-    let only = '';
-    if (query.data.region) {
-      values.push(query.data.region);
-      only = 'and region = $2';
-    }
-
-    const { rows } = await app.db.query<{
-      region: string;
-      kobo_per_kg: string;
-      weight: string;
-      source: string;
-      reported_by: string | null;
-      reported_at: Date;
-    }>(
-      `select region, kobo_per_kg, weight, source, reported_by, reported_at
-       from price_reports
-       where crop = $1 ${only}
-         and is_outlier = false
-         and reported_at > now() - interval '30 days'
-       order by reported_at desc`,
-      values,
+    const prices = (await pricesFor(app.db, query.data.crop, query.data.region)).map(
+      (price) => ({
+        region: price.region,
+        koboPerKg: price.kobo,
+        reports: price.reports,
+        sources: price.sources,
+        newest: price.newest,
+        stale: price.stale,
+      }),
     );
-
-    const byRegion = new Map<string, { reports: Report[]; sources: Set<string> }>();
-    for (const row of rows) {
-      const region = byRegion.get(row.region) ?? {
-        reports: [],
-        sources: new Set<string>(),
-      };
-      region.reports.push({
-        kobo: Number(row.kobo_per_kg),
-        weight: Number(row.weight),
-        at: row.reported_at,
-        // Carried through, because the influence cap is per reporter and a
-        // hundred reports from one person is the attack it exists for.
-        ...(row.reported_by ? { by: row.reported_by } : {}),
-      });
-      region.sources.add(row.source);
-      byRegion.set(row.region, region);
-    }
-
-    const prices = [...byRegion.entries()]
-      .map(([region, held]) => {
-        const figure = aggregate(held.reports);
-        return figure && {
-          region,
-          koboPerKg: figure.kobo,
-          reports: figure.reports,
-          sources: [...held.sources].sort(),
-          newest: figure.newest,
-          stale: figure.stale,
-        };
-      })
-      .filter((price) => price !== null);
 
     return reply.send({ crop: query.data.crop, prices });
   });

@@ -2595,3 +2595,54 @@ order, rather than reasoned about.
 That is the same shape as this morning's `getRect` finding: *absent from the
 tree* and *absent from the screen* are not the same claim, and a negative
 assertion is where the difference shows up.
+
+## 2026-09-08 (later still) — Price alerts, and one voice pretending to be three
+
+F-305: *price alert when a crop crosses a threshold.* It is the other half of
+the wedge. The spoilage clock says how long you have; this says whether waiting
+is paying, which is the actual question a farmer with a lot and a low offer is
+holding.
+
+The screen opens its keypad on what the crop is worth today. A blank pad asks
+somebody to invent a number; a pad showing today's price asks them how much
+better it would have to be.
+
+### The test that caught the real defect
+
+Written before the code was right, and it failed:
+
+> `will not fire on one person reporting many times`
+
+`enoughToWake` was compared against the **report** count. Ten inserts from one
+account cleared a threshold meant to require three people. The per-reporter
+influence cap already stopped that account moving the figure much — it says
+nothing about how well *supported* the figure looks, and "well supported" is the
+only thing standing between a notification and somebody's afternoon.
+
+`Aggregate` carries `reporters` now, distinct from `reports`. Anonymous reports
+each count as their own voice; pooling them would let one signed-in reporter
+reduce the apparent support of everybody without an account.
+
+### What a notification is allowed to be, versus what a screen is
+
+FR-4.4 is explicit that the app must not hide a stale price. Shown with its age
+beside it, a four-day-old figure is judgeable and useful. A notification carries
+neither the age nor the source, arrives while somebody is doing something else,
+and says *this is worth acting on*. So stale is disqualifying here and nowhere
+else, and the watch screen says so before anybody sets one — a farmer who is not
+told has no way to tell a silent alert from a dead one.
+
+### Two copies of the same query
+
+`/prices` and the job each had six lines of SQL and a call to `aggregate`. A job
+with its own copy is how somebody gets sent to market on a number the app itself
+does not show — one forgotten `is_outlier = false` and the alert is about a
+typo. One function now, and the endpoint was refactored onto it rather than the
+job being written against a copy.
+
+### A locking test that was over-specific
+
+`will not take a row another server is holding` asserted `toEqual({})` on the
+whole result map, which was only true while the schedule had one job in it. The
+second job broke it for a reason with nothing to do with locking. It names the
+row it cares about now.

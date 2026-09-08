@@ -1,4 +1,5 @@
 import type { Db } from './db.js';
+import { isWorthWaking, pricesFor, type RegionalPrice } from './prices/current.js';
 import type { Push } from './push.js';
 
 export type JobContext = { readonly db: Db; readonly push: Push };
@@ -50,6 +51,89 @@ export const expireListings: Job = async ({ db, push }, now) => {
 };
 
 /**
+ * Wakes a farmer when the crop they are holding reaches the price they asked
+ * about (F-305).
+ *
+ * Reads the same figure the price endpoint serves — one function, because a
+ * job with its own copy of the query is how somebody gets sent to market on a
+ * number the app itself does not show.
+ *
+ * Three things it will not do. It will not fire on a **stale** price, or on
+ * one with fewer than `enoughToWake` reports behind it: a displayed price is
+ * allowed to be thin because it carries its age and its source and a farmer
+ * can judge it, and a notification carries neither. And it will not fire
+ * **twice** — `notified_at`, for the same reason the listing warning has
+ * `warned_at`.
+ */
+export const firePriceWatches: Job = async ({ db, push }, now) => {
+  const { rows: watches } = await db.query<{
+    id: string;
+    account_id: string;
+    crop: string;
+    region: string;
+    target_kobo_per_kg: string;
+  }>(
+    `select id, account_id, crop, region, target_kobo_per_kg
+     from price_watches
+     where notified_at is null and expires_at > $1`,
+    [now],
+  );
+
+  // One query per crop rather than per watch: a hundred farmers watching
+  // tomatoes is one aggregation, and the aggregation is the expensive half.
+  const prices = new Map<string, RegionalPrice[]>();
+  let fired = 0;
+
+  for (const watch of watches) {
+    let forCrop = prices.get(watch.crop);
+    if (!forCrop) {
+      forCrop = await pricesFor(db, watch.crop);
+      prices.set(watch.crop, forCrop);
+    }
+
+    const price = forCrop.find((p) => p.region === watch.region);
+    if (!price || !isWorthWaking(price)) continue;
+    if (price.kobo < Number(watch.target_kobo_per_kg)) continue;
+
+    /*
+      Marked before the push, not after.
+
+      A gateway that accepts the message and then throws — or a process killed
+      between the two — leaves the row un-fired, and the next tick sends it
+      again. Fifteen minutes apart, for as long as the price holds. Writing
+      first can lose a notification; writing second can send forty, and only
+      one of those is a phone somebody switches off.
+    */
+    const { rowCount } = await db.query(
+      `update price_watches set notified_at = $2, notified_kobo_per_kg = $3
+       where id = $1 and notified_at is null`,
+      [watch.id, now, price.kobo],
+    );
+    // Another server took it between the select and here. `skip locked` keeps
+    // two servers off the same *job*, not off the same row of somebody else's
+    // table.
+    if (!rowCount) continue;
+
+    await push.send(
+      watch.account_id,
+      'The price has come up',
+      `${watch.crop} is at ₦${Math.round(price.kobo / 100)} a kilogram where you are.`,
+    );
+    fired++;
+  }
+
+  const { rowCount: swept } = await db.query(
+    // Watches die with the lot they were about. Deleted rather than kept:
+    // there is nothing to learn from a watch that expired, and the table is
+    // one row per person per crop precisely so that it stays small.
+    'delete from price_watches where expires_at <= $1',
+    [now],
+  );
+
+  return `fired ${fired}, expired ${swept ?? 0}`;
+};
+
+/**
  * What runs, and how often, in the same place as the functions that do it.
  *
  * Not seeded into the table by a migration. A schedule split between a
@@ -59,6 +143,10 @@ export const expireListings: Job = async ({ db, push }, now) => {
  */
 export const schedule: Record<string, { every: number; run: Job }> = {
   'listing-expiry': { every: 900, run: expireListings },
+  // Slower than the expiry sweep on purpose. A price that moved four minutes
+  // ago is not news a farmer needed four minutes ago, and the cost of a tighter
+  // loop is an aggregation per crop per tick.
+  'price-watches': { every: 1800, run: firePriceWatches },
 };
 
 /**
