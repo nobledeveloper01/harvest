@@ -2541,3 +2541,57 @@ thing on that screen that must not reflow.
 
 The compose button in a thread. There is no recorder plugin wired, and a button
 that did nothing would be worse than one that plainly is not ready.
+
+## 2026-09-08 (later) — The app's own record of being wrong
+
+Phase 6's exit gate is *a prediction the engine made is compared against what
+actually happened to that lot, and the comparison is published — including where
+the engine was wrong.* Everything that gate needs has been on the lot row since
+Phase 2: the window, its confidence, and the table version that produced it,
+stored at the moment it was predicted. What was missing was the arithmetic and a
+screen.
+
+Both exist now, and the screen is on the home list rather than in settings. A
+calibration figure in a repository is a thing engineers read; the person who
+acted on a countdown and lost a crate anyway is the one entitled to it.
+
+### The two refusals are the whole design
+
+**A lot sold before its window closed says nothing.** It might have kept another
+week or gone the next morning, and the app cannot know which. Counting it as a
+success would be a model made to look right by a product whose entire purpose is
+to make people sell sooner — the failure mode is not subtle, it is the default.
+The verdict is `leftTooSoonToSay`, and the screen states how many there were.
+
+**A goat is not a shelf-life failure.** Nor is a crushed load or a buyer who
+never came. Counting those against the engine would make it look bad for the
+wrong reason, which is as dishonest as making it look good, and the closed
+`LossReason` list from Phase 2 is what makes the distinction possible at all.
+
+The two error directions are never summed. Optimistic costs a harvest — the
+farmer was told they had days and did not. Pessimistic costs a sale. A single
+"83% accurate" hides the only one of those that takes money off somebody.
+
+And below thirty judgeable endings the screen states no figure. A percentage
+from four harvests moves twenty-five points when a fifth arrives, and a farmer
+who reads "75% right" once will carry that number for a season.
+
+### A test that was true about itself and nothing else
+
+`a goat is not a shelf-life failure` asserted `verdict == notAboutSpoilage`
+against `!spoilageLosses.contains(why)` — the constant under test on both sides
+of the equals sign. Moving `animals` into the engine's score left it green. It
+is a table of expected answers now, with a check that the table covers every
+`LossReason`, so a seventh has to be classified on purpose.
+
+### And one that passed because the widget was never built
+
+`does not mention versions when there is only one` asserted `findsNothing` for
+a card at the bottom of a `ListView` — which only builds what is on screen, so
+the assertion passed for free. Changing the condition to `isNotEmpty` did not
+fail it. Scrolling to the bottom first, it fails. Both were measured, in that
+order, rather than reasoned about.
+
+That is the same shape as this morning's `getRect` finding: *absent from the
+tree* and *absent from the screen* are not the same claim, and a negative
+assertion is where the difference shows up.

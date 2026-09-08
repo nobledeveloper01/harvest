@@ -34,6 +34,7 @@ class HomeScreen extends StatelessWidget {
     required this.waiting,
     required this.onClosed,
     required this.onDecide,
+    required this.onCalibration,
     super.key,
   });
 
@@ -78,6 +79,13 @@ class HomeScreen extends StatelessWidget {
 
   /// Open the money question — what this lot is worth, and what waiting costs.
   final Future<void> Function(BuildContext context, Lot lot) onDecide;
+
+  /// Open the comparison between what the app guessed and what happened.
+  ///
+  /// Reached from here, under the countdowns, because that is what it is about.
+  /// Buried in settings it would be a thing engineers read; the person the app
+  /// was wrong to is the one entitled to it.
+  final VoidCallback onCalibration;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +179,12 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
               ),
+              if (stored.lots.isNotEmpty)
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.m),
+                  child: _HowOftenRight(onTap: onCalibration),
+                ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, Gap.l),
                 child: PrimaryButton(
@@ -179,6 +193,47 @@ class HomeScreen extends StatelessWidget {
                   onPressed: onLogAnother,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The way in to the app's own record of being wrong.
+///
+/// A quiet row rather than a button: it is not what a farmer came to the screen
+/// to do, and a product that shouted about its own accuracy would be making a
+/// claim rather than offering a check.
+class _HowOftenRight extends StatelessWidget {
+  const _HowOftenRight({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: 'How often is this right?',
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.chip,
+          onTap: onTap,
+          child: Row(
+            children: [
+              Icon(Icons.fact_check_outlined,
+                  size: 20, color: scheme.onSurfaceVariant),
+              const SizedBox(width: Gap.s),
+              Expanded(
+                child: Text('How often is this right?', style: text.bodyMedium),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  size: 22, color: scheme.onSurfaceVariant),
             ],
           ),
         ),

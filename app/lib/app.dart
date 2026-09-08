@@ -23,6 +23,7 @@ import 'domain/money/storing.dart';
 import 'domain/spoilage/shelf_life.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
+import 'features/settings/calibration_screen.dart';
 import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
 import 'package:dio/dio.dart';
@@ -34,6 +35,7 @@ import 'data/net/outbox_store.dart';
 import 'data/net/inbox_store.dart';
 import 'features/account/sign_in_screen.dart';
 import 'domain/market/deal.dart';
+import 'domain/spoilage/calibration.dart';
 import 'features/market/deal_screen.dart';
 import 'features/market/inbox_screen.dart';
 import 'features/market/rating_screen.dart';
@@ -696,6 +698,24 @@ class _HarvestAppState extends State<HarvestApp> {
     Judgement.qualityAsDescribed: 'qualityAsDescribed',
   };
 
+  /// What the engine guessed, against what happened.
+  ///
+  /// Phase 6's exit gate, published to the farmer rather than only to us. Read
+  /// once when the screen opens rather than watched: these are closed lots, and
+  /// a row that changes while somebody is reading a report about it would be a
+  /// lot being closed in another window, which cannot happen.
+  Future<void> _openCalibration(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final report = Calibration.of(await _lots.endings());
+    if (!mounted) return;
+    await navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            CalibrationScreen(report: report, onBack: navigator.pop),
+      ),
+    );
+  }
+
   /// Says yes or no to an enquiry, locally first.
   ///
   /// The row is updated on the phone immediately and queued for the server —
@@ -743,6 +763,7 @@ class _HarvestAppState extends State<HarvestApp> {
         language: _language ?? Speech.values.first,
         onLogAnother: () => setState(() => _logging = true),
         onInbox: () => _openInbox(_navigator.currentContext!),
+        onCalibration: () => _openCalibration(_navigator.currentContext!),
         waiting: _waiting,
         onToggleBrightness: _flipBrightness,
         onClosed: _close,

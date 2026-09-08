@@ -188,6 +188,24 @@ SMS fallback alerts, price alerts, model calibration from recorded outcomes.
 happened to that lot, and the comparison is published — including where the
 engine was wrong.*
 
+**The comparison is built and the app publishes it; what is missing is
+harvests.** `domain/spoilage/calibration.dart` reads each closed lot against the
+window that was stored on it at the time — never recomputed, because today's
+table against last month's harvest would call the difference an improvement —
+and *How often is this right?* on the home screen shows the result, naming the
+crops the engine was optimistic about rather than only a headline figure.
+
+Two things it deliberately refuses. It does not count a lot **sold** before its
+window closed: nobody knows how much longer that crop would have kept, and
+counting it as a success is how a model is made to look right by a product whose
+entire purpose is to make people sell sooner. And it does not count a lot lost
+to goats, damage or nobody turning up — the engine predicts shelf life and does
+not claim to predict any of those.
+
+Below thirty judgeable endings it states no figure at all and says so. So the
+gate needs a pilot: thirty farmers who logged a harvest, watched a countdown and
+told the app what happened. That is field work, not engineering.
+
 ## Phase 7 — Reach · *v1.2*
 
 Extension-officer dashboard, outbreak mapping, more crops and diseases, more

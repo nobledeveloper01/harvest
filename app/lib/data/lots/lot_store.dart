@@ -4,6 +4,7 @@ import '../../domain/crops/crop.dart';
 import '../../domain/lots/lot.dart';
 import '../../domain/lots/outcome.dart';
 import '../../domain/lots/quantity.dart';
+import '../../domain/spoilage/calibration.dart';
 import '../../domain/spoilage/shelf_life.dart';
 import 'lots_database.dart';
 
@@ -119,6 +120,44 @@ class LotStore {
           lossReason: Value(outcome.why?.id),
         ),
       );
+
+  /// Every closed lot, as the comparison Phase 6's exit gate turns on.
+  ///
+  /// Read straight from the rows rather than through [Lot], because these are
+  /// records written months apart by versions of the app that no longer exist,
+  /// and a lot whose crop this version cannot name still has a prediction and
+  /// an ending worth counting. `_toLot` would drop it.
+  ///
+  /// Nothing here is recomputed. The window is the one that was shown to the
+  /// farmer at the time, under the table version stored beside it — recomputing
+  /// it from today's table would compare this month's engine against last
+  /// month's harvest and call the difference an improvement.
+  Future<List<Ending>> endings() async {
+    final rows = await (_database.select(_database.lots)
+          ..where((row) => row.outcomeAt.isNotNull()))
+        .get();
+
+    final endings = <Ending>[];
+    for (final row in rows) {
+      final crop = _byId(Crop.values, row.cropId, (c) => c.id);
+      final outcome = _outcomeOf(row);
+      if (crop == null || outcome == null) continue;
+
+      endings.add(Ending(
+        crop: crop,
+        harvestedAt: row.harvestedAt,
+        outcome: outcome,
+        shortest: row.predictedShortestMinutes == null
+            ? null
+            : Duration(minutes: row.predictedShortestMinutes!),
+        longest: row.predictedLongestMinutes == null
+            ? null
+            : Duration(minutes: row.predictedLongestMinutes!),
+        tableVersion: row.shelfLifeTableVersion,
+      ));
+    }
+    return endings;
+  }
 
   /// A row, or null if this version of the app cannot name what is in it.
   Lot? _toLot(LotRow row) {

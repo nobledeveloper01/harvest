@@ -22,6 +22,8 @@ import 'package:harvest/data/net/account_store.dart';
 import 'package:harvest/data/net/api.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
 import 'package:harvest/domain/market/deal.dart';
+import 'package:harvest/domain/spoilage/calibration.dart';
+import 'package:harvest/features/settings/calibration_screen.dart';
 import 'package:harvest/features/market/deal_screen.dart';
 import 'package:harvest/features/market/inbox_screen.dart';
 import 'package:harvest/features/market/rating_screen.dart';
@@ -537,6 +539,32 @@ Future<void> pumpTheUnreachable(
   await at('the three questions about a buyer', find.byType(RatingScreen));
 
   /*
+    The calibration report in both of its states.
+
+    The one everybody sees for the first months — not enough finished lots to
+    say anything — and the one it becomes. They are different screens: the first
+    has no figure on it at all, deliberately, and a walk that only saw the
+    second would be checking the half of this feature that does not ship first.
+  */
+  for (final (label, endings) in [
+    ('with nothing to say yet', _someEndings(4)),
+    ('with enough to say', _someEndings(Calibration.enoughToPublish + 2)),
+  ]) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: CalibrationScreen(
+          report: Calibration.of(endings),
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('how often it is right, $label', find.byType(CalibrationScreen));
+  }
+
+  /*
     The capture screen, in the two states that differ: nothing worth
     photographing, and something. The shutter appears in one and not the other,
     so a suite that only saw one of them would be checking half a screen.
@@ -633,4 +661,27 @@ class _NoServer implements Api {
   @override
   Future<Answer> get(String path, {Map<String, dynamic>? query}) async =>
       const Answer(status: 0, body: {});
+}
+
+/// Closed lots for the calibration report: mostly right, one wrong, and one of
+/// each kind the report is obliged to leave out.
+List<Ending> _someEndings(int count) {
+  final harvest = DateTime(2026, 8, 1, 7);
+  Ending ending(Crop crop, LotOutcome what, LossReason? why, int days) => Ending(
+        crop: crop,
+        harvestedAt: harvest,
+        outcome: Outcome.record(
+            what: what, at: harvest.add(Duration(days: days)), why: why)!,
+        shortest: const Duration(days: 3),
+        longest: const Duration(days: 6),
+        tableVersion: 1,
+      );
+
+  return [
+    ending(Crop.tomato, LotOutcome.lost, LossReason.rotted, 1),
+    ending(Crop.tomato, LotOutcome.sold, null, 2),
+    ending(Crop.yam, LotOutcome.lost, LossReason.animals, 2),
+    for (var i = 0; i < count - 1; i++)
+      ending(Crop.tomato, LotOutcome.lost, LossReason.rotted, 4),
+  ];
 }

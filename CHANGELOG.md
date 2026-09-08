@@ -10,6 +10,21 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **How often is this right?** — the app's own record of being wrong, on the
+  home screen under the countdowns rather than buried in settings. Each closed
+  lot is read against the window that was stored on it at the time, never
+  recomputed: today's table against last month's harvest would call the
+  difference an improvement. It names the crops the engine was optimistic about,
+  because a headline figure quietly drops that. Phase 6's exit gate.
+- The report refuses to count two things. A lot **sold** before its window
+  closed says nothing — nobody knows how much longer it would have kept, and
+  counting it as a success is how a model is made to look right by a product
+  whose whole purpose is to make people sell sooner. And a lot lost to goats,
+  damage or nobody coming is not a shelf-life failure; the engine does not claim
+  to predict any of those.
+- Below thirty judgeable endings it states no figure at all, says how many it
+  has, and says why it is not putting a number on them.
+
 - **Deals and ratings on the phone.** Whichever party is holding a phone writes
   down what the two of them agreed — a quantity and a whole price, on one keypad
   with a tap to switch between them — and the other side agrees to the same
