@@ -2413,3 +2413,64 @@ Listings are regional, like prices. `migrations/0009` drops the columns and says
 why, and the geometry module stays with a note that it guards a road not
 currently driven on: a **buyer** may well give a coordinate, and that is where
 it goes back.
+
+## The inbox, and four hours of tests telling the truth about it
+
+The enquiries arrive on the phone the way the spec insists everything server-side
+must: `InboxStore.pull` is the only thing in the app that reads `/sync/pull`, it
+writes into Drift, and both screens read Drift. No screen waits for a network. A
+farmer four days from a signal opens the inbox and sees everything that had
+arrived by the last time they had one.
+
+The cursor moves **after** the rows are written, never before. Storing it first
+is the bug that loses a page for ever: a crash between the two leaves the phone
+claiming to have caught up on messages it never wrote down, and the server never
+sends them again.
+
+Two decisions on the screens worth keeping. The empty inbox does not say *no
+enquiries* — that reads as a fault — it says nobody has asked yet, and then says
+the thing a farmer can do about it. And the accept/decline pair have **equal
+weight**: a green accept beside a grey decline is a screen with an opinion about
+what somebody should do with a stranger, and declining is the right answer often
+enough that it should not look like the mistake.
+
+### What the gates found, in the order they found it
+
+**A synthetic bold.** `font_weight_test` caught the new badge asking for `w600`
+without naming the `wght` axis — Skia fakes the weight and the result is a smear.
+Exactly the check that exists for it, on the first screen to forget it.
+
+**Two horizontal overflows** on the 5" floor: the accept/decline buttons at 156
+dp each, and `BackButtonRow` with a sentence in it rather than a crop name. The
+second is fixed in the row itself, so every future caller gets it — and that
+immediately produced a `Flexible` inside a `Flexible` on the diagnosis screen,
+which is a parent-data error rather than a wider title.
+
+**An empty state taller than the screen** at 200%, which is the third time a
+placeholder has rendered a yellow-striped bar instead of its own sentence.
+
+### And two that were not about the code at all
+
+**`!timersPending`.** A Drift stream watched at the root of the app holds a
+timer, and Flutter checks for pending timers at the end of the **test body** —
+which is after `addTearDown` and before `tearDown`, so the database closed in
+`tearDown` was closed too late. Every test that reached the home screen failed as
+though the app leaked something. The badge is a one-shot count now, asked when a
+farmer looks at the screen, which is both the simpler shape and the honest one.
+
+**A seventeen-minute stall** on a file that runs in five seconds alone. The app
+constructed a real `Dio` against an unreachable host, and a widget test at the
+mercy of whatever the machine's resolver does with `harvest.invalid` is a widget
+test with a random runtime. The `Api` is injectable now, for the reason the
+speaker and the database already were.
+
+Also measured and fixed: pumping the same screen twice in `pumpTheUnreachable`
+took the touch-target suite from four seconds to a hundred and two. Every other
+screen there is pumped once, so nothing had hit it. A blank frame between the
+two states makes each a fresh mount.
+
+**The suite is slower than it was** — a few minutes rather than a few seconds —
+and that is not fully explained by the four extra screens. Two of the long runs
+had a debug app on the simulator and a Node server competing for the machine, and
+the runs since are between two and four minutes with no single file over eight
+seconds. Worth watching rather than declared solved.

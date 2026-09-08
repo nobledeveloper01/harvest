@@ -149,13 +149,66 @@ class OutboxItems extends Table {
   DateTimeColumn get queuedAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Lots, Prices, OutboxItems])
+/// An enquiry somebody made about a lot, as the server last told us.
+///
+/// A **mirror**, not a source. `docs/07-BACKEND-SPEC.md`: *server data arrives
+/// by writing into Drift; the UI observes Drift.* No screen in this app reads
+/// the network — a farmer four days from a signal opens the inbox and sees
+/// every enquiry that had arrived by the time they last had one, which is the
+/// truth and is useful.
+@DataClassName('EnquiryRow')
+class Enquiries extends Table {
+  /// The server's uuid, so a row that arrives twice is one row.
+  TextColumn get id => text()();
+
+  TextColumn get status => text()();
+  TextColumn get cropId => text()();
+  TextColumn get buyerId => text()();
+  TextColumn get sellerId => text()();
+
+  RealColumn get quantityWantedKg => real().nullable()();
+  IntColumn get offerKobo => integer().nullable()();
+
+  /// Null until both sides have agreed. The server does not send it before
+  /// then, and this column being empty is that promise, kept on the phone.
+  TextColumn get buyerPhone => text().nullable()();
+  TextColumn get sellerPhone => text().nullable()();
+
+  /// The change cursor this row arrived under.
+  IntColumn get seq => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One message in a thread.
+@DataClassName('MessageRow')
+class Messages extends Table {
+  TextColumn get id => text()();
+  TextColumn get enquiryId => text()();
+  TextColumn get senderId => text()();
+
+  /// `text`, `voice` or `image` — a kind, not an attachment. Typing excludes
+  /// the primary persona, so speech is a first-class message here exactly as it
+  /// is in the server's schema.
+  TextColumn get kind => text()();
+
+  TextColumn get body => text().nullable()();
+  TextColumn get mediaKey => text().nullable()();
+  DateTimeColumn get sentAt => dateTime()();
+  IntColumn get seq => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Lots, Prices, OutboxItems, Enquiries, Messages])
 class LotsDatabase extends _$LotsDatabase {
   LotsDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'harvest'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -189,6 +242,10 @@ class LotsDatabase extends _$LotsDatabase {
           }
           if (from < 4) {
             await m.createTable(outboxItems);
+          }
+          if (from < 5) {
+            await m.createTable(enquiries);
+            await m.createTable(messages);
           }
         },
       );

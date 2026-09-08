@@ -26,11 +26,15 @@ import 'features/lots/crop_grid_screen.dart';
 import 'features/lots/quantity_screen.dart';
 import 'features/home/home_screen.dart';
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
 
 import 'data/net/account_store.dart';
 import 'data/net/api.dart';
 import 'data/net/outbox_store.dart';
+import 'data/net/inbox_store.dart';
 import 'features/account/sign_in_screen.dart';
+import 'features/market/inbox_screen.dart';
+import 'features/market/thread_screen.dart';
 import 'features/money/decision_screen.dart';
 import 'features/money/costs_screen.dart';
 import 'features/money/price_screen.dart';
@@ -63,6 +67,7 @@ class HarvestApp extends StatefulWidget {
     this.database,
     this.alarms,
     this.weather,
+    this.api,
     super.key,
   });
 
@@ -78,6 +83,16 @@ class HarvestApp extends StatefulWidget {
   final LotsDatabase? database;
   final Alarms? alarms;
   final WeatherStore? weather;
+
+  /// The seam to the server.
+  ///
+  /// Injectable for the same reason the speaker and the database are: a widget
+  /// test that constructs a real `Dio` is a widget test that can reach for a
+  /// network, and one that does — even to fail — is at the mercy of whatever
+  /// the machine's resolver does with an unreachable host. It cost seventeen
+  /// minutes in one suite run and four seconds in the next, which is the
+  /// signature of exactly that.
+  final Api? api;
 
   @override
   State<HarvestApp> createState() => _HarvestAppState();
@@ -109,10 +124,13 @@ class _HarvestAppState extends State<HarvestApp> {
     a lot writes a row in the outbox and returns; the server hears about it when
     there is a signal, and the farmer's screen has already said so.
   */
-  late final Api _api = Api(http: Dio(), baseUrl: _serverUrl);
+  late final Api _api =
+      widget.api ?? Api(http: Dio(), baseUrl: _serverUrl);
   late final AccountStore _accounts =
       AccountStore(api: _api, tokens: ForgetfulTokenStore());
   late final Outbox _outbox = Outbox(database: _database, api: _api);
+  late final InboxStore _inbox = InboxStore(database: _database, api: _api);
+
 
   /// The lots this session has put on the market.
   final _listed = <String>{};
@@ -478,6 +496,97 @@ class _HarvestAppState extends State<HarvestApp> {
     );
   }
 
+  /// Opens the enquiries, and asks the server what it has missed.
+  ///
+  /// The screen is built from the phone's own rows and does not wait for the
+  /// answer — a pull that never lands leaves a farmer looking at everything
+  /// that had arrived by the last time they had a signal, which is the truth.
+  void _openInbox(BuildContext context) {
+    final navigator = Navigator.of(context);
+    unawaited(_inbox.pull().then((_) => _countWaiting()));
+    navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => StreamBuilder<List<EnquiryRow>>(
+          stream: _inbox.watchEnquiries(),
+          builder: (context, snapshot) => InboxScreen(
+            enquiries: snapshot.data ?? const [],
+            me: _accounts.account?.id ?? '',
+            onBack: navigator.pop,
+            onOpen: (enquiry) => _openThread(context, enquiry),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openThread(BuildContext context, EnquiryRow enquiry) {
+    final navigator = Navigator.of(context);
+    navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => StreamBuilder<List<EnquiryRow>>(
+          stream: _inbox.watchEnquiries(),
+          builder: (context, enquiries) {
+            final current = (enquiries.data ?? const <EnquiryRow>[])
+                    .where((e) => e.id == enquiry.id)
+                    .firstOrNull ??
+                enquiry;
+            return StreamBuilder<List<MessageRow>>(
+              stream: _inbox.watchThread(enquiry.id),
+              builder: (context, messages) => ThreadScreen(
+                enquiry: current,
+                messages: messages.data ?? const [],
+                me: _accounts.account?.id ?? '',
+                onBack: navigator.pop,
+                onAccept: () => _answer(current, 'enquiry.accept'),
+                onDecline: () => _answer(current, 'enquiry.decline'),
+                // No recorder is wired yet, and a button that did nothing
+                // would be worse than one that is plainly not ready.
+                onSpeak: null,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Says yes or no to an enquiry, locally first.
+  ///
+  /// The row is updated on the phone immediately and queued for the server —
+  /// a farmer who taps "talk to them" with no signal has answered, and the
+  /// screen says so. The server's copy catches up when the outbox drains.
+  Future<void> _answer(EnquiryRow enquiry, String kind) async {
+    final status = kind == 'enquiry.accept' ? 'accepted' : 'declined';
+    await (_database.update(_database.enquiries)
+          ..where((row) => row.id.equals(enquiry.id)))
+        .write(EnquiriesCompanion(status: Value(status)));
+    await _outbox.add(kind, {'id': enquiry.id});
+    unawaited(_outbox.drain());
+    await _countWaiting();
+  }
+
+  /*
+    The badge is a question asked when it matters, not a subscription.
+
+    A Drift stream held at the root of the app keeps a timer alive for the life
+    of the process, which every widget test then trips over — `!timersPending`,
+    reported as though the app had leaked something. And a stream is the wrong
+    shape for this: the number has to be right when a farmer looks at the home
+    screen, so it is counted then, and again whenever something could have
+    changed it.
+
+    Counted from the phone's own rows rather than fetched from the server,
+    because a farmer with no signal would otherwise get a zero meaning *we could
+    not ask* rather than *nobody is waiting*, and those are different facts.
+  */
+  int _waiting = 0;
+
+  Future<void> _countWaiting() async {
+    final id = _accounts.account?.id;
+    final waiting = id == null ? 0 : await _inbox.waitingFor(id);
+    if (mounted && waiting != _waiting) setState(() => _waiting = waiting);
+  }
+
   Widget _home() => HomeScreen(
         stored: _stored,
         now: DateTime.now(),
@@ -487,6 +596,8 @@ class _HarvestAppState extends State<HarvestApp> {
         // screen is unreachable before that.
         language: _language ?? Speech.values.first,
         onLogAnother: () => setState(() => _logging = true),
+        onInbox: () => _openInbox(_navigator.currentContext!),
+        waiting: _waiting,
         onToggleBrightness: _flipBrightness,
         onClosed: _close,
         onDecide: (context, lot) =>

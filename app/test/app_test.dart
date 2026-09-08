@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:harvest/app.dart';
-import 'package:harvest/core/theme.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harvest/app.dart';
+import 'package:harvest/core/theme.dart';
+import 'package:harvest/data/net/api.dart';
 import 'package:harvest/data/alerts/alarms.dart';
 import 'package:harvest/data/lots/lot_store.dart';
 import 'package:harvest/data/lots/lots_database.dart';
@@ -146,8 +147,19 @@ void main() {
     // A store with no network. Every test here should behave as a farmer in a
     // field does — no reading, wider windows, nothing waited for.
     weather = WeatherStore(http: _Offline());
+
+    /*
+      `addTearDown`, not `tearDown`, and the difference is the whole bug.
+
+      The home screen watches Drift for the enquiry count, and a live stream
+      query holds a timer. Flutter checks for pending timers at the end of the
+      **test body** — which is after `addTearDown` callbacks and before
+      `tearDown` ones — so a database closed in `tearDown` is closed too late,
+      and every test that reached the home screen failed with `!timersPending`
+      as though the app had leaked something.
+    */
+    addTearDown(database.close);
   });
-  tearDown(() => database.close());
 
   /// A lot on disk, so the app opens on the harvest list rather than on the
   /// logging flow.
@@ -221,6 +233,13 @@ void main() {
   Future<_Silent> launch(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+
+    // Unmounted first, so the widgets let go of the database before it closes.
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+
     final speaker = _Silent();
     await tester.pumpWidget(
       HarvestApp(
@@ -229,6 +248,8 @@ void main() {
         // In memory, so a test never touches the farmer's actual database and
         // never needs sqlite3's platform libraries.
         database: database,
+        // Never a real `Dio`. See `HarvestApp.api`.
+        api: _NoServer(),
         alarms: alarms,
         weather: weather,
       ),
@@ -803,4 +824,25 @@ void main() {
       expect(find.text('Your harvest'), findsOneWidget);
     });
   });
+}
+
+
+/// A server nothing can reach, so no test ever waits on a resolver.
+class _NoServer implements Api {
+  @override
+  String? bearer;
+
+  @override
+  String get baseUrl => '';
+
+  @override
+  Dio get http => throw UnimplementedError();
+
+  @override
+  Future<Answer> post(String path, Map<String, dynamic> body) async =>
+      const Answer(status: 0, body: {});
+
+  @override
+  Future<Answer> get(String path, {Map<String, dynamic>? query}) async =>
+      const Answer(status: 0, body: {});
 }

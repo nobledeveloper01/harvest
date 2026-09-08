@@ -770,7 +770,14 @@ class BackButtonRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: Gap.m),
-        child,
+        /*
+          Flexible, because what follows a back button is usually a name.
+
+          A crop's name fits; "Who is asking" at 200% type does not, and an
+          unflexed child overflows the app bar into a yellow-striped bar. Found
+          by the walk suites the moment a screen put a sentence here.
+        */
+        Flexible(child: child),
       ],
     );
   }

@@ -83,13 +83,14 @@ class _DiagnosisResultScreenState extends State<DiagnosisResultScreen> {
         titleSpacing: Gap.l,
         title: BackButtonRow(
           onBack: widget.onDone,
-          // Flexible, and short. An app-bar title in a Row gets the width the
-          // back arrow leaves it and no more: "What is wrong with it"
-          // overflowed by 85 px at ordinary type on a 360 dp screen, on this
-          // screen's very first test run.
-          child: Flexible(
-            child: Text('What is wrong?', style: text.titleLarge),
-          ),
+          // Short, and `BackButtonRow` does the flexing now. An app-bar title
+          // in a Row gets the width the back arrow leaves it and no more:
+          // "What is wrong with it" overflowed by 85 px at ordinary type on a
+          // 360 dp screen, on this screen's very first test run. The `Flexible`
+          // that fixed it lived here until the row learned to do it for
+          // everybody — and two of them nested is a parent-data error, not a
+          // wider title.
+          child: Text('What is wrong?', style: text.titleLarge),
         ),
       ),
       body: PageCanvas(

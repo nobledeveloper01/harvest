@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
@@ -20,6 +21,8 @@ import 'package:harvest/domain/diagnosis/framing.dart';
 import 'package:harvest/data/net/account_store.dart';
 import 'package:harvest/data/net/api.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
+import 'package:harvest/features/market/inbox_screen.dart';
+import 'package:harvest/features/market/thread_screen.dart';
 import 'package:harvest/features/diagnosis/capture_screen.dart';
 import 'package:harvest/features/diagnosis/diagnosis_result_screen.dart';
 import 'package:harvest/domain/lots/lot.dart';
@@ -391,6 +394,98 @@ Future<void> pumpTheUnreachable(
     await tester.pumpAndSettle();
     await at('signing in, ${code ? 'the code' : 'the number'}',
         find.byType(SignInScreen));
+  }
+
+  /*
+    The marketplace screens, in the states that differ.
+
+    The inbox empty and full, because the empty one is a different layout and
+    the one a farmer sees first. The thread open and accepted, because the
+    accepted one is the only place in this app a phone number appears — and a
+    suite that only saw the open one would never check the screen that carries
+    somebody's number.
+  */
+  final enquiry = EnquiryRow(
+    id: 'e1',
+    status: 'open',
+    cropId: 'tomato',
+    buyerId: 'buyer',
+    sellerId: 'me',
+    quantityWantedKg: 150,
+    offerKobo: 13_500_000,
+    seq: 1,
+  );
+
+  for (final rows in [<EnquiryRow>[], [enquiry]]) {
+    /*
+      Torn down between states, not swapped in place.
+
+      Pumping the same screen twice reuses the element tree, and going from the
+      empty state to a list took this suite from four seconds to a hundred and
+      two — every other screen here is pumped once, so nothing had ever hit it.
+      A blank frame in between makes each state a fresh mount, which is what
+      these pumps are pretending to be anyway.
+    */
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: InboxScreen(
+          enquiries: rows,
+          me: 'me',
+          onOpen: (_) {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('the inbox, ${rows.isEmpty ? 'empty' : 'with somebody asking'}',
+        find.byType(InboxScreen));
+  }
+
+  for (final agreed in [false, true]) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Palette.theme(brightness: Brightness.dark),
+        home: ThreadScreen(
+          enquiry: agreed
+              ? enquiry.copyWith(
+                  status: 'accepted',
+                  buyerPhone: const Value('+2348099999999'),
+                )
+              : enquiry,
+          messages: [
+            MessageRow(
+              id: 'm1',
+              enquiryId: 'e1',
+              senderId: 'buyer',
+              kind: 'text',
+              body: 'Is it still available?',
+              sentAt: DateTime(2026, 9, 8, 9),
+              seq: 2,
+            ),
+            MessageRow(
+              id: 'm2',
+              enquiryId: 'e1',
+              senderId: 'buyer',
+              kind: 'voice',
+              mediaKey: 'voice/abc.m4a',
+              sentAt: DateTime(2026, 9, 8, 9, 1),
+              seq: 3,
+            ),
+          ],
+          me: 'me',
+          onAccept: () {},
+          onDecline: () {},
+          onSpeak: () {},
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await at('a thread, ${agreed ? 'agreed' : 'waiting on an answer'}',
+        find.byType(ThreadScreen));
   }
 
   /*

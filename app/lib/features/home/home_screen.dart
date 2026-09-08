@@ -30,6 +30,8 @@ class HomeScreen extends StatelessWidget {
     required this.weather,
     required this.onLogAnother,
     required this.onToggleBrightness,
+    required this.onInbox,
+    required this.waiting,
     required this.onClosed,
     required this.onDecide,
     super.key,
@@ -62,6 +64,15 @@ class HomeScreen extends StatelessWidget {
   /// theme that exists only in a contrast test.
   final VoidCallback onToggleBrightness;
 
+  /// Open the enquiries. Phase 5.
+  final VoidCallback onInbox;
+
+  /// How many enquiries are waiting on an answer, so the button can say so.
+  ///
+  /// A number rather than a dot: *three people are waiting* is a reason to open
+  /// it, and a dot is a decoration somebody learns to ignore.
+  final int waiting;
+
   /// Record what happened to the lot at this index.
   final void Function(int index, Outcome outcome) onClosed;
 
@@ -77,6 +88,10 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Your harvest', style: text.titleLarge),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: Gap.s),
+            child: _InboxButton(waiting: waiting, onTap: onInbox),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: Gap.l),
             child: DaylightButton(onTap: onToggleBrightness),
@@ -571,6 +586,60 @@ class _Tag extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+/// The way into the enquiries, with the count on it.
+class _InboxButton extends StatelessWidget {
+  const _InboxButton({required this.waiting, required this.onTap});
+
+  final int waiting;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = Theme.of(context).extension<Freshness>()!;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: waiting == 0
+          ? 'enquiries'
+          : '$waiting ${waiting == 1 ? 'person is' : 'people are'} waiting',
+      child: ExcludeSemantics(
+        child: Pressable(
+          borderRadius: Radii.pill,
+          onTap: onTap,
+          child: Container(
+            width: Target.standard - 8,
+            height: Target.standard - 8,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: waiting == 0
+                  ? freshness.high
+                  : freshness.atRisk.withValues(alpha: 0.16),
+              borderRadius: Radii.pill,
+              border: Border.all(
+                color: waiting == 0 ? freshness.outline : freshness.atRisk,
+              ),
+            ),
+            child: waiting == 0
+                ? Icon(Icons.forum_outlined,
+                    size: 22, color: scheme.onSurfaceVariant)
+                : Text(
+                    '$waiting',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: freshness.atRisk,
+                          fontWeight: FontWeight.w700,
+                          fontVariations: weightAxis(700),
+                        ),
+                  ),
+          ),
+        ),
       ),
     );
   }

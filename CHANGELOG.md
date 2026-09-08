@@ -66,6 +66,11 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The enquiries inbox and the thread.** Both read from the phone's own
+  database; `/sync/pull` writes into it and nothing else does. Accept and
+  decline are written locally first and queued, so a farmer with no signal has
+  still answered. `HarvestApp` takes an injectable `Api`, for the reason the
+  speaker and the database already were.
 - **The marketplace is reachable.** "Let buyers see this lot" on the decision
   screen signs the farmer in if they are not, queues the listing in the outbox,
   and returns without waiting for a network. Proved end to end against a local
