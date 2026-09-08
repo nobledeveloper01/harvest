@@ -37,38 +37,54 @@ That the mark is any good. That is R4, and it needs a person.
 
 from __future__ import annotations
 
-import importlib.util
 import pathlib
 import re
 import subprocess
 import sys
+import types
 
 from PIL import Image
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import brandmark  # noqa: E402
 from dartenum import GREEN, OFF, RED, ROOT  # noqa: E402
 
 
-def _design_check():
-    """`design-check.py`, imported despite the hyphen in its name.
+def _from_source(name: str, filename: str):
+    """Import a sibling script by **compiling its text**, every time.
 
-    Its `freshness()` already knows how to read a `Freshness(...)` out of
-    `theme.dart`. A second parser here would be a second thing to fix when the
-    theme's shape changes, and — worse — a second chance for the two gates to
-    disagree about what colour the app paints.
+    Not `import`, and not `spec_from_file_location` either: both go through
+    Python's bytecode cache, and on macOS that cache lives under
+    `~/Library/Caches/com.apple.python` rather than in a `__pycache__` beside
+    the file — so it is invisible to anybody looking for it.
+
+    It goes stale in one specific way, and this gate hit it. The cache is
+    validated on the source's **mtime in whole seconds and its size in bytes**.
+    Edit a file and put it back within the same second, with the replacement
+    exactly as long as what it replaced, and Python keeps running the old code.
+    That is not a contrived case: it is what happens when a gate is proved by
+    breaking it on purpose and restoring it, which is this repository's rule.
+
+    The symptom was a gate reporting that thirty-nine generated files were not
+    what the generator draws, while the generator — run as a script, and so
+    never cached — was drawing exactly them. An hour went into that, most of it
+    spent doubting the images.
     """
-    path = pathlib.Path(__file__).resolve().parent / 'design-check.py'
-    spec = importlib.util.spec_from_file_location('design_check', path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    source = pathlib.Path(filename).read_text()
+    module = types.ModuleType(name)
+    module.__file__ = filename
+    exec(compile(source, filename, 'exec'), module.__dict__)  # noqa: S102
     return module
 
 
-design_check = _design_check()
+design_check = _from_source(
+    'design_check', str(pathlib.Path(__file__).resolve().parent / 'design-check.py'))
+brandmark = _from_source(
+    'brandmark', str(pathlib.Path(__file__).resolve().parent / 'brandmark.py'))
 
 THEME = ROOT / 'app/lib/core/theme.dart'
 APP = ROOT / 'app/lib/app.dart'
+SPLASH = ROOT / 'app/lib/features/brand/splash.dart'
+GENERATOR = ROOT / 'scripts/brandmark.py'
 COLORS = ROOT / 'app/android/app/src/main/res/values/colors.xml'
 STORYBOARD = ROOT / 'app/ios/Runner/Base.lproj/LaunchScreen.storyboard'
 #: Every iOS asset catalogue this script owns. Both, not just the icons: the
@@ -192,6 +208,51 @@ def check_marks() -> set[str]:
     return drawn
 
 
+def check_ring_geometry() -> None:
+    """Fail if the animated ring is not the shape the generator draws.
+
+    The splash paints its own ring, because a ring that sweeps cannot be a PNG,
+    and it paints it around the crop the generator drew. So the proportions
+    exist twice — in `_ring()` in Python and in `SplashRingPainter` in Dart —
+    and Dart cannot read a Python constant.
+
+    Two rings of different proportions would come apart exactly at the hand-off
+    from the native launch screen, which is the one moment nothing in the test
+    suite can see. The duplication is admitted and guarded here rather than
+    left as a comment asking the next person to remember.
+    """
+    py = GENERATOR.read_text()
+    dart = SPLASH.read_text()
+
+    wanted = {}
+    m = re.search(r'radius = span \* ([\d.]+)', py)
+    if m:
+        wanted['radius'] = float(m.group(1))
+    m = re.search(r"width=max\(1, int\(span \* ([\d.]+)\)\)", py)
+    if m:
+        wanted['width'] = float(m.group(1))
+    if len(wanted) != 2:
+        fail(f'{GENERATOR.name}: could not read the ring\'s proportions')
+        return
+
+    for name, value in wanted.items():
+        m = re.search(rf'static const {name} = ([\d.]+);', dart)
+        if not m:
+            fail(f'{SPLASH.name}: no `{name}` to compare with the generator')
+        elif float(m.group(1)) != value:
+            fail(f'{SPLASH.name}: {name} is {m.group(1)}, the generator draws '
+                 f'{value} — the animated ring is not the mark\'s shape')
+
+    # The gap too: the generator opens a quarter turn, `-45` to `225` of 360.
+    m = re.search(r'start=-45, end=225', py)
+    g = re.search(r'static const gap = ([\d.]+);', dart)
+    if not m:
+        fail(f'{GENERATOR.name}: could not read the ring\'s gap')
+    elif not g or float(g.group(1)) != 0.25:
+        fail(f'{SPLASH.name}: gap is {g.group(1) if g else "missing"}, the '
+             f'generator leaves a quarter turn open')
+
+
 def check_tracked(paths: list[pathlib.Path]) -> None:
     """Fail if git is ignoring a file the app or the README needs.
 
@@ -244,6 +305,7 @@ def main() -> int:
     check_styles()
     check_catalogues(check_marks())
     check_tracked([path for path, *_ in brandmark.targets()])
+    check_ring_geometry()
 
     if failures:
         for line in failures:

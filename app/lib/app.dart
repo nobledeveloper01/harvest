@@ -21,6 +21,7 @@ import 'domain/money/net_price.dart';
 import 'domain/money/sourced.dart';
 import 'domain/money/storing.dart';
 import 'domain/spoilage/shelf_life.dart';
+import 'features/brand/splash.dart';
 import 'features/language/language_screen.dart';
 import 'features/lots/crop_grid_screen.dart';
 import 'features/settings/calibration_screen.dart';
@@ -577,7 +578,13 @@ class _HarvestAppState extends State<HarvestApp> {
       theme: Palette.theme(brightness: Brightness.light),
       darkTheme: Palette.theme(brightness: Brightness.dark),
       home: !_loaded
-          ? const Scaffold(body: SizedBox.shrink())
+          // The mark, animating, for exactly as long as `_start()` takes.
+          //
+          // It was `SizedBox.shrink()` — an empty rectangle between the launch
+          // screen's mark and the first real screen, so the app appeared to
+          // blink out and start again. See `features/brand/splash.dart`; it
+          // adds no time, because it is replaced the moment `_loaded` is true.
+          ? const SplashScreen()
           : switch (_language) {
               null => LanguageScreen(
                   speaker: _speaker,

@@ -16,7 +16,22 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
+                            <!-- `scaleAspectFit` inside an explicit 128x128, not `center`
+                                 at the image's own size.
+
+                                 With `center` the view takes its size from whatever
+                                 the compiled storyboard believes the asset to be, and
+                                 that belief is stale the moment the asset is redrawn:
+                                 the images went from 96 pt to 128 pt, the bundle
+                                 carried the new ones, and the launch screen went on
+                                 drawing them at 96. How big the mark is is a design
+                                 decision, so it is stated here rather than inferred
+                                 from a PNG's pixel count. -->
+                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="128" id="hVm-1c-2Kt"/>
+                                    <constraint firstAttribute="height" constant="128" id="hVm-1c-3Kt"/>
+                                </constraints>
                             </imageView>
                         </subviews>
                         <!-- #0B0F0C: `Palette.dark`'s far canvas stop, which is what the first
@@ -37,6 +52,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchImage" width="96" height="96"/>
+        <image name="LaunchImage" width="128" height="128"/>
     </resources>
 </document>

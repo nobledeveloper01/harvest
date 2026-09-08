@@ -20,6 +20,7 @@ import 'package:harvest/data/diagnosis/viewfinder.dart';
 import 'package:harvest/domain/diagnosis/framing.dart';
 import 'package:harvest/data/net/account_store.dart';
 import 'package:harvest/data/net/api.dart';
+import 'package:harvest/features/brand/splash.dart';
 import 'package:harvest/features/account/sign_in_screen.dart';
 import 'package:harvest/domain/market/deal.dart';
 import 'package:harvest/domain/spoilage/calibration.dart';
@@ -423,6 +424,29 @@ Future<void> pumpTheUnreachable(
     await at('signing in, ${code ? 'the code' : 'the number'}',
         find.byType(SignInScreen));
   }
+
+  /*
+    The splash, which the walk cannot reach because it is not somewhere the
+    farmer goes — it is what the app *is* for the second before the walk
+    begins, and `walkTheFlow` starts from a database that is already open.
+
+    Pumped rather than settled. Its ring turns for as long as the loading
+    lasts, so `pumpAndSettle` would spin until it timed out — which is the
+    correct behaviour of a screen that has no resting state, and the reason it
+    is the one screen here that needs saying out loud.
+  */
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: Palette.theme(brightness: Brightness.dark),
+      home: const SplashScreen(),
+    ),
+  );
+  await tester.pump(const Duration(milliseconds: 100));
+  await at('the splash', find.byType(SplashScreen));
+  // Torn down here, so the ticker is not still running when the next screen
+  // is pumped — and so no suite ends with a timer pending.
+  await tester.pumpWidget(const SizedBox.shrink());
 
   /*
     The marketplace screens, in the states that differ.

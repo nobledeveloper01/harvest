@@ -3241,6 +3241,113 @@ It borrows `design-check.py`'s `Freshness(...)` parser rather than writing a
 second one, because two parsers is two chances for two gates to disagree about
 what colour the app paints.
 
+### Two numbers I calculated instead of measuring
+
+The mark came out a little small on the launcher and the two platforms did not
+agree with each other, and both had the same cause: I worked out how wide the
+drawing was instead of looking at it.
+
+`mark()` strokes an arc of `width` on a circle of `radius`, and I sized
+everything from `2 * (radius + width / 2)` — a stroke centred on the circle.
+**PIL strokes inward from the bounding box**, so the true figure is
+`2 * radius`, twelve per cent smaller than believed. The launcher icon was
+under-filled and the launch bitmap was short. Neither looked broken; both looked
+*a bit small*, which is the hardest kind of wrong to notice. The figure is now
+read off a drawing — draw the mark once, take its bounding box — so the
+proportions can move and the sizing follows.
+
+The second is the same mistake with a platform instead of a library. From
+Android 12 the launch screen is not the app's layer-list at all: the system
+draws its own splash from the **adaptive icon**, on the theme's window
+background, at a size it chooses. `launch_mark.png` is only ever seen on Android
+11 and earlier. So the two paths were different sizes, and the app would appear
+to shrink on an older phone. `288 * SAFE` is the canvas on which the older
+bitmap comes out the same width as the newer one — a derivation, not a number,
+confirmed against the emulator at 161.1 dp measured versus 161.9 predicted.
+
+### And a launch screen that ignored its own asset
+
+iOS then refused to change size at all. The images went from 96 pt to 128 pt,
+`assetutil` confirmed the bundle carried 128/256/384, a clean uninstall and
+reinstall changed nothing, and the launch screen went on drawing 96. The cause
+is the storyboard: an image view with `contentMode="center"` and no size
+constraints takes its size from the `<image width height>` the **compiled**
+storyboard believes the asset to be, and that belief is stale the moment the
+asset is redrawn. It is now `scaleAspectFit` inside an explicit 128×128
+constraint. How big the mark is is a design decision; it should not be inferred
+from a PNG's pixel count.
+
+I spent four rebuilds on the assumption that this was a simulator cache. It was
+not a cache. It was the file saying so, in a line I had already edited once.
+
+### "you are not animating my splash screens"
+
+Also correct, and the interesting part is *where* the animation can live. Neither
+platform can move a native launch screen: iOS renders a static storyboard, and
+Android paints a window before any code has run. Anything that moves has to be
+the frame after.
+
+That frame was `SizedBox.shrink()` — the mark from the launch screen vanishing
+into an empty rectangle, and then the language picker arriving out of nothing.
+So the same mark, at the same size and in the same place, is now drawn in Dart
+with the ring **sweeping**: a countdown, which is what this ring means on every
+lot card. Then it turns slowly for as long as the loading lasts.
+
+Two things kept it honest. It adds **no time** — it is built only while
+`_start()` reads three preferences and opens the database, and it is replaced
+the instant that finishes, so on a fast phone it is a blink and on the design
+floor it fills a second that was being spent anyway. And it obeys
+`disableAnimations`: reduced motion gets the mark whole and still, for exactly
+as long.
+
+The crop comes from `brandmark.py` — the generator now emits the fruit without
+the ring — so the app does not own a second tomato. The ring's proportions,
+though, genuinely exist twice, because Dart cannot read a Python constant. That
+duplication is admitted in both files and guarded by `splash-check`, which reads
+the radius, the stroke and the gap out of each and fails if they disagree. Two
+rings of different proportions would come apart exactly at the hand-off from the
+launch screen, which is the one moment no test can see.
+
+Verified by recording a cold start on the emulator and pulling the frames: the
+arc grows over five frames at 20 fps and then holds. Not a mock-up, and not a
+screenshot of a widget test.
+
+### An hour lost to bytecode I could not see
+
+Then the gate started reporting that thirty-nine generated files were not what
+the generator draws — while the generator, run again, wrote exactly those bytes.
+Same md5 before and after regenerating; gate still red.
+
+I went at the images. I diffed them, enlarged them, measured ring diameters,
+compared 1024 px sources against 48 px outputs, and satisfied myself that PIL's
+`resize` was deterministic in a minimal case and somehow not here. Along the way
+I twice believed a measurement that was itself wrong: `ImageChops.difference`
+on RGBA images reports `getbbox() == None` when the **alpha** difference is
+zero, whatever the colours did, so two visibly different icons looked identical.
+
+The answer, when I finally instrumented `ImageDraw.arc` itself: the generator
+run drew `start=-45`, and the gate's imported copy drew `start=-30`. The file
+said -45. `inspect.getsource` said -45, because it reads the file. The *compiled
+code* said -30.
+
+Stale bytecode. macOS's system Python sets `sys.pycache_prefix` to
+`~/Library/Caches/com.apple.python`, so there is no `__pycache__` beside the
+source — I looked for one, found none, and crossed the whole idea off. And the
+cache had gone stale in the one way it can: validation is the source's **mtime
+in whole seconds and its size in bytes**, and the break-test that put `-30` in
+and took it back out replaced a string with one of exactly the same length,
+within the same second. Same size, same second: Python kept the old code.
+
+That is not an exotic case. It is what this repository's own rule — *prove a
+guard fires by breaking it on purpose, then restore it* — does to any gate that
+imports a sibling script. So `splash-check` no longer imports: it compiles the
+text of `brandmark.py` and `design-check.py` on every run. Proved by leaving the
+poisoned `.pyc` in place and watching the gate pass, then breaking the source
+for real and watching it fail.
+
+A script run as `__main__` is never cached, which is why the generator and the
+gate could disagree about a file they were both reading.
+
 ### One more, found by the gate a minute after writing it
 
 `docs/mark.png` — the one the README puts above the title — was generated into

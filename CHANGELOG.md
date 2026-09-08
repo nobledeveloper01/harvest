@@ -175,10 +175,26 @@ Entries say *why*, not just what.
 - An **adaptive icon**, which the app did not have. Without one a launcher
   drops the legacy bitmap into a white rounded square of its own making, so the
   app's ground never shows.
+- The mark is the same size on both platforms and on both Android launch paths.
+  From Android 12 the launch screen is the system's own splash drawn from the
+  adaptive icon, not the app's layer-list, so the bitmap for Android 11 and
+  earlier is derived from what the system draws rather than picked. iOS states
+  its size as a storyboard constraint: an image view sized `center` takes its
+  size from what the compiled storyboard believes the asset to be, which is
+  stale the moment the asset is redrawn.
+- **The mark animates on the screen after the launch window.** Neither platform can
+  move a native launch screen, and what came after it was `SizedBox.shrink()` — so the
+  mark appeared, vanished into an empty rectangle, and the language picker arrived out of
+  nothing. The same mark is now drawn in Dart at the same size and place, with the ring
+  sweeping out and then turning while the app loads. It adds no time: it exists only while
+  the preferences and the database are being read, and a phone asking for reduced motion
+  gets it whole and still.
 - `make splash-check` — the launch colour on both platforms must equal the
   canvas of the brightness the app *starts* in, both read out of the Dart, and
   every generated file must have exactly the pixels the generator draws. That
   covers stale as well as missing: a 68-byte blank passes an existence check.
+  It also runs `git check-ignore` over everything the generator owns, which
+  caught the README's mark being drawn into a directory `.gitignore` covers.
 
 ### Fixed
 

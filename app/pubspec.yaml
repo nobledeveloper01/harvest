@@ -179,6 +179,7 @@ flutter:
     - assets/storage/
     - assets/units/
     - assets/judgements/
+    - assets/brand/
   fonts:
     - family: Inter
       fonts:

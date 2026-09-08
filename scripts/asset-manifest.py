@@ -38,8 +38,10 @@ GREEN, RED, YELLOW, OFF = '\033[0;32m', '\033[0;31m', '\033[0;33m', '\033[0m'
 
 #: Directories of pictures. Derived where they can be, listed where the set is
 #: not an enum — the illustrations for the three judgements are drawn by
-#: `illustrate.py` and named there.
-EXTRA_PICTURES = ['assets/judgements/']
+#: `illustrate.py` and named there, and `assets/brand/` holds the one drawing
+#: the app itself needs from `brandmark.py`: the crop the splash animates a
+#: ring around.
+EXTRA_PICTURES = ['assets/judgements/', 'assets/brand/']
 
 HEADER = """  # Every bundled clip, in every language, and every tile the app draws.
   #

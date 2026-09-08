@@ -91,30 +91,43 @@ LEAF = (0x3F, 0x8F, 0x3F)
 #: makes it so — derived, because `mark()`'s proportions may move and a number
 #: typed here would then be silently wrong.
 CIRCLE = 66 / 108
-_RING_OUTER = 2 * (0.36 + 0.085 / 2)  # of `span`, from `mark()` below
-SAFE = CIRCLE * 0.92 / _RING_OUTER
 
 
-def mark(size: int, *, ground: bool = True, fill: float = 1.0) -> Image.Image:
-    """The ring and the crop at `size` pixels, occupying `fill` of the frame."""
-    im = Image.new('RGBA', (BIG, BIG), (*GROUND, 255) if ground else (0, 0, 0, 0))
-    draw = ImageDraw.Draw(im)
+def ring_outer() -> float:
+    """How wide the drawn mark actually is, as a fraction of its canvas.
 
-    cx = cy = BIG / 2
-    # `fill` shrinks the drawing inside the frame without moving it: the
-    # adaptive foreground needs the same mark, smaller, on a bigger canvas.
-    span = BIG * fill
+    **Measured, not calculated.** The first version worked it out from
+    `mark()`'s numbers as `2 * (radius + width / 2)` — a stroke centred on the
+    circle — and PIL strokes an arc *inward* from the bounding box, so the true
+    figure is `2 * radius`. Twelve per cent smaller than believed, everywhere
+    it was used: the launcher icon came out under-filled and the launch bitmap
+    came out short of the size Android's own splash draws, and both looked
+    merely a bit small rather than wrong.
+
+    So it is read off a drawing instead. The proportions in `mark()` can move
+    and this follows them.
+    """
+    probe = mark(512, ground=False)
+    left, _, right, _ = probe.getbbox()
+    return (right - left) / 512
+
+
+def _ring(draw, cx: float, cy: float, span: float) -> None:
+    """Three quarters of a turn, opening at the top.
+
+    PIL measures clockwise from three o'clock, so -45° to 225° leaves a
+    quarter-turn gap centred on twelve. **The stroke goes inward** from the
+    bounding box, which is why `ring_outer()` measures rather than calculates.
+    """
     radius = span * 0.36
-    width = span * 0.085
-
-    # Three quarters of a turn, opening at the top. PIL measures clockwise from
-    # three o'clock, so -45° to 225° leaves a quarter-turn gap centred on twelve.
     draw.arc(
         [cx - radius, cy - radius, cx + radius, cy + radius],
-        start=-45, end=225, fill=RING, width=max(1, int(width)),
+        start=-45, end=225, fill=RING, width=max(1, int(span * 0.085)),
     )
 
-    # The crop, kept clear of the ring so the gap reads rather than the fruit.
+
+def _crop(draw, cx: float, cy: float, span: float) -> None:
+    """The tomato, kept clear of the ring so the gap reads before the fruit."""
     r = span * 0.175
     draw.ellipse([cx - r, cy - r * 0.92, cx + r, cy + r], fill=FRUIT)
     # One highlight, top-left, as everywhere else in the drawing set.
@@ -130,6 +143,25 @@ def mark(size: int, *, ground: bool = True, fill: float = 1.0) -> Image.Image:
         draw.ellipse([lx - r * 0.21, ly - r * 0.17, lx + r * 0.21, ly + r * 0.17],
                      fill=LEAF)
 
+
+def mark(size: int, *, ground: bool = True, fill: float = 1.0,
+         crop_only: bool = False) -> Image.Image:
+    """The ring and the crop at `size` pixels, occupying `fill` of the frame.
+
+    `crop_only` leaves the ring off. That one is for the Flutter splash, which
+    animates the ring itself and needs the fruit to draw it around — so the two
+    halves of the mark come from one drawing rather than the app owning a second
+    tomato that can drift away from this one.
+    """
+    im = Image.new('RGBA', (BIG, BIG), (*GROUND, 255) if ground else (0, 0, 0, 0))
+    draw = ImageDraw.Draw(im)
+    cx = cy = BIG / 2
+    # `fill` shrinks the drawing inside the frame without moving it: the
+    # adaptive foreground needs the same mark, smaller, on a bigger canvas.
+    span = BIG * fill
+    if not crop_only:
+        _ring(draw, cx, cy, span)
+    _crop(draw, cx, cy, span)
     return im.resize((size, size), Image.LANCZOS)
 
 
@@ -160,6 +192,18 @@ def silhouette(size: int) -> Image.Image:
     return im.resize((size, size), Image.LANCZOS)
 
 
+#: The adaptive foreground's scale: the ring's outer edge at 92% of the circle.
+SAFE = CIRCLE * 0.92 / ring_outer()
+
+#: How wide Android's own splash draws an adaptive icon's 108 dp foreground.
+#:
+#: Measured, not looked up: an API 36 emulator at 280 dpi drew the ring 161.1 dp
+#: across, and `288 * SAFE * ring_outer()` is 161.9 — half a per cent out, which
+#: is the width of the measurement. It matters because from Android 12 the
+#: system splash is what a launch actually looks like, and the bitmap for
+#: Android 11 and earlier is sized to agree with it.
+SPLASH = 288
+
 #: Android launcher densities. `mipmap` holds the legacy icon at 48 dp; the
 #: adaptive foreground lives in `drawable` at 108 dp, which is 2.25x as wide.
 DENSITY = {
@@ -181,7 +225,12 @@ IOS_ICON = [
 ]
 
 
-#: What this script owns, as `(path, size, ground, fill, alpha)`.
+#: What this script owns, as `(path, size, kind, fill, alpha)`.
+#:
+#: `kind` says which drawing: **ground** is the mark on the app's ground,
+#: **plain** the same mark on nothing, **crop** the fruit without the ring (the
+#: Flutter splash animates its own), and **flat** the alpha-only silhouette the
+#: status bar wants.
 #:
 #: One list, two readers: `main()` draws it and `splash-check.py` checks it. The
 #: gate cannot be told about a file the generator does not know about, and it
@@ -191,48 +240,67 @@ def targets():
     for name, scale in DENSITY.items():
         # 48 dp, full bleed, on the ground — what a pre-Oreo launcher draws.
         yield (ANDROID / f'mipmap-{name}/ic_launcher.png',
-               round(48 * scale), True, 1.0, False)
-        # 108 dp, transparent, inset to the safe zone — the adaptive foreground.
+               round(48 * scale), 'ground', 1.0, False)
+        # 108 dp, transparent, inset to the mask — the adaptive foreground.
         yield (ANDROID / f'drawable-{name}/ic_launcher_foreground.png',
-               round(108 * scale), False, SAFE, True)
-        # 96 dp, transparent — the bitmap centred on the launch screen. Bigger
-        # than the icon because this one is looked at rather than tapped.
+               round(108 * scale), 'plain', SAFE, True)
+        # The bitmap centred on the launch screen — about 222 dp of canvas.
+        #
+        # **Only Android 11 and earlier ever see it.** From 12 on the system
+        # draws its own splash: the adaptive icon, on the theme's window
+        # background, at a size it chooses. So the size here is not picked, it
+        # is *derived from that* — `SPLASH * SAFE` is the canvas on which this
+        # mark comes out the same width as the one the system draws, and it
+        # stays right if the icon's proportions move. Without it the app
+        # visibly changes size across an OS version.
         yield (ANDROID / f'drawable-{name}/launch_mark.png',
-               round(96 * scale), False, 1.0, True)
+               round(SPLASH * SAFE * scale), 'plain', 1.0, True)
         # 24 dp, alpha only — the status bar's small icon.
         yield (ANDROID / f'drawable-{name}/ic_notification.png',
-               round(24 * scale), None, None, True)
+               round(24 * scale), 'flat', 1.0, True)
 
     for name, points, scale in IOS_ICON:
         yield (IOS / f'AppIcon.appiconset/{name}',
-               round(points * scale), True, 1.0, False)
+               round(points * scale), 'ground', 1.0, False)
 
-    for name, size in [('LaunchImage.png', 96),
-                       ('LaunchImage@2x.png', 192),
-                       ('LaunchImage@3x.png', 288)]:
-        yield (IOS / f'LaunchImage.imageset/{name}', size, False, 1.0, True)
+    # 128 pt, and deliberately smaller than Android's 222.
+    #
+    # Android's size is not a choice — it is what the system splash draws from
+    # 12 on, and the older path is matched to it. iOS imposes nothing, and a
+    # mark at 222 pt would be wider than two thirds of the narrowest iPhone
+    # still supported. At 128 pt the ring is 93 pt: 23% of an iPhone 17 and 29%
+    # of an SE, close to Android without shouting on a small screen.
+    for name, size in [('LaunchImage.png', 128),
+                       ('LaunchImage@2x.png', 256),
+                       ('LaunchImage@3x.png', 384)]:
+        yield (IOS / f'LaunchImage.imageset/{name}', size, 'plain', 1.0, True)
+
+    # The crop alone, for the Flutter splash — the screen between the native
+    # launch window and the first real one, which draws its own ring. Bundled
+    # at 3x of the largest size it is drawn at, and scaled by Flutter.
+    yield (ROOT / 'app/assets/brand/mark_crop.png', 384, 'crop', 1.0, True)
 
     # The one the README puts above the title. It is documentation, not a
     # platform resource, so it lives with the documents — but it is drawn here
     # so that it cannot drift away from the icon it is a picture of.
-    yield (ROOT / 'docs/mark.png', 160, True, 1.0, False)
+    yield (ROOT / 'docs/mark.png', 160, 'ground', 1.0, False)
 
 
-def draw(size, ground, fill, alpha):
-    """One target, drawn — the single place a file's pixels are decided.
-
-    `ground=None` asks for the status-bar silhouette rather than the mark: it
-    has no ground because it has no colours at all, only an alpha channel.
-    """
-    im = silhouette(size) if ground is None else mark(size, ground=ground, fill=fill)
+def draw(size, kind, fill, alpha):
+    """One target, drawn — the single place a file's pixels are decided."""
+    if kind == 'flat':
+        im = silhouette(size)
+    else:
+        im = mark(size, ground=kind == 'ground', fill=fill,
+                  crop_only=kind == 'crop')
     return im if alpha else im.convert('RGB')
 
 
 def main() -> int:
     written = 0
-    for path, size, ground, fill, alpha in targets():
+    for path, size, kind, fill, alpha in targets():
         path.parent.mkdir(parents=True, exist_ok=True)
-        draw(size, ground, fill, alpha).save(path)
+        draw(size, kind, fill, alpha).save(path)
         written += 1
 
     print(f'{GREEN}✓{OFF} drew {written} icons and launch images')

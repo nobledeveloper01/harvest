@@ -165,10 +165,38 @@ frame before the app appears. That is a real mismatch and it is the better of th
 a window painted before any code runs cannot know a preference that code has not read yet, and
 of the two wrong frames, dark-then-light is a step up in brightness rather than a flash down.
 
-`scripts/brandmark.py` draws all of it — 33 files across two platforms, four sets that are not
-interchangeable: the legacy Android icon full-bleed, the adaptive foreground inset to the
-72-of-108 safe zone a launcher may mask, the launch bitmap transparent, and the iOS icons with
-no alpha channel. `make splash-check` fails the build if any file on disk is not what the
-generator draws, or if either launch screen stops matching the theme.
+`scripts/brandmark.py` draws all of it — 39 files across two platforms, five sets that are not
+interchangeable: the legacy Android icon full-bleed; the adaptive foreground, sized so the ring
+sits at 92% of the **circle** mask rather than the larger safe zone, because a mark drawn to the
+safe zone looks smaller than its neighbours in a drawer; the launch bitmaps transparent, so the
+background owns the colour; the notification silhouette, which is alpha and nothing else; and
+the iOS icons with no alpha channel at all. `make splash-check` fails the build if any file on
+disk is not what the generator draws, if either launch screen stops matching the theme, or if
+git is ignoring a file the app needs.
+
+**How big the mark is, per surface, and why the three numbers differ.** From Android 12 the
+launch screen is not the app's at all: the system draws its own splash from the adaptive icon,
+on the theme's window background, at a size it chooses — measured at a **161 dp** ring. The
+bitmap for Android 11 and earlier is derived from that rather than picked, so the app does not
+appear to shrink on an older phone. iOS imposes nothing and gets **128 pt** of canvas — a 93 pt
+ring, 23% of an iPhone 17 — because 222 pt would be most of the width of the narrowest iPhone
+still supported. The iOS size is stated in the storyboard as a constraint, not inferred from the
+image: an image view sized `center` takes its size from what the compiled storyboard believes
+the asset to be, and that belief goes stale the moment the asset is redrawn.
+
+**The launch screen does not animate; the screen after it does.** Neither platform can move
+a native launch window — iOS renders a static storyboard and Android paints a window before any
+code runs. What can move is the first Flutter frame, and until now that frame was
+`SizedBox.shrink()`: the mark appeared, vanished into an empty rectangle, and the language
+picker arrived out of nothing.
+
+So the same mark, at the same size and in the same place, is now drawn in Dart with the ring
+**sweeping** — a countdown, which is what this ring means everywhere else — and then turning
+slowly for as long as the loading lasts. It is not a delay: it is built only while the app is
+reading its preferences and opening its database, and is replaced the instant that finishes.
+A phone asking for reduced motion gets the mark whole and still, for exactly as long.
+
+The ring's proportions exist twice, in `brandmark.py` and in `SplashRingPainter` — Dart cannot
+read a Python constant — so `make splash-check` reads both and fails if they disagree.
 
 Nobody who draws for a living has looked at it. That is **R4**, and it stays open.
