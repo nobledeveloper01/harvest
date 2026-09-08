@@ -140,3 +140,35 @@ useful to somebody who cannot read the rest of the screen.
 Every fixed prompt is a bundled clip. `make audio-check` proves the set is complete and
 reads the language and phrase lists out of the Dart enums rather than a list maintained
 beside them.
+
+## The mark, and the first screen
+
+The mark is the **freshness ring**: three quarters of a green circle, opening at the top,
+around a tomato. It is not a new drawing — it is the shape already on every lot card and on
+the home screen, made large. A gap rather than a closed circle, because a closed circle is a
+logo and a gap is a clock, and at 48 dp the gap is the only part of it that says *time*.
+
+There is **no wordmark**. The primary user may not read, the app ships in six languages, and
+a name in Latin script at 48 dp is decoration for everybody it is not for.
+
+The launch screen is that mark, centred, on `#0B0F0C` — the far stop of the **dark** canvas
+gradient. Until this was written it was `flutter create`'s **white**, on both platforms, and
+every cold start on the design floor was a white flash into a near-black screen.
+
+It is not the system's colour, because the app never reads the system setting: brightness is
+the farmer's own toggle and the app remembers it, defaulting to dark. So a launch screen that
+followed the system would be wrong on every phone whose system disagrees with that choice.
+
+What a launch screen *can* match is the **default**, and `make splash-check` reads that default
+out of `app.dart` rather than assuming it. A farmer who has chosen light still gets one dark
+frame before the app appears. That is a real mismatch and it is the better of the two available:
+a window painted before any code runs cannot know a preference that code has not read yet, and
+of the two wrong frames, dark-then-light is a step up in brightness rather than a flash down.
+
+`scripts/brandmark.py` draws all of it — 33 files across two platforms, four sets that are not
+interchangeable: the legacy Android icon full-bleed, the adaptive foreground inset to the
+72-of-108 safe zone a launcher may mask, the launch bitmap transparent, and the iOS icons with
+no alpha channel. `make splash-check` fails the build if any file on disk is not what the
+generator draws, or if either launch screen stops matching the theme.
+
+Nobody who draws for a living has looked at it. That is **R4**, and it stays open.

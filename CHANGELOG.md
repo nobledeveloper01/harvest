@@ -155,7 +155,52 @@ Entries say *why*, not just what.
   erase it and the app ask again for ever.
 - Five clips for *How did it go?*, bringing the bundle to 980.
 
+- **A mark, and a launch screen that is the app's own colour.** The app had
+  neither: the launcher icon on both platforms was still the Flutter logo, the
+  iOS launch images were 68-byte blanks, and both launch screens were
+  `flutter create`'s white on a product whose first frame is `#0B0F0C`. Every
+  cold start was a white flash into a near-black screen, worst on the 2 GB
+  design floor where the launch window is up longest.
+- The mark is the **freshness ring** — the shape already on every lot card —
+  open at the top, around a tomato. A gap rather than a closed circle, because
+  a closed circle is a logo and a gap is a clock. No wordmark: the primary user
+  may not read, the app ships in six languages, and a name in Latin script at
+  48 dp is decoration for everybody it is not for.
+- `scripts/brandmark.py` draws all 39 files — four sets that are not
+  interchangeable: the legacy Android icon full-bleed, the adaptive foreground
+  sized to the circle mask rather than to the larger safe zone (a mark drawn to
+  the safe zone sits visibly smaller than its neighbours), the launch bitmaps
+  transparent so the background owns the colour, and the iOS icons with no
+  alpha channel.
+- An **adaptive icon**, which the app did not have. Without one a launcher
+  drops the legacy bitmap into a white rounded square of its own making, so the
+  app's ground never shows.
+- `make splash-check` — the launch colour on both platforms must equal the
+  canvas of the brightness the app *starts* in, both read out of the Dart, and
+  every generated file must have exactly the pixels the generator draws. That
+  covers stale as well as missing: a 68-byte blank passes an existence check.
+
 ### Fixed
+
+- **A photograph from a buyer drew an empty bubble.** The thread tested for
+  `voice` and let every other kind fall through to `body ?? ''`, so an `image`
+  message — one of the three `migrations/0003` allows — rendered as a blank
+  grey pill on the screen where a farmer decides whether to trust somebody.
+  All three kinds are named now, and an unknown fourth says that something
+  arrived rather than showing nothing. There is still no media fetching, so a
+  photo says it cannot be shown: a placeholder that announces itself, which a
+  blank does not.
+- **The spoilage warning arrived under a solid white square.** Android draws a
+  notification's small icon from its alpha channel alone — every opaque pixel
+  becomes white — and the app named `@mipmap/ic_launcher`, which is opaque edge
+  to edge. On the product's single most important surface, the alert that is the
+  entire wedge, the icon was a filled block. There is now a silhouette with
+  nothing in it but alpha.
+- **The window behind the Flutter UI was white in light mode.** Not just the
+  launch screen: `NormalTheme` said `?android:colorBackground`, so the colour
+  showed through on every resize and rotation for the life of the activity.
+- **The Android app was labelled `harvest`.** Lower case, on the home screen,
+  beside `Harvest` in the iOS bundle's display name.
 
 - **A lapsed enquiry read as one waiting for an answer.** The inbox named three
   of the five statuses the server can produce and let a default catch the rest,
@@ -257,6 +302,13 @@ Entries say *why*, not just what.
   because which table a row is in is the claim the row makes.
 
 ### Changed
+
+- **One NDK version for every module, pinned in `android/build.gradle.kts`.**
+  Pinning it in `app/build.gradle.kts` is not enough: `jni`, which arrives
+  transitively, sets `ndkVersion flutter.ndkVersion`, so a build silently began
+  downloading about a gigabyte before compiling a line. The pin does not stop
+  the Flutter tool resolving its own NDK before Gradle is evaluated — that is
+  recorded in the file — but it makes the choice visible rather than inherited.
 
 - The README's Status section describes the app as it is: the decision screen
   and the money that makes it worth showing, the confidence gate, and the

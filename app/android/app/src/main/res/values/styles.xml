@@ -1,18 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The window behind the app, when the system is in light mode.
+
+  Both themes are dark, and both name the app's own colour rather than the
+  system's.
+
+  `flutter create` gave the light one `Theme.Light.NoTitleBar` and
+  `?android:colorBackground`, which is white. The app never reads the system
+  setting — brightness is the farmer's own toggle, remembered, defaulting to
+  dark — so on a phone whose system is light the window was white before the
+  first frame and white again behind the UI on every resize and rotation, a
+  flash of the wrong colour on a screen that is #0B0F0C.
+
+  This matches the **default**, which is what a launch is until somebody
+  chooses otherwise; `make splash-check` reads that default out of `app.dart`
+  and fails if it moves. A farmer who has chosen light gets one dark frame,
+  which is the price of a window painted before any code has run.
+
+  The two files stay because Android picks by the system setting and would fall
+  back to the light one; they say the same thing so that it does not matter
+  which it picks.
+-->
 <resources>
-    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- Show a splash screen on the activity. Automatically removed when
-             the Flutter engine draws its first frame -->
+    <!-- While the process starts. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
-    <!-- Theme applied to the Android Window as soon as the process has started.
-         This theme determines the color of the Android Window while your
-         Flutter UI initializes, as well as behind your Flutter UI while its
-         running.
-
-         This Theme is only used starting with V2 of Flutter's Android embedding. -->
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+    <!-- Once it has, and behind the Flutter UI for the life of the activity. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_ground</item>
     </style>
 </resources>

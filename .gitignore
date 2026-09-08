@@ -7,6 +7,8 @@ docs/*
 !docs/RELEASE-GATES.md
 !docs/adr/
 !docs/screenshots/
+# The mark the README shows above the title. Drawn by `scripts/brandmark.py`.
+!docs/mark.png
 
 # OS / editors
 .DS_Store

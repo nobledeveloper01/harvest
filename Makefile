@@ -18,10 +18,10 @@ help: ## Show this help
 # --- the gate ---------------------------------------------------------------
 
 .PHONY: ci
-ci: doc-check design-check counts-check assets-check language-check audio-check picture-check analyze test coverage-gate server-check ## Everything CI runs
+ci: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check analyze test coverage-gate server-check ## Everything CI runs
 
 .PHONY: gates
-gates: doc-check design-check counts-check assets-check language-check audio-check picture-check coverage-gate ## The blocking gates alone. These never go yellow.
+gates: doc-check design-check counts-check assets-check language-check audio-check picture-check splash-check coverage-gate ## The blocking gates alone. These never go yellow.
 
 .PHONY: design-check
 design-check: ## Fail if DESIGN.md disagrees with the theme it documents
@@ -50,6 +50,16 @@ audio-check: ## Fail if anything the app says is missing a clip, or is not bundl
 .PHONY: picture-check
 picture-check: ## Fail if a crop or unit has no picture, or a picture has nothing using it
 	@python3 scripts/picture-check.py
+
+.PHONY: splash-check
+splash-check: ## Fail if a launch screen or an app icon is not what the theme and the generator say
+	@python3 scripts/splash-check.py
+
+.PHONY: brandmark
+# Not run by `ci`, which checks rather than writes — same split as `assets`
+# and `assets-check`. `splash-check` fails if you forget to run this.
+brandmark: ## Redraw the app mark: launcher icons and launch screens, both platforms
+	@python3 scripts/brandmark.py
 
 .PHONY: device-check
 # The half of Phase 2's exit gate a machine can reach.

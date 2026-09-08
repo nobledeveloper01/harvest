@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The adaptive icon, from Android 8 on.
+
+  Without this the launcher takes the legacy `mipmap` bitmap and drops it into a
+  white rounded square of its own making, so the app's own ground never shows
+  and the mark sits in a frame it did not choose.
+
+  The foreground is inset to the 72-of-108 safe zone by the generator, because
+  the launcher decides the mask — circle, squircle, teardrop — and anything
+  outside that zone is its to cut off.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/launch_ground" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

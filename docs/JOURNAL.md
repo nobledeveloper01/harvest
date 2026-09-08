@@ -3152,3 +3152,126 @@ server is a red test here rather than a farmer seeing a blank.
 Worth saying plainly: I found this by grepping for `status ==` immediately after
 the `completed` bug, rather than by waiting to trip over it. One bug of a shape
 is a bug; the shape is worth a search.
+
+## 2026-09-08 — "you have not writen my splash screens"
+
+Correct, and it was worse than that. The app had no mark at all. The launcher
+icon on both platforms was still the **Flutter logo**; the iOS launch images
+were three 68-byte blanks; both launch screens were `flutter create`'s white on
+a product whose first painted frame is `#0B0F0C`. Seven phases in, on the
+surface that is the very first thing anybody sees.
+
+Nothing had failed, because nothing was looking. A launch screen is the one
+surface no widget test can reach and no screenshot in the README shows — the
+familiar shape from this project, *a screen covered by every suite and reachable
+by nobody*, in its purest form: covered by nothing and reached by everybody.
+
+### The mark
+
+The freshness ring, which the product already owns: a green countdown around a
+crop, on every lot card. Made large, opening at the top, with a tomato inside.
+A gap rather than a closed circle, because a closed circle is a logo and a gap
+is a clock, and at 48 dp the gap is the only part that says *time*. No wordmark:
+the primary user may not read and the app ships in six languages.
+
+Generated, like the illustrations — `scripts/brandmark.py`, 39 files across two
+platforms. Four sets that are not interchangeable, and I got two of them wrong
+before looking at the output:
+
+  * the **adaptive foreground** must be inset, because a launcher masks it to a
+    circle, squircle or teardrop of its choosing. Drawn full bleed it loses the
+    ring. But inset to the *safe zone* (72 of 108) it sits visibly smaller than
+    its neighbours in the drawer — the tighter number, the **circle** (66 of
+    108), is the one to size against, and the fill is now derived from
+    `mark()`'s own proportions rather than typed;
+  * the **iOS icons** carry no alpha channel, which the store requires.
+
+### The one the user's question did not ask about
+
+`alarms.dart` named `@mipmap/ic_launcher` as the notification icon. Android
+draws a small icon from its **alpha channel alone**: every opaque pixel becomes
+white. The launcher icon is opaque edge to edge — so the spoilage warning, the
+alert that is the entire wedge of this product, arrived in the status bar as a
+solid white square. There is now a silhouette with nothing in it but alpha.
+
+That one was found by asking *where else does this mark belong*, the same move
+that found the expired-enquiry bug an hour earlier. One place a thing is missing
+is a bug; the question is worth a search.
+
+### The comment I wrote and the screenshot that refuted it
+
+Having set the launch colour to `#0B0F0C`, I wrote — in `DESIGN.md`, in two
+`styles.xml` files, and in the generator's docstring — that the app "sets
+`Brightness.dark` at launch and never reads the system setting". Then I ran it
+on the emulator and screenshotted the settled screen to check the flash was
+gone. It came back **light**: there is a brightness toggle in the app bar and
+the app remembers the choice.
+
+"Never reads the system setting" was true. "Is dark" was true of the default and
+of nobody who had touched the toggle. I had written four confident sentences an
+hour before the screenshot that showed them wrong, and the only reason I found
+out is that I looked at a picture I had taken for another purpose.
+
+What the launch screen can honestly match is the **default**, because that is
+what a launch is until somebody chooses otherwise. So `splash-check` now reads
+the default out of `app.dart` — `brightness ?? Brightness.dark` — and the
+palette out of `theme.dart`, and fails if either moves without the launch
+screens. A farmer who has chosen light still gets one dark frame. `DESIGN.md`
+says so, rather than pretending the case away: a window painted before any code
+runs cannot know a preference no code has read yet.
+
+### The gate, and the six ways it fails
+
+`make splash-check`, broken on purpose six times and watched to fail each time:
+the theme retuned without the launch screens; the Android ground back to white;
+the iOS storyboard back to white; a theme that follows the system again; a mark
+replaced by a 1×1 blank; and a `Contents.json` naming a file the generator does
+not draw. Then twice more after I changed how it derives the default.
+
+The first version failed for the wrong reason and said so in three misleading
+sentences. It found the dark canvas by searching for a colour beginning `0xFF0B`
+— which is the answer. Retune the theme and it could not find the gradient at
+all, so instead of *the launch screen is stale* it reported *there is no dark
+canvas*, and then measured everything against a fallback of black. It now
+anchors on the palette's **name** and stops on a parse failure rather than
+judging four things against a colour it invented. A gate should not need to know
+the answer in order to ask the question.
+
+It borrows `design-check.py`'s `Freshness(...)` parser rather than writing a
+second one, because two parsers is two chances for two gates to disagree about
+what colour the app paints.
+
+### One more, found by the gate a minute after writing it
+
+`docs/mark.png` — the one the README puts above the title — was generated into
+a directory `.gitignore` covers with an allowlist, and it was not on the list.
+Every check passed: the file existed and its pixels were exactly what the
+generator draws. It simply would not have been in the repository, and the README
+would have shown a broken image to everybody except me.
+
+*Present on this disk* and *present in the tree* are different claims, and only
+one of them is what a reader gets. `splash-check` now runs `git check-ignore`
+over everything the generator owns.
+
+### And a build that failed while looking like it had
+
+`flutter build apk` refused with *resource `drawable/launch_background` not
+found*, which is a file that plainly exists and parses. The cause was Gradle's
+incremental resource merger: deleting `drawable-v21/launch_background.xml` — a
+`flutter create` leftover that said `?android:colorBackground`, and which won on
+every device this ships to — left the merger holding state in which the base
+file was never compiled. Clearing `merged_res` and the merger's incremental
+directory and rebuilding was enough; a clean clone was never affected.
+
+The way I found out is the thing worth recording. The build log ended on an NDK
+warning and there was a 110 MB APK with a plausible timestamp, so I installed it
+and screenshotted a white screen with the Flutter logo — and started reasoning
+about *why the resources had not taken effect*. They had not taken effect
+because the build had failed thirty lines further down the log, behind the same
+block of NULs that hid the server requests yesterday. `tr -d '\0'` and there was
+`BUILD FAILED`.
+
+Four times now in two days I have started from *the code is wrong* and found the
+measurement was. It is no longer a coincidence; it is the default failure mode
+of working through a log file, and the fix is to read the log with the NULs
+stripped every single time, not when something looks odd.

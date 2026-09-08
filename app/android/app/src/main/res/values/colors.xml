@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The colour the window is painted before Flutter draws a frame.
+
+      It is `Palette.dark`'s far canvas stop, `#0B0F0C`, and `make splash-check`
+      fails the build if the theme moves and this does not. `flutter create`
+      left this white on a product that is dark on every launch regardless of
+      the system setting, so every cold start was a white flash into a near
+      black screen — worst on the 2 GB design floor, where the launch window is
+      up for a while.
+
+      One value, no `-night` variant: the app does not follow the system theme —
+      brightness is the farmer's own toggle — so a launch screen that followed
+      the system would disagree with the first frame half the time. It matches
+      the default instead, which `make splash-check` reads out of `app.dart`.
+    -->
+    <color name="launch_ground">#FF0B0F0C</color>
+</resources>

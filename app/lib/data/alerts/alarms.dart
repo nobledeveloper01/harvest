@@ -118,7 +118,17 @@ class LocalAlarms implements Alarms {
           if (id != null) _taps.add(id);
         },
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          /*
+            The silhouette, not the launcher icon.
+
+            Android draws a notification's small icon from its **alpha channel
+            alone** — every opaque pixel becomes white. `@mipmap/ic_launcher`
+            is opaque edge to edge, so the spoilage warning, which is the
+            reason this product exists, arrived in the status bar as a solid
+            white square. `ic_notification` is the freshness ring with nothing
+            but alpha in it. Drawn by `scripts/brandmark.py`.
+          */
+          android: AndroidInitializationSettings('@drawable/ic_notification'),
           iOS: DarwinInitializationSettings(
             // Asked for separately, below, so the request happens when the
             // farmer has just logged a lot and the reason is obvious — not on
@@ -173,6 +183,9 @@ class LocalAlarms implements Alarms {
             channelDescription: 'When a lot is running out of time',
             importance: Importance.high,
             priority: Priority.high,
+            // Named again here: the initialisation default covers a
+            // notification this app posts, and this one is scheduled.
+            icon: '@drawable/ic_notification',
           ),
           iOS: DarwinNotificationDetails(),
         ),

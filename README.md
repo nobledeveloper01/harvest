@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/mark.png" width="80" alt="The Harvest mark: a green freshness ring, open at the top, around a tomato" />
+</p>
+
 # Harvest
 
 **Post-harvest loss prevention and offtaker matching for Nigerian smallholder farmers.**
