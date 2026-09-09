@@ -3774,3 +3774,58 @@ different thing than the one that mattered — and the second where a *placehold
 being honest about itself* was what concealed the gap beside it. A stand-in that
 announces what it does not do is still a stand-in for one thing, and the thing
 next to it can be missing entirely.
+
+
+## 2026-09-09 (later still) — Which screenshots were actually stale
+
+`doc-check` warns that the screenshots are *N commits of `app/lib` behind*,
+which is a heuristic about the whole directory and says nothing about which
+picture is wrong. Retaking all twenty-two by hand is hours of driving a
+simulator into twenty-two states; retaking none is how a README ends up
+describing an app that no longer exists.
+
+So the question was made answerable instead: for each screenshot, its own last
+commit against the last change to the screen it shows. Three failed that test
+and nineteen passed.
+
+  * **01-language** — five languages and the old leaf mark, taken before
+    Fulfulde landed. Its alt text in the README has said *six languages* the
+    whole time, so the caption and the picture had been contradicting each other
+    for a day.
+  * **06-daylight** — taken before the home screen gained the inbox button and
+    the *How often is this right?* row.
+  * **12-storage-offer** — taken before the decision screen gained three of its
+    six actions.
+
+And the interesting negatives. **13-diagnosis** is the oldest file in the set and
+looked like the obvious suspect; the only change to that screen since was moving
+a `Flexible` from the title into `BackButtonRow`, which renders identically. It
+was left alone. **20-thread** and **18-inbox** both had their source changed
+yesterday, by the message-kind fix and the expired-status fix — but neither
+screenshot shows the states those touch, so both are still true.
+
+Guessing would have retaken 13-diagnosis and skipped 06-daylight. The date is
+not the question; *what changed in the screen this picture is of* is.
+
+### And the app said "orices"
+
+Reading the retaken `12-storage-offer` at full size: **Based on orices from just
+now.** The source string says `prices`. The tail of the *p* and the tail of the
+*j* are cut flat at the same y — a clip, not a typo, and not the downscale: it
+is in the raw 1206x2622 simulator capture.
+
+Measured rather than assumed: the lowest amber pixel is y=1828 and the card's
+bottom border is y=1884, so there are fifty-six pixels of clear space below the
+cut. The card is not the clipper. What is at exactly that line is `Pressable`,
+which wraps its child in a `Material` with `clipBehavior: Clip.antiAlias` whose
+box is the text's own height — so a descender painting below the last line box
+is cut off. `Pressable` is used in seventeen files.
+
+Not fixed here. `Clip.none` is the obvious try and the obvious risk — the clip
+is what keeps the ink splash inside the rounded corner — and the one experiment
+I ran proved nothing, because reinstalling the build to test it wiped the
+database and took the screen with it. It is written down with the measurement
+rather than guessed at.
+
+Which is the sixth thing this week that only running the product showed, and the
+first that only *looking closely at a picture of it* showed.

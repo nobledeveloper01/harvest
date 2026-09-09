@@ -403,6 +403,17 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **Three README screenshots retaken.** `01-language` showed five languages and
+  the abandoned leaf mark, while its own alt text said six; `06-daylight`
+  predated the inbox button and the calibration row; `12-storage-offer`
+  predated three of the decision screen's actions. Which three was **derived**
+  rather than guessed — each screenshot's last commit against the last change
+  to the screen it shows — and the rest were checked the same way and left
+  alone, including `13-diagnosis`, whose only change since was moving a
+  `Flexible`.
+- The iOS `Podfile.lock` drops `flutter_timezone` and picks up
+  `flutter_secure_storage`.
+
 - **`flutter_timezone` is gone, and the alerts are unchanged.** It applied the
   Kotlin Gradle Plugin, which future Flutter versions refuse to build, and
   5.1.0 is the last release — so there was nothing to upgrade to. It had one
