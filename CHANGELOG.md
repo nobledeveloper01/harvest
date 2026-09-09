@@ -10,6 +10,23 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **The refresh token survives a launch.** `KeychainTokenStore` puts it in
+  EncryptedSharedPreferences on Android and the Keychain on iOS, replacing
+  `ForgetfulTokenStore`, which kept it in memory — so every restart signed the
+  farmer out and the whole marketplace was unreachable on the second launch.
+  Proved on a device against a live server: sign in, kill the app, relaunch,
+  and the session comes back without an SMS code. R14's other half is iOS on a
+  handset.
+- A **reinstall guard**: the iOS Keychain survives uninstalling the app and
+  Android's encrypted preferences do not, so on one platform a farmer who
+  deletes Harvest and sells the phone would leave a working token for whoever
+  installs it next. A flag in `shared_preferences` — which an uninstall does
+  clear — says whether this install has run before.
+- Cleartext HTTP in **debug builds only**, so a device can reach a development
+  server over `adb reverse`. Without it every call comes back as *no signal*,
+  which this app is deliberately correct in, so a blocked request looked
+  exactly like working offline.
+
 - **A recording kit**, which is the half of R1 that was not waiting on a person.
   `make recording-kit L=ha` writes a numbered 196-line script per language —
   every clip, the English source beside it, grouped so a session can stop at a
@@ -222,6 +239,15 @@ Entries say *why*, not just what.
   caught the README's mark being drawn into a directory `.gitignore` covers.
 
 ### Fixed
+
+- **Nothing ever exchanged the stored refresh token.** `AccountStore.restore()`
+  has documented itself as *called at launch and before anything that needs an
+  account* since Phase 5, and had **no caller** — not in `lib/`, not in a test.
+  With a token store that forgot on every launch the two were
+  indistinguishable: a method nobody calls and a store that keeps nothing look
+  the same from outside. It is called at launch and before listing now, and the
+  assertion is about the launch rather than the method — with a token on the
+  phone, a launch must ask.
 
 - **Logging a harvest was impossible on Android 12 and later.** Alerts were
   scheduled with `exactAllowWhileIdle`, which needs `SCHEDULE_EXACT_ALARM` —

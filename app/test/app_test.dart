@@ -313,6 +313,75 @@ void main() {
         reason: 'and there is still a way forward');
   });
 
+  testWidgets('a launch asks the server about the token it already has',
+      (tester) async {
+    /*
+      The caller that did not exist.
+
+      `AccountStore.restore()` has documented itself as *called at launch* since
+      Phase 5, and nothing called it. With `ForgetfulTokenStore` there was never
+      a token to exchange, so a method nobody calls and a store that keeps
+      nothing were indistinguishable — until a real store went in, and a
+      relaunch on the emulator asked `/sync/pull` and got a 401 with no refresh
+      attempted behind it.
+
+      So the assertion is about the launch, not about `restore()`: whatever the
+      answer, a launch with a token on the phone must **ask**.
+    */
+    // A phone that has been signed in before: a token in the secure store, and
+    // the flag that says this install has run, so the reinstall guard in
+    // `KeychainTokenStore` leaves it alone.
+    const channel =
+        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    final secure = <String, String>{'auth.refresh': 'refresh-from-last-time'};
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      final args = (call.arguments as Map).cast<String, Object?>();
+      final key = args['key'] as String?;
+      switch (call.method) {
+        case 'read':
+          return secure[key];
+        case 'write':
+          secure[key!] = args['value'] as String;
+          return null;
+        case 'delete':
+          secure.remove(key);
+          return null;
+      }
+      return null;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    SharedPreferences.setMockInitialValues({
+      'speech.language.code': 'en',
+      'auth.install.seen': true,
+    });
+
+    final server = _NoServer();
+    server.answers['/auth/token/refresh'] =
+        const Answer(status: 401, body: <String, dynamic>{});
+    await tester.pumpWidget(
+      HarvestApp(
+        speaker: _Silent(),
+        languages: const Settings(),
+        database: database,
+        api: server,
+        alarms: alarms,
+        weather: weather,
+      ),
+    );
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+
+    expect(server.asked, contains('/auth/token/refresh'),
+        reason: 'there was a token on the phone and nobody asked about it');
+  });
+
   testWidgets('a platform that refuses to warn does not lose the harvest',
       (tester) async {
     /*
@@ -974,7 +1043,15 @@ void main() {
 
 
 /// A server nothing can reach, so no test ever waits on a resolver.
+/// A server that is never reached, unless a test says otherwise.
+///
+/// `asked` and `answers` exist because of `restore()`: the question that
+/// mattered was not *what does the server say* but *does the app ask at all*,
+/// and a fake with no memory cannot answer that. It could not, for two phases.
 class _NoServer implements Api {
+  final List<String> asked = [];
+  final Map<String, Answer> answers = {};
+
   @override
   String? bearer;
 
@@ -985,10 +1062,14 @@ class _NoServer implements Api {
   Dio get http => throw UnimplementedError();
 
   @override
-  Future<Answer> post(String path, Map<String, dynamic> body) async =>
-      const Answer(status: 0, body: {});
+  Future<Answer> post(String path, Map<String, dynamic> body) async {
+    asked.add(path);
+    return answers[path] ?? const Answer(status: 0, body: {});
+  }
 
   @override
-  Future<Answer> get(String path, {Map<String, dynamic>? query}) async =>
-      const Answer(status: 0, body: {});
+  Future<Answer> get(String path, {Map<String, dynamic>? query}) async {
+    asked.add(path);
+    return answers[path] ?? const Answer(status: 0, body: {});
+  }
 }

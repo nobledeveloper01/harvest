@@ -31,6 +31,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 
 import 'data/net/account_store.dart';
+import 'data/net/keychain_token_store.dart';
 import 'data/net/api.dart';
 import 'data/net/outbox_store.dart';
 import 'data/net/inbox_store.dart';
@@ -137,7 +138,7 @@ class _HarvestAppState extends State<HarvestApp> {
   late final Api _api =
       widget.api ?? Api(http: Dio(), baseUrl: _serverUrl);
   late final AccountStore _accounts =
-      AccountStore(api: _api, tokens: ForgetfulTokenStore());
+      AccountStore(api: _api, tokens: KeychainTokenStore());
   late final Outbox _outbox = Outbox(database: _database, api: _api);
   late final InboxStore _inbox = InboxStore(database: _database, api: _api);
   late final SignalStore _signals = SignalStore(api: _api);
@@ -218,6 +219,26 @@ class _HarvestAppState extends State<HarvestApp> {
       if a reading arrives it narrows them. A farmer opening the app in a field
       waits for nothing.
     */
+    /*
+      The account the farmer already has, from the token on the phone.
+
+      `AccountStore.restore()` exchanges the stored refresh token for a
+      session. Its own doc has said *called at launch and before anything that
+      needs an account* since Phase 5, and **nothing called it** — not here, not
+      in the sign-in path, not in a test. With `ForgetfulTokenStore` that was
+      invisible: there was never a token to exchange, so a method that was never
+      called and a store that never kept anything looked exactly like each
+      other. Only a real store made the gap visible, and it took a relaunch on a
+      handset to see it — `/sync/pull` came back 401 and nothing tried a
+      refresh.
+
+      Not awaited, for the same reason the weather is not: `docs/07-BACKEND-SPEC.md`
+      says no screen waits for the network, and a farmer four days from a signal
+      must reach their lots at once. The marketplace paths ask again before they
+      need an account, so an unfinished restore costs nothing.
+    */
+    unawaited(_accounts.restore());
+
     unawaited(_refreshWeather());
 
     /*
@@ -465,7 +486,13 @@ class _HarvestAppState extends State<HarvestApp> {
     final language = _language;
     if (language == null) return false;
 
+    // The token on the phone before the SMS: asking a farmer for a code they
+    // already gave, because a launch-time refresh had not finished yet, is the
+    // sign-out this gate exists to prevent.
+    if (_accounts.account == null) await _accounts.restore();
+
     if (_accounts.account == null) {
+      if (!context.mounted) return false;
       final navigator = Navigator.of(context);
       final signedIn = await navigator.push<bool>(
         MaterialPageRoute(

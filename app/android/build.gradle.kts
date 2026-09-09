@@ -43,6 +43,28 @@ subprojects {
 */
 val pinnedNdk = "27.1.12297006"
 
+/*
+  A plugin brings its own `compileSdk`, and there is no overriding it from here.
+
+  `flutter_secure_storage` 9.2.4 asks for 34, and 11.0.0 asks for 37. Gradle
+  **downloads** whichever it is told, mid-build, without asking — 152 MB of
+  Android SDK Platform 37 arrived that way while this dependency was being
+  evaluated, and then failed to be usable, because it installs as `android-37.0`
+  and Gradle looks for `android-37`.
+
+  This block used to try to raise them all to the app's own. It cannot:
+  `plugins.withId` fires before the module's `android { compileSdk 34 }` and is
+  overwritten by it, and `afterEvaluate` is refused outright — *it is too late to
+  set compileSdk, it has already been read to configure this project*. AGP reads
+  the value during the module's evaluation and there is no window between.
+
+  So the defence is not a pin, it is knowing before you add: a plugin's
+  `compileSdk` is one line in its `android/build.gradle`, readable from
+  `~/.pub-cache` without building anything. Adding a Flutter plugin can cost an
+  Android SDK platform, and that belongs in the decision rather than in the
+  build log.
+*/
+
 subprojects {
     plugins.withId("com.android.library") {
         extensions.configure<com.android.build.gradle.LibraryExtension>("android") {

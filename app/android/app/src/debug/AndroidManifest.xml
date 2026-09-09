@@ -4,4 +4,19 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!--
+      Cleartext, in debug builds only.
+
+      From Android 9 the platform blocks plain HTTP, and the development server
+      is `http://127.0.0.1:8099` reached over `adb reverse`. Without this the
+      app cannot talk to it at all: every call comes back as *no signal*, which
+      is a state this app is deliberately correct in — so it looks exactly like
+      working offline rather than like a blocked request, and the whole
+      marketplace is untestable on a device.
+
+      `src/debug/` only. The release manifest does not merge this, so a shipped
+      build still refuses plain HTTP.
+    -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

@@ -3698,3 +3698,79 @@ logcat.
 I have now written four times in two days that a check was honest, passing, and
 about a different thing than the one that mattered. This one is the worst of
 them, because the thing it was not about is the entire product.
+
+
+## 2026-09-09 (later) — A store that kept nothing, and a method nobody called
+
+R14: `ForgetfulTokenStore` held the refresh token in memory, so every restart
+signed the farmer out and the marketplace — inbox, enquiries, deals — was
+unreachable on the second launch. The gate names what it needs: the platform's
+own secure store, which is a plugin.
+
+### Two things installed without being asked for
+
+Adding the current `flutter_secure_storage` (11.0.0) made Gradle download **152
+MB of Android SDK Platform 37**, mid-build, silently — because the plugin
+compiles against 37 — and then fail anyway, because it installs as
+`android-37.0` and Gradle looks for `android-37`. Removed, and 9.2.4 chosen
+instead: Java rather than Kotlin, so no Kotlin Gradle Plugin (the thing
+`flutter_timezone` was removed for this morning), and `compileSdk 34`.
+
+Which pulled **130 MB of Platform 34**. That one is genuine — the plugin needs
+it — but it arrived the same way, without asking.
+
+I tried to stop that with a root-project override raising every plugin's
+`compileSdk` to the app's. It cannot be done. `plugins.withId` fires before the
+module's own `android { compileSdk 34 }` and is overwritten by it; `afterEvaluate`
+is refused outright — *it is too late to set compileSdk, it has already been
+read to configure this project*. AGP reads the value during the module's
+evaluation and there is no window between. The block is gone and the comment
+where it stood says so, because the defence is not a pin: it is reading a
+plugin's `android/build.gradle` out of `~/.pub-cache` **before** adding it. One
+line, no build required. That is now how a plugin gets chosen here.
+
+### The store, and the thing the iOS Keychain does
+
+`KeychainTokenStore`: EncryptedSharedPreferences on Android, Keychain on iOS at
+`first_unlock_this_device` — *first unlock* because the app is woken by a
+spoilage alert with the phone in a pocket, *this device* to keep the token out
+of iCloud backups.
+
+And a reinstall guard, because **the iOS Keychain survives uninstalling the app
+and Android's encrypted preferences do not**. Without it, a farmer who deletes
+Harvest and sells the phone leaves a working refresh token for whoever installs
+it next, on one platform and not the other. `shared_preferences` *is* cleared by
+an uninstall, so a flag there answers *has this install run before*.
+
+### And then the device said 401
+
+Signed in on the emulator against a live server, listed a lot, killed the app,
+relaunched — and `/sync/pull` came back **401**, with no refresh attempted
+behind it.
+
+`AccountStore.restore()` exchanges the stored token for a session. Its own
+docstring has said *called at launch and before anything that needs an account*
+since Phase 5. **Nothing called it.** Not the launch path, not the sign-in gate,
+not one test.
+
+It was invisible for a reason worth writing down: with `ForgetfulTokenStore`
+there was never a token to exchange, so *a method nobody calls* and *a store
+that keeps nothing* produce exactly the same behaviour. Fixing one exposed the
+other. The placeholder was honest about what it did and it hid what was missing
+next to it.
+
+Fixed at both ends — unawaited at launch, awaited before listing — and the
+assertion is about the launch rather than the method: with a token on the phone,
+a launch must **ask**. The fake `Api` in `app_test.dart` had no memory of what
+it was asked, which is why nothing could have caught this; it has one now.
+
+Then on the device: relaunch, `/auth/token/refresh` 200, `/sync/pull` 200 where
+it was 401 twenty minutes earlier.
+
+### The fifth
+
+That is five times in two days that something was covered, passing, and about a
+different thing than the one that mattered — and the second where a *placeholder
+being honest about itself* was what concealed the gap beside it. A stand-in that
+announces what it does not do is still a stand-in for one thing, and the thing
+next to it can be missing entirely.
