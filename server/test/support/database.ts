@@ -16,8 +16,21 @@ export function testDatabase(): Db {
   return connect(url);
 }
 
+/**
+ * Applied once per test file, not once per test.
+ *
+ * `migrate` is idempotent, so calling it before all two hundred tests bought
+ * two hundred round trips, a `readdir`, and nothing else. It is not what made
+ * the suite slow — measured under load it was 0 to 36 ms while the `truncate`
+ * below took 170 to 560 ms — but work done two hundred times for one result is
+ * worth doing once whatever it costs.
+ */
+let migrated: Promise<unknown> | undefined;
+
 export async function reset(db: Db): Promise<void> {
-  await migrate(db);
+  migrated ??= migrate(db);
+  await migrated;
+
   // Every table but the migration ledger, in one statement so foreign keys do
   // not dictate an order that has to be maintained by hand.
   const { rows } = await db.query<{ name: string }>(`

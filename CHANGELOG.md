@@ -240,6 +240,19 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **A server test that failed for being slow rather than wrong.** `sync.test.ts`
+  hit vitest's ten-second `hookTimeout` in its `beforeEach`, on a machine that
+  was also building an iOS app, recording the simulator and running ffmpeg over
+  a thousand frames. There is no deadlock behind it — `pg_stat_activity` was
+  polled four times a second through a full run and no session ever sat *idle
+  in transaction* or waited on a lock. The hook empties a real Postgres, which
+  takes 20 ms quiet and 170–560 ms under disk contention, because `truncate`
+  rewrites and fsyncs the file behind every relation it names. The budget is
+  thirty seconds now, which a contended two-core runner can meet and a genuine
+  hang still cannot.
+- `migrate` runs once per test file instead of once per test — it is idempotent,
+  so two hundred calls bought one result and a `readdir` each time.
+
 - **The rounded corner of a tappable card was eating the last word's
   descender.** `Pressable` clipped its *child* to the rounded rectangle, and
   that box hugs its child exactly — so on a block of text the bottom-left curve

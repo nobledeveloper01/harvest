@@ -3886,3 +3886,60 @@ The thing that worked was the least clever: render the pixels large enough to
 look at, and compare two glyphs on the same line. Seventh time this week that
 running or looking at the product beat reasoning about it — and the first where
 what I had to look at was a single letter.
+
+
+## 2026-09-09 (last, really) — Slow is not hung, and I had to prove which
+
+`sync.test.ts` failed once in `make ci` with *Hook timed out in 10000ms*, on a
+test that then reported 320 seconds, while the machine was building an iOS app,
+recording the simulator and running ffmpeg over a thousand frames. It passed on
+the next two runs. The temptation is to write "flaky" and move on; the note I
+left myself said **slow is not the same as hung**, and finding out which was the
+whole job.
+
+### Watching rather than guessing
+
+Polled `pg_stat_activity` four times a second through a full clean run, looking
+for anything `idle in transaction` or waiting on a `Lock`. **Zero.** So no
+leaked transaction, no unreleased client, nothing holding an `ACCESS EXCLUSIVE`
+against the `truncate`. That killed the hypothesis I would otherwise have
+shipped: a leaked `begin` somewhere in the server, which would have been a
+production bug worth a lot of attention and does not exist.
+
+Then instrumented `reset` and ran the suite under synthetic disk and CPU load.
+`migrate` is **0–36 ms**. The `truncate` is **170–560 ms**, against about 20 ms
+on a quiet machine. So the hook is genuinely slow under contention, for the
+ordinary reason: `truncate` rewrites and fsyncs the file behind every relation
+it names, and every relation's index, whether or not the test wrote a row.
+
+### Two fixes I measured and then threw away
+
+**Narrowing the truncate** to only the tables holding rows — one `exists` per
+table in a single round trip, then truncate three to seven instead of twenty.
+Fewer relations rewritten, and it cut the count of slow resets roughly in half.
+It did **not** move the peak, which is what actually trips the timeout.
+
+**`synchronous_commit = off`** on the test pool, which is a legitimate setting
+for a database that is emptied between tests. One run said 28 s, the next said
+49 s with a 1731 ms peak.
+
+At which point the honest thing to notice is that **my benchmark was not good
+enough to tell these apart**. Six file-writing loops and four spinners is not a
+reproducible load; two runs of the same code differed by twenty seconds. So
+neither change ships. A cleverer reset I cannot show helps is exactly the kind
+of thing this repository is supposed to refuse — it would sit there looking like
+a fix and be one only by coincidence.
+
+### What did ship
+
+`migrate` moved out of the per-test path, because *that* needs no benchmark:
+idempotent work done two hundred times for one result. And the hook's budget
+raised from ten seconds to thirty, with the measurement written above it so the
+next reader knows it is not covering for a hang.
+
+Proved in both directions rather than asserted. A `reset` made to take 12
+seconds **passes** on the new budget and **fails** on the old one with the exact
+error from the original run — which is the first time in this investigation the
+original failure was reproduced on purpose. A `reset` made to take 35 seconds
+still fails. Thirty is enough for a contended runner and short enough that a
+real hang is caught in half a minute.
