@@ -360,6 +360,18 @@ Entries say *why*, not just what.
 
 ### Changed
 
+- **`flutter_timezone` is gone, and the alerts are unchanged.** It applied the
+  Kotlin Gradle Plugin, which future Flutter versions refuse to build, and
+  5.1.0 is the last release — so there was nothing to upgrade to. It had one
+  caller, setting `tz.local` so alerts could be scheduled in the device's zone.
+  They never needed to be: `TZDateTime.from` converts rather than
+  reinterprets, so the same alert is the same instant in any zone, and the
+  platform is handed an offset either way. The comment defending the dependency
+  described a real bug belonging to a **different constructor** one line away.
+  [ADR-0014](docs/adr/0014-a-spoilage-alert-is-an-instant-not-a-wall-clock-time.md),
+  and `LocalAlarms.whenToRing` is public so the claim is asserted rather than
+  written down.
+
 - **One NDK version for every module, pinned in `android/build.gradle.kts`.**
   Pinning it in `app/build.gradle.kts` is not enough: `jni`, which arrives
   transitively, sets `ndkVersion flutter.ndkVersion`, so a build silently began

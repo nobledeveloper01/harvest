@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../domain/spoilage/alerts.dart';
@@ -103,15 +101,41 @@ class LocalAlarms implements Alarms {
   */
   static const _perLot = 8;
 
+  /// When an alert actually rings, as the plugin wants it.
+  ///
+  /// Public, and a named function rather than an expression at the call site,
+  /// for the reason `FreshnessRing.arcFraction` is: the thing worth asserting
+  /// is what gets handed over, and a test of the call site's arguments is a
+  /// test of its own inputs. The first version of the test for this checked
+  /// what `TZDateTime.from` does — which is a test of the `timezone` package,
+  /// and it passed happily while this line was wrong.
+  ///
+  /// **An instant, and the location is only how it is written down.**
+  /// `TZDateTime.from` converts: the same moment, expressed in whatever zone
+  /// you name. The plugin sends it to the platform as an ISO-8601 string
+  /// carrying its own offset, and Android rebuilds it with
+  /// `LocalDateTime.parse(...).atZone(...)` — so the zone name never moves the
+  /// alarm, and the app does not need to know which zone the phone is in.
+  ///
+  /// This used to read `tz.local`, set from `flutter_timezone`, under a comment
+  /// saying a farmer in Lagos scheduled in UTC would be *warned an hour early,
+  /// every time, for ever*. That is true of `TZDateTime(location, year, month,
+  /// ...)`, one line away in the same class, which **reinterprets** wall-clock
+  /// numbers in a zone. It was never true of this. The plugin was doing
+  /// nothing, on the platform this product can least afford to lose: it applies
+  /// the Kotlin Gradle Plugin, which future Flutter versions refuse to build.
+  /// See ADR-0014.
+  ///
+  /// What *would* need the device's zone is `matchDateTimeComponents` — *every
+  /// morning at six* is a promise about a wall clock and depends on which wall.
+  /// Nothing here repeats: a spoilage window is a length of time from a
+  /// harvest, and if the farmer crosses a border the crop does not care.
+  static tz.TZDateTime whenToRing(DateTime at) =>
+      tz.TZDateTime.from(at, tz.UTC);
+
   @override
   Future<void> start() async {
     if (!_started) {
-      tzdata.initializeTimeZones();
-      // The device's own zone, not UTC. A farmer in Lagos scheduled in UTC is
-      // warned an hour early, every time, for ever.
-      final zone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(zone.identifier));
-
       await _plugin.initialize(
         onDidReceiveNotificationResponse: (response) {
           final id = int.tryParse(response.payload ?? '');
@@ -173,7 +197,7 @@ class LocalAlarms implements Alarms {
         id: lotId * _perLot + i,
         title: 'Harvest',
         body: body(alert),
-        scheduledDate: tz.TZDateTime.from(alert.at, tz.local),
+        scheduledDate: whenToRing(alert.at),
         // The lot, so the tap can land on it rather than on the list.
         payload: '$lotId',
         notificationDetails: const NotificationDetails(

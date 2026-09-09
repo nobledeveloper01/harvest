@@ -3587,3 +3587,79 @@ caught immediately, because `doc-check.sh` already has a *present but not
 tracked* check and the document is now on its required list. That is the better
 fix: not remembering the allowlist, but making the document required and letting
 the gate notice.
+
+
+## 2026-09-09 — A dependency that was guarding against a bug we did not have
+
+`flutter_timezone` applies the Kotlin Gradle Plugin, future Flutter versions
+refuse to build an app whose plugins do, and 5.1.0 is the last release. Nothing
+to upgrade to; it had to go or be replaced.
+
+It had one caller: `tz.local`, set from the device's zone, so alerts could be
+scheduled in it. The comment above it said a farmer in Lagos scheduled in UTC
+would be *warned an hour early, every time, for ever* — which is exactly the
+kind of sentence that makes a dependency look structural.
+
+It is true. It is true of `TZDateTime(location, year, month, day, hour,
+minute)`, which **reinterprets** wall-clock numbers in a zone. The line it was
+written above used `TZDateTime.from`, which **converts** — same instant, named
+in a different zone. Two constructors on the same class, adjacent in the docs,
+opposite in meaning. The plugin was guarding against a mistake the code was not
+making.
+
+Checked rather than reasoned: one alert read back in Lagos, Kolkata, London and
+São Paulo, all with the same `millisecondsSinceEpoch`; and the plugin's own
+mapper, which sends the platform an ISO-8601 string carrying its offset, with
+Android rebuilding it as `LocalDateTime.parse(...).atZone(...)`. The zone name
+cannot move the alarm. ADR-0014.
+
+### A test that agreed with the code
+
+The first version of `alarms_zone_test.dart` asserted what `TZDateTime.from`
+does. It passed while I replaced the app's line with the reinterpreting
+constructor — because it was a test of the `timezone` package, not of Harvest.
+So the conversion is now `LocalAlarms.whenToRing`, public and named, for the
+same reason `FreshnessRing.arcFraction` is: *the thing worth asserting is what
+gets handed over*.
+
+Then the fixed test passed again with the constructor swapped, and only the
+third assertion caught it — because that machine sits at +01:00, the same
+offset as the Africa/Lagos I had broken it with, so a locally-built `DateTime`
+came out identical. A test whose strength depends on where CI is standing is not
+a test. It asserts a UTC input too now, which is decisive anywhere.
+
+### And then the on-device run, which found something much worse
+
+Running `integration_test/alarms_test.dart` against the Android emulator, to
+prove the platform still accepts a schedule without the plugin, all five tests
+failed with:
+
+    PlatformException(exact_alarms_not_permitted, Exact alarms are not permitted)
+
+Not caused by this change. `AndroidScheduleMode.exactAllowWhileIdle` needs
+`SCHEDULE_EXACT_ALARM`, which from Android 12 is not granted by default, and the
+merged manifest declares **no alarm permission at all** — `aapt2 dump
+permissions` lists INTERNET, VIBRATE and POST_NOTIFICATIONS and nothing else.
+`RECEIVE_BOOT_COMPLETED` is missing too, so anything that did schedule would not
+survive a reboot, on a three-day window.
+
+Then on the product, not the test: allow notifications, log a lot of bitterleaf,
+tap **Save this lot** — and the button lights up and nothing happens.
+`Unhandled Exception: PlatformException(exact_alarms_not_permitted)` in logcat.
+The lot is written, the alarm throws, and the throw takes the rest of `_save()`
+with it: no refresh, no `setState`, no way out of the screen. The farmer taps
+again and logs a second one.
+
+Which is the whole product. On Android. For anybody who says yes to
+notifications.
+
+It has been like that since Phase 2. `integration_test/alarms_test.dart` was
+written then and verified on **iOS** — the journal entry for that day is titled
+*two phases of green tests on the wrong platform*, and this is the third phase.
+The suite is not a map of the product; it is a map of what somebody thought to
+run, on the platform they happened to have.
+
+Not fixed in this commit, because whether a spoilage warning is an *exact* alarm
+is a product decision with a Play Store policy attached: `USE_EXACT_ALARM` is
+auto-granted and restricted to alarm clocks and calendars, and Harvest is
+neither. The recommendation is on the table.
