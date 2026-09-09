@@ -3829,3 +3829,60 @@ rather than guessed at.
 
 Which is the sixth thing this week that only running the product showed, and the
 first that only *looking closely at a picture of it* showed.
+
+
+## 2026-09-09 (last) — The corner was eating the words
+
+Following up the *orices* finding from the screenshots. Three measurements, and
+the first two were both wrong in an instructive way.
+
+**One:** laid the sentence out in a `TextPainter` with the real Inter loaded,
+and printed the line metrics. `bodyMedium` is 14 sp at `height: 1.45`, giving a
+20 px line box with 4.05 px of descent — deeper than Inter's actual descenders.
+The glyph bottom of the last line lands exactly on the box edge. **The text does
+not overflow.** So the tidy story — *the line box is too tight and the Material
+clip cuts what pokes out* — was false, and it was the story I had written into
+the task.
+
+**Two:** measured the raw capture. The lowest amber pixel is y=1828 and the
+card's bottom border is y=1884: fifty-six pixels of clear space below the cut.
+Not the card.
+
+**Three**, and the one that settled it: printed the glyphs as pixels. The `p`
+of *prices* is cut flat at y=1820 — and the `j` of *just*, two hundred and forty
+pixels to its right on **the same line**, keeps a full descender down to y=1828.
+A horizontal clip cuts both. Only a **corner** cuts one.
+
+`Pressable` wraps its child in `Material(clipBehavior: Clip.antiAlias)` with a
+12 dp radius, and its box hugs the text exactly. The `p` is the first glyph of
+the last line, so it sits inside the bottom-left curve; the `j` is well clear of
+it. Every observation falls out of that.
+
+### The fix, and what had to be true for it
+
+`Clip.none`. Nothing needed the clip: `InkWell.borderRadius` on the very next
+line already clips the splash and the highlight, and every child that paints a
+background of its own carries its own `borderRadius` — checked across all
+seventeen uses, because a child relying on the Material to round its square
+corners would have been squared off by removing it.
+
+Verified by looking, both ways round. The `p` has its tail. A long press
+recorded at 20 fps shows the highlight still rounded on all four corners, with
+the descender now painting *below* that curve — in exactly the sliver the clip
+used to take.
+
+`pressable_test.dart` holds the two facts the fix leaves standing, and says in
+its own comment that it would not catch a different way of clipping the child;
+what caught this one was looking at the pixels.
+
+### Three wrong stories before the right one
+
+I wrote *the line box is too tight* into a task file as the hypothesis, with
+confidence, before measuring it. Then I ran an experiment that proved nothing
+because reinstalling the build wiped the database and took the screen away. Then
+I read an ASCII dump of the glyphs and misread a `p` as an `o` next to an `r`.
+
+The thing that worked was the least clever: render the pixels large enough to
+look at, and compare two glyphs on the same line. Seventh time this week that
+running or looking at the product beat reasoning about it — and the first where
+what I had to look at was a single letter.

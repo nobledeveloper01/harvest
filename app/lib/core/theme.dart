@@ -531,7 +531,25 @@ class _PressableState extends State<Pressable> {
       child: Material(
         color: Colors.transparent,
         borderRadius: widget.borderRadius,
-        clipBehavior: Clip.antiAlias,
+        /*
+          Not clipped, because the corner was eating the words.
+
+          `Clip.antiAlias` here clips the **child** to the rounded rectangle,
+          and this box hugs its child exactly — for a block of text that means
+          the bottom-left curve carves into the last line. On the decision
+          screen, *"Based on prices from just now."* rendered as **orices**: the
+          descender of the `p`, the first glyph on that line and so the one
+          nearest the corner, was shaved flat, while the `j` of *just* two
+          hundred pixels to the right kept its tail. That asymmetry is what
+          identified the corner rather than an edge.
+
+          Nothing needed the clip. `InkWell.borderRadius` on the line below
+          already clips the splash and the highlight, which is what a tap
+          shows; and every child that paints a background of its own carries
+          its own `borderRadius` — checked across all seventeen uses, because
+          a child relying on this to round its square corners would be squared
+          off by removing it.
+        */
         child: InkWell(
           borderRadius: widget.borderRadius,
           onTap: widget.onTap,

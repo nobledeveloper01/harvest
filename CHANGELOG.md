@@ -240,6 +240,18 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **The rounded corner of a tappable card was eating the last word's
+  descender.** `Pressable` clipped its *child* to the rounded rectangle, and
+  that box hugs its child exactly — so on a block of text the bottom-left curve
+  carved into the last line. On the decision screen *"Based on prices from just
+  now."* rendered as **orices**: the `p` is the first glyph on that line and so
+  the one nearest the corner, and its tail was shaved flat while the `j` of
+  *just* two hundred pixels to the right kept its own. That asymmetry is what
+  identified the corner rather than a horizontal edge. Nothing needed the clip —
+  `InkWell.borderRadius` already keeps the splash inside the corner, and every
+  child that paints a background carries its own radius. `12-storage-offer` is
+  retaken.
+
 - **Nothing ever exchanged the stored refresh token.** `AccountStore.restore()`
   has documented itself as *called at launch and before anything that needs an
   account* since Phase 5, and had **no caller** — not in `lib/`, not in a test.
