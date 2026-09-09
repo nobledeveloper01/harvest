@@ -1,4 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Alerts have to survive a restart.
+
+      A spoilage window is three days and a cheap phone reboots — for an update,
+      for a flat battery, because it was switched off overnight to save charge,
+      which is ordinary on the design floor. Android drops every scheduled alarm
+      on reboot, and `flutter_local_notifications` ships a receiver that puts
+      them back; the receiver cannot run without this.
+
+      Nothing declared it, so every warning was one power cycle from being
+      forgotten silently. Found beside `exact_alarms_not_permitted`, in the same
+      `aapt2 dump permissions` that showed this app asks for INTERNET, VIBRATE
+      and POST_NOTIFICATIONS and nothing else. See ADR-0015 and the journal.
+
+      There is deliberately no `SCHEDULE_EXACT_ALARM` here: the alerts are
+      inexact, which needs no permission and cannot be refused.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:label="Harvest"
         android:name="${applicationName}"

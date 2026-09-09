@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harvest/app.dart';
 import 'package:harvest/core/theme.dart';
@@ -96,6 +97,13 @@ class _Ledger implements Alarms {
   final List<int> cleared = [];
   bool allowed = true;
 
+  /// Set when the test is pretending to be a platform that says no.
+  ///
+  /// Android 12 said no to every one of these for two phases —
+  /// `exact_alarms_not_permitted` — and nothing in this suite could tell,
+  /// because the fake had no way of refusing.
+  Object? refuses;
+
   /// The lot a cold start came from, if the test is pretending there was one.
   int? launchedFrom;
 
@@ -118,8 +126,10 @@ class _Ledger implements Alarms {
     int lotId,
     List<Alert> alerts,
     String Function(Alert) body,
-  ) async =>
-      set.add((lotId, alerts));
+  ) async {
+    if (refuses != null) throw refuses!;
+    set.add((lotId, alerts));
+  }
 
   @override
   Future<void> clearFor(int lotId) async => cleared.add(lotId);
@@ -301,6 +311,42 @@ void main() {
         reason: 'that would contradict the banner directly above it');
     expect(find.text('Log a harvest'), findsOneWidget,
         reason: 'and there is still a way forward');
+  });
+
+  testWidgets('a platform that refuses to warn does not lose the harvest',
+      (tester) async {
+    /*
+      What Android did for two phases, and what nothing here could see.
+
+      `exactAllowWhileIdle` needs `SCHEDULE_EXACT_ALARM`, which Android 12 does
+      not grant by default, so `zonedSchedule` threw
+      `exact_alarms_not_permitted` on every save. The call was unguarded, so the
+      throw took the rest of `_save()` with it: the row was written and nothing
+      after it ran — no reread, no `setState`, no way off the storage screen.
+      Tap **Save this lot**, watch the button light up, watch nothing happen.
+
+      This suite could not have caught it, because the fake alarms could not
+      refuse. It can now, and the assertion is the product's: whatever the
+      operating system says about notifications, the farmer keeps the lot and
+      gets to the next screen.
+    */
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'en'});
+    // The design floor, because `logAYam` taps its way through four screens
+    // and the binding's default 800x600 is not a phone.
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    alarms.refuses = PlatformException(
+        code: 'exact_alarms_not_permitted',
+        message: 'Exact alarms are not permitted');
+
+    await launch(tester);
+    await logAYam(tester);
+
+    expect(alarms.set, isEmpty, reason: 'the platform refused, as arranged');
+    expect(find.text('Where are you keeping it?'), findsNothing,
+        reason: 'the save finished rather than dying on the last screen');
+    expect((await database.select(database.lots).get()), hasLength(1),
+        reason: 'and the harvest is on the phone');
   });
 
   testWidgets('the mark is not cut off half-drawn', (tester) async {

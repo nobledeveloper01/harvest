@@ -546,13 +546,36 @@ class _HarvestAppState extends State<HarvestApp> {
         now: DateTime.now(),
       );
       if (alerts.isNotEmpty && await _alarms.ready()) {
-        await _alarms.setFor(
-          id,
-          alerts,
-          // The crop's name, which a farmer recognises as a word even when
-          // they read little. The sentence itself is spoken in the app.
-          (_) => '${lot.crop.label} — open Harvest',
-        );
+        /*
+          A platform that refuses to warn must not also lose the harvest.
+
+          This was unguarded, and on Android 12 and later
+          `exactAllowWhileIdle` threw `exact_alarms_not_permitted` every single
+          time — which took the rest of this method with it. The lot was
+          written and nothing after this line ran: no reread, no `setState`, no
+          way off the storage screen. The farmer tapped **Save this lot**, the
+          button lit up, and nothing happened; tapping again logged a second
+          one.
+
+          The mode is fixed. The guard stays anyway, because the failure it
+          allowed is out of all proportion to its cause: *no warning* is a
+          worse product and *no lot* is a broken one, and only one of those may
+          follow from the operating system saying no.
+        */
+        try {
+          await _alarms.setFor(
+            id,
+            alerts,
+            // The crop's name, which a farmer recognises as a word even when
+            // they read little. The sentence itself is spoken in the app.
+            (_) => '${lot.crop.label} — open Harvest',
+          );
+        } catch (_) {
+          // Deliberately swallowed here and nowhere else. Telling the farmer
+          // their warnings failed needs a sentence in six languages and a
+          // recording of it; until then the lot is what must survive.
+          // `docs/FEATURE-BACKLOG.md` carries it.
+        }
       }
     }
 

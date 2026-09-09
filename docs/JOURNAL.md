@@ -3659,7 +3659,42 @@ written then and verified on **iOS** — the journal entry for that day is title
 The suite is not a map of the product; it is a map of what somebody thought to
 run, on the platform they happened to have.
 
-Not fixed in this commit, because whether a spoilage warning is an *exact* alarm
-is a product decision with a Play Store policy attached: `USE_EXACT_ALARM` is
-auto-granted and restricted to alarm clocks and calendars, and Harvest is
-neither. The recommendation is on the table.
+Put to the product rather than decided in passing, because `USE_EXACT_ALARM` is
+auto-granted and restricted by Google Play to alarm clocks, timers and
+calendars, and Harvest is none of those. The answer was **inexact**, which is
+the right one: the app says *half its time is gone, start looking for a buyer*,
+against a window measured in days, computed from a table with a range of hours
+in it. Delivered in the system's next maintenance window it says exactly the
+same thing. ADR-0015.
+
+Three changes and one of them is the interesting one:
+
+  * `inexactAllowWhileIdle`, which needs no permission and cannot be refused;
+  * `RECEIVE_BOOT_COMPLETED`, because a three-day window on a phone switched off
+    overnight to save charge — ordinary on the design floor — lost every
+    warning it had scheduled;
+  * the call wrapped, so a platform that refuses costs the farmer a warning
+    rather than a harvest.
+
+The third stays even though the first makes it unreachable. The consequence was
+out of all proportion to the cause: *no warning* is a worse product and *no lot*
+is a broken one, and only one of those may follow from the operating system
+saying no.
+
+### The fake that could not say no
+
+`app_test.dart` has had a fake `Alarms` since Phase 2 and it could only ever
+succeed. So the suite had nothing to say about the one behaviour that mattered —
+what the app does when the platform refuses — and it was green throughout. It
+can refuse now, and the assertion is the product's: whatever the operating
+system says about notifications, the farmer keeps the lot and gets to the next
+screen. Broken on purpose by unwrapping the call, and it fails.
+
+Then the on-device test, which is where this started: five green, on Android,
+for the first time. And through the app by hand — crop, quantity, storage, **Save
+this lot** — and the lot lands on *Your harvest* with its ring, with nothing in
+logcat.
+
+I have now written four times in two days that a check was honest, passing, and
+about a different thing than the one that mattered. This one is the worst of
+them, because the thing it was not about is the entire product.

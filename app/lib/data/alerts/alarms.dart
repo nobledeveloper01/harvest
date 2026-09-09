@@ -213,7 +213,29 @@ class LocalAlarms implements Alarms {
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        /*
+          Inexact, and that is the honest mode for this product.
+
+          `exactAllowWhileIdle` needs `SCHEDULE_EXACT_ALARM`, which Android 12
+          does not grant by default — so on every Android 12 or later phone
+          this threw `exact_alarms_not_permitted`, and the throw took the whole
+          save with it. Logged a lot, tapped Save, nothing happened. Since
+          Phase 2, on the platform the farmer persona actually uses, found by
+          running the on-device test on Android for the first time.
+
+          The other way out is `USE_EXACT_ALARM`, which is auto-granted and
+          which Google restricts to alarm clocks, timers and calendars. Harvest
+          is none of those, and claiming it risks the store the product needs
+          most. ADR-0015.
+
+          And it would be claiming something untrue. A spoilage warning is not
+          an alarm clock: the app says *half its time is gone, start looking
+          for a buyer*, not a minute. Delivered in the system's next
+          maintenance window it says exactly the same thing. What matters is
+          that it arrives at all, which is what this mode guarantees and the
+          other one did not.
+        */
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     }
   }

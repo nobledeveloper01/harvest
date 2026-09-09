@@ -223,6 +223,23 @@ Entries say *why*, not just what.
 
 ### Fixed
 
+- **Logging a harvest was impossible on Android 12 and later.** Alerts were
+  scheduled with `exactAllowWhileIdle`, which needs `SCHEDULE_EXACT_ALARM` —
+  not granted by default, and not declared. Every save threw
+  `exact_alarms_not_permitted`, and the unguarded call took the rest of the
+  save with it: the row was written, nothing after it ran, and the farmer sat
+  on the storage screen watching the button light up. Tapping again logged a
+  second lot. Since Phase 2, for anybody who allows notifications.
+  [ADR-0015](docs/adr/0015-spoilage-warnings-are-inexact-alarms.md).
+- Warnings are **inexact** now, which needs no permission and cannot be
+  refused. A spoilage warning is not an alarm clock: it says *half its time is
+  gone*, against a window measured in days.
+- Alerts survive a reboot. `RECEIVE_BOOT_COMPLETED` was missing, so a
+  three-day window on a phone switched off overnight lost every warning.
+- A platform that refuses to warn no longer loses the harvest. The fake alarms
+  in `app_test.dart` could not refuse, which is why two phases of green tests
+  said nothing about any of this.
+
 - **A phone whose harvests this version cannot read was sent to log more.**
   `HarvestApp` asked `lots.isEmpty` to decide whether to open in the log flow,
   and asked it again to decide whether the crop grid gets a back button. A
