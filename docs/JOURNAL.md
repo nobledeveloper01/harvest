@@ -3943,3 +3943,20 @@ error from the original run — which is the first time in this investigation th
 original failure was reproduced on purpose. A `reset` made to take 35 seconds
 still fails. Thirty is enough for a contended runner and short enough that a
 real hang is caught in half a minute.
+
+## 2026-09-15 — The README in Grid's shape
+
+Rewrote the README in Grid's twelve sections, at the user's ask across the
+portfolio. The old one had grown by accretion — a status paragraph per
+phase, then a feature per screen — and the effect was that the strongest
+material, the journal's surprises, was scattered through it as asides. It is
+a correctness-notes section now, seven of them, and a reader gets the
+problem, the mechanism, the layers, the quick start, the status and the
+licence in the same order as every sibling.
+
+Two things it found. The README still said the session *does not survive a
+restart yet*, a phase after the changelog and the ledger said it does on
+Android; a sentence quoted in one place drifts less, which is the whole
+argument for the shape. And the repository had no licence file — it has the
+portfolio's pair now, BSL for the app and the server, Apache-2.0 for
+`app/lib/domain`, with the grant written for harvests.
