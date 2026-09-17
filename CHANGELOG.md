@@ -10,6 +10,16 @@ Entries say *why*, not just what.
 
 ### Added
 
+- **A refused warning is said, not swallowed.** When the operating system will
+  not schedule a lot's warnings, the lot was already kept (the guard from the
+  Android 12 defect) but the farmer was told nothing — the backlog carried it
+  as *the failure mode this repository keeps writing down*. `Phrase.warningsNotSet`
+  is said once when the list comes back: *your harvest is saved, but this phone
+  will not let me warn you later — open Harvest yourself and check on it.* Six
+  placeholder clips, so R1's count is 1182 and the recording script 197 lines.
+  Asserted both ways: said on refusal, silent otherwise, and the test fails when
+  the flag is not set.
+
 - **The refresh token survives a launch.** `KeychainTokenStore` puts it in
   EncryptedSharedPreferences on Android and the Keychain on iOS, replacing
   `ForgetfulTokenStore`, which kept it in memory — so every restart signed the

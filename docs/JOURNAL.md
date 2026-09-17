@@ -5,6 +5,32 @@ point — everything else is in the commit log.
 
 ---
 
+## 2026-09-17 — The one thing left that needed no person
+
+**Asked to start Harvest's next phase, and there is not one.** Phases 5, 6 and 7
+were built ahead while phase 4 stayed open on the classifier; every remaining
+line in `RELEASE-GATES.md` names a speaker, a handset, an illustrator, a dataset
+or an FCM project. The portfolio note that called Harvest "the largest remaining
+block of buildable code" was wrong, and is corrected.
+
+What was buildable was one backlog row. The save has been guarded since the
+Android 12 defect — a platform that refuses to warn costs a warning rather than
+a harvest — but it cost the warning silently, and the row said why: a sentence
+in six languages is a clip, and a clip is R1. It is a clip now, a placeholder
+like the other 1176, said once after the list comes back. The counts gate
+caught the three documents still quoting 1176, which is what it is for.
+
+Proved to fire: with the flag left unset, the refusal test fails on the new
+assertion and nothing else.
+
+The other backlog row that looked like code — composed audio, *"Your {crop} has
+{n} days left"* — was left alone on purpose. `Phrase` says why in its own doc:
+nothing is assembled from fragments, because word order differs across five
+languages and a sentence stitched from isolated clips sounds like a ransom note.
+The fixed-state sentences already say what the countdown means.
+
+---
+
 ## 2026-09-06 — Android has never compiled, and could not have
 
 R2 has sat on the release-gate list since Phase 0 with the same note: no JDK on

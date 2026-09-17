@@ -408,7 +408,7 @@ void main() {
         code: 'exact_alarms_not_permitted',
         message: 'Exact alarms are not permitted');
 
-    await launch(tester);
+    final speaker = await launch(tester);
     await logAYam(tester);
 
     expect(alarms.set, isEmpty, reason: 'the platform refused, as arranged');
@@ -416,6 +416,23 @@ void main() {
         reason: 'the save finished rather than dying on the last screen');
     expect((await database.select(database.lots).get()), hasLength(1),
         reason: 'and the harvest is on the phone');
+    // And the farmer is told, aloud, once — the backlog carried this as the
+    // silent failure the guard left behind.
+    expect(speaker.said.where((s) => s == 'phrase:warnings-not-set'), hasLength(1),
+        reason: 'a refused warning is said, not swallowed');
+  });
+
+  testWidgets('a platform that warns as asked says nothing about it',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'speech.language.code': 'en'});
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final speaker = await launch(tester);
+    await logAYam(tester);
+
+    expect(alarms.set, isNotEmpty);
+    expect(speaker.said, isNot(contains('phrase:warnings-not-set')));
   });
 
   testWidgets('the mark is not cut off half-drawn', (tester) async {

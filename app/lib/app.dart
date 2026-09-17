@@ -155,6 +155,11 @@ class _HarvestAppState extends State<HarvestApp> {
   /// True while the farmer is part-way through logging one.
   bool _logging = false;
 
+  /// The operating system refused to schedule the last lot's warnings. Told
+  /// to the farmer once, aloud, when the list comes back — see
+  /// `Phrase.warningsNotSet`.
+  bool _warningsRefused = false;
+
   /// Dark unless the farmer has said otherwise. See `HomeScreen`.
   Brightness _brightness = Brightness.dark;
 
@@ -598,10 +603,10 @@ class _HarvestAppState extends State<HarvestApp> {
             (_) => '${lot.crop.label} — open Harvest',
           );
         } catch (_) {
-          // Deliberately swallowed here and nowhere else. Telling the farmer
-          // their warnings failed needs a sentence in six languages and a
-          // recording of it; until then the lot is what must survive.
-          // `docs/FEATURE-BACKLOG.md` carries it.
+          // Deliberately swallowed here and nowhere else: the lot is what
+          // must survive. What the farmer is told instead is spoken once the
+          // list is back — a sentence, not a stack trace.
+          _warningsRefused = true;
         }
       }
     }
@@ -614,6 +619,13 @@ class _HarvestAppState extends State<HarvestApp> {
       _quantity = null;
       _logging = false;
     });
+    if (_warningsRefused) {
+      _warningsRefused = false;
+      final language = _language;
+      if (language != null) {
+        unawaited(_speaker.say(Phrase.warningsNotSet, language));
+      }
+    }
   }
 
   void _forgetLanguage() {

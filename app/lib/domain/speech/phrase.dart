@@ -237,7 +237,17 @@ enum Phrase {
   /// The second sentence is the point. A farmer who mistypes a code and is told
   /// only that they are wrong has no idea whether to wait, retype, or start
   /// again — and the server has already spent the code by then.
-  wrongCode('wrong-code');
+  wrongCode('wrong-code'),
+
+  /// *"Your harvest is saved, but this phone will not let me warn you later. Open Harvest yourself and check on it."*
+  ///
+  /// Said once, after a lot is stored and the operating system has refused to
+  /// schedule its warnings. The save is guarded so a refusal costs a warning
+  /// rather than a harvest; without this sentence it cost the warning
+  /// *silently*, which the backlog carried as the failure mode this
+  /// repository keeps writing down. The lot is kept either way — the sentence
+  /// says what the farmer must now do instead.
+  warningsNotSet('warnings-not-set');
 
   const Phrase(this.id);
 

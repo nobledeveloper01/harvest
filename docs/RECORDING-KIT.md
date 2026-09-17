@@ -28,7 +28,7 @@ trusting it.
 
 ## What they are given
 
-`build/recording/<code>/SCRIPT.md` — 196 numbered lines, grouped into sections,
+`build/recording/<code>/SCRIPT.md` — 197 numbered lines, grouped into sections,
 with an English sentence beside each and the clip it becomes.
 
 **The English is the source, not the words.** It says what the app means; the
